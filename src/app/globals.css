@@ -7547,6 +7547,216 @@ textarea {
   }
 }
 
+/* V51 — lecteur d'histoire optimisé pour tableau */
+.reader-scene-main-history {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px 28px 8px;
+  overflow: hidden;
+}
+
+.history-reader-ribbon {
+  top: 76px;
+  min-height: 64px;
+  border-radius: 16px;
+}
+
+.history-reader-ribbon .reader-command-instruction {
+  gap: 12px;
+  padding: 10px 18px;
+}
+
+.history-reader-ribbon .reader-command-number {
+  width: 42px;
+  height: 42px;
+}
+
+.history-reader-ribbon .reader-command-instruction .eyebrow {
+  margin-bottom: 2px;
+  font-size: .66rem;
+}
+
+.history-reader-ribbon .reader-command-instruction-slot {
+  color: #123b5d;
+  font-size: clamp(.95rem, 1.35vw, 1.24rem);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.history-reader-ribbon .reader-command-score {
+  min-width: 175px;
+  padding: 8px 18px;
+}
+
+.history-reader-ribbon .reader-command-score .classroom-ornament-medal.is-compact {
+  width: 42px;
+  height: 42px;
+}
+
+.reader-scene-main-history .reader-activity-flow {
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 0 82px;
+}
+
+.reader-scene-main-history .history-reader {
+  width: min(1380px, 100%);
+}
+
+.reader-scene-main-history .history-reader-main {
+  gap: 14px;
+  padding: 22px 26px;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgb(12 54 87 / 10%);
+}
+
+.reader-scene-main-history .history-reader-heading h1 {
+  margin-top: 6px;
+  font-size: clamp(1.8rem, 3.25vw, 3rem);
+  line-height: 1.02;
+}
+
+.reader-scene-main-history .history-reader-documents {
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 10px;
+}
+
+.reader-scene-main-history .history-reader-document-card {
+  grid-template-rows: minmax(150px, 22vh) auto auto;
+  min-height: 0;
+  padding: 10px;
+}
+
+.reader-scene-main-history .history-reader-document-card img,
+.reader-scene-main-history .history-reader-document-card span {
+  height: 100%;
+  min-height: 150px;
+}
+
+.reader-scene-main-history .history-reader-document-card strong {
+  font-size: 1.05rem;
+}
+
+.reader-scene-main-history .history-short-text-reader input {
+  min-height: 62px;
+}
+
+.history-reader-dock {
+  min-height: 58px;
+  bottom: 8px;
+  padding: 8px 10px 8px 14px;
+  border-radius: 16px;
+}
+
+.history-reader-dock .reader-command-actions-slot:empty::before {
+  font-size: .76rem;
+}
+
+.history-document-modal {
+  padding: 18px;
+}
+
+.history-document-modal-content {
+  width: min(1540px, 96vw);
+  height: min(860px, 92vh);
+  max-height: 92vh;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px;
+  border-radius: 16px;
+}
+
+.history-document-modal-content .icon-control {
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+}
+
+.history-document-modal-header {
+  min-height: 46px;
+  padding-right: 70px;
+}
+
+.history-document-modal-header h2 {
+  margin: 0 0 4px;
+  color: var(--portal-ink);
+  font-size: clamp(1.2rem, 1.7vw, 1.7rem);
+}
+
+.history-document-modal-header small {
+  display: block;
+  color: var(--text-muted);
+  font-size: .9rem;
+}
+
+.history-document-modal-body {
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  border-radius: 12px;
+  background: #f8fbfe;
+}
+
+.history-document-modal-body img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.history-document-modal-body p {
+  width: min(900px, 100%);
+  margin: 0;
+  padding: 24px;
+  color: var(--portal-ink);
+  font-size: clamp(1.15rem, 1.7vw, 1.6rem);
+  line-height: 1.55;
+}
+
+@media (max-height: 780px) {
+  .reader-scene-main-history {
+    padding-top: 8px;
+  }
+
+  .history-reader-ribbon {
+    min-height: 58px;
+  }
+
+  .reader-scene-main-history .history-reader-main {
+    gap: 10px;
+    padding: 18px 22px;
+  }
+
+  .reader-scene-main-history .history-reader-heading h1 {
+    font-size: clamp(1.55rem, 2.65vw, 2.4rem);
+  }
+
+  .reader-scene-main-history .history-reader-document-card {
+    grid-template-rows: minmax(120px, 18vh) auto auto;
+  }
+
+  .reader-scene-main-history .history-reader-document-card img,
+  .reader-scene-main-history .history-reader-document-card span {
+    min-height: 120px;
+  }
+}
+
+@media (max-width: 900px) {
+  .reader-scene-main-history {
+    padding-inline: 12px;
+  }
+
+  .history-reader-ribbon {
+    grid-template-columns: 1fr;
+  }
+
+  .history-reader-ribbon .reader-command-score {
+    display: none;
+  }
+}
+
 @media print {
   body:has(.worksheet-print-root),
   body:has(.worksheet-print-root) * {

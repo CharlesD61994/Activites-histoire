@@ -715,9 +715,9 @@ export default function PresentationPage({
           isWordClassActivity || isWordGroupActivity || isTreeAnalysisActivity || isHistoryActivity || isWorksheetActivity
             ? "reader-scene-main-word-classes"
             : ""
-        }`}
+        } ${isHistoryActivity ? "reader-scene-main-history" : ""}`}
       >
-        <section className={`reader-command-ribbon ${isWorksheetActivity ? "worksheet-reader-ribbon" : ""}`}>
+        <section className={`reader-command-ribbon ${isWorksheetActivity ? "worksheet-reader-ribbon" : ""} ${isHistoryActivity ? "history-reader-ribbon" : ""}`}>
           <div className="reader-command-instruction">
             <span className="reader-command-number"><Target size={25} /></span>
             <div>
@@ -790,6 +790,7 @@ export default function PresentationPage({
           className={[
             "reader-command-dock",
             isWorksheetActivity ? "worksheet-reader-dock" : "",
+            isHistoryActivity ? "history-reader-dock" : "",
             competitionActive ? "has-competition" : ""
           ].filter(Boolean).join(" ")}
         >

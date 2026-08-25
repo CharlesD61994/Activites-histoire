@@ -177,9 +177,13 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
         <div className="history-document-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && setSelectedDocument(null)}>
           <div className="history-document-modal-content">
             <button type="button" className="icon-control" onClick={() => setSelectedDocument(null)} aria-label="Fermer"><X size={20} /></button>
-            <h2>{selectedDocument.title}</h2>
-            {selectedDocument.src ? <img src={selectedDocument.src} alt={selectedDocument.title} /> : <p>{selectedDocument.text}</p>}
-            {(selectedDocument.caption || selectedDocument.source) && <small>{[selectedDocument.caption, selectedDocument.source].filter(Boolean).join(" · ")}</small>}
+            <div className="history-document-modal-header">
+              <h2>{selectedDocument.title}</h2>
+              {(selectedDocument.caption || selectedDocument.source) && <small>{[selectedDocument.caption, selectedDocument.source].filter(Boolean).join(" · ")}</small>}
+            </div>
+            <div className="history-document-modal-body">
+              {selectedDocument.src ? <img src={selectedDocument.src} alt={selectedDocument.title} /> : <p>{selectedDocument.text}</p>}
+            </div>
           </div>
         </div>
       )}
