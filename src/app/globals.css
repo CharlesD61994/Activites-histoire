@@ -61,32 +61,36 @@
   place-items: center;
 }
 
-.reader-scene-main-history .history-canvas-reader-stage {
+.history-canvas-stage {
   width: var(--history-stage-frame-width) !important;
   height: var(--history-stage-frame-height) !important;
   max-width: var(--history-stage-frame-width) !important;
   max-height: var(--history-stage-frame-height) !important;
+  position: relative;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid #c8dbe9;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgb(12 54 87 / 10%);
   aspect-ratio: auto !important;
   margin: 0 !important;
 }
 
-.history-canvas-editor-card {
-  padding: 18px !important;
-}
-
-.history-canvas-shell {
-  display: grid;
-  justify-items: center;
-  padding: 14px !important;
-  overflow: auto;
-}
-
 .history-canvas-surface {
-  width: var(--history-stage-frame-width) !important;
-  height: var(--history-stage-frame-height) !important;
-  max-width: none !important;
   min-height: 0 !important;
-  aspect-ratio: auto !important;
+}
+
+.app-shell.sidebar-hidden .page:has(.history-canvas-editor) {
+  width: 100%;
+  max-width: none;
+  padding-inline: 30px;
+}
+
+.app-shell.sidebar-hidden .history-canvas-editor-section,
+.app-shell.sidebar-hidden .history-canvas-editor,
+.app-shell.sidebar-hidden .history-canvas-layout {
+  width: 100%;
 }
 
 @media (max-height: 760px) {
@@ -98,18 +102,20 @@
   .reader-scene-main-history {
     padding: 12px 20px !important;
   }
+
+  .app-shell.sidebar-hidden .page:has(.history-canvas-editor) {
+    padding-inline: 20px;
+  }
 }
 
 /* V54 — créateur d'histoire en tableau vierge */
 .history-canvas-editor { display: grid; gap: 14px; }
 .page:has(.history-canvas-editor) { max-width: 1780px; }
-.history-canvas-editor-card { padding: 18px; }
+.history-canvas-editor-section { min-width: 0; }
 .history-canvas-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .history-canvas-toolbar h3 { margin: 4px 0 0; color: var(--portal-ink); }
 .history-canvas-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .history-canvas-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; }
-.history-canvas-shell { min-width: 0; padding: 14px; border: 1px solid #d4e4f0; border-radius: 14px; background: #eef5fa; }
-.history-canvas-surface { position: relative; width: 100%; min-height: min(760px, calc(100vh - 250px)); aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid #c8dbe9; border-radius: 10px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 72%); }
 .history-canvas-block { position: absolute; display: grid; min-width: 0; min-height: 0; padding: 8px; overflow: hidden; border: 2px solid #b9d0e1; border-radius: 10px; background: rgb(255 255 255 / 92%); color: var(--portal-ink); text-align: left; }
 .history-canvas-block.selected { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 .history-canvas-block img { width: 100%; height: 100%; object-fit: contain; }
@@ -134,7 +140,7 @@
 .history-canvas-choice-editor input[type="checkbox"] { width: 18px; min-height: 18px; }
 .history-canvas-choice-editor button, .history-canvas-short-editor button { min-height: 32px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--primary); font-weight: 850; }
 .history-reader-canvas-mode { height: 100%; }
-.history-canvas-reader-stage { position: relative; width: min(1500px, 100%); height: 100%; min-height: 0; margin: 0 auto; overflow: hidden; border: 1px solid #c8dbe9; border-radius: 16px; box-shadow: 0 12px 30px rgb(12 54 87 / 10%); }
+.history-canvas-reader-stage { min-height: 0; }
 .history-canvas-reader-block { position: absolute; min-width: 0; min-height: 0; display: grid; overflow: hidden; }
 .history-canvas-reader-block.block-text p { margin: 0; color: var(--portal-ink); font-size: clamp(1.2rem, 2.8vw, 3.25rem); font-weight: 850; line-height: 1.08; }
 .history-canvas-reader-document { display: grid; width: 100%; height: 100%; min-height: 0; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--secondary) 40%, #fff); }

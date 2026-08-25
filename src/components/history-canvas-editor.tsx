@@ -164,48 +164,46 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       </div>
 
       <div className="history-canvas-layout">
-        <div className="history-canvas-shell">
-          <div
-            className="history-canvas-surface"
-            ref={surfaceRef}
-            style={{ background: canvas.background || "#fff" }}
-            onPointerMove={onPointerMove}
-            onPointerUp={() => setDrag(null)}
-            onPointerLeave={() => setDrag(null)}
-          >
-            {canvas.blocks.map((block) => (
-              <div
-                key={block.id}
-                role="button"
-                tabIndex={0}
-                className={`history-canvas-block block-${block.type} ${selectedId === block.id ? "selected" : ""}`}
-                style={{
-                  left: `${block.x / canvas.width * 100}%`,
-                  top: `${block.y / canvas.height * 100}%`,
-                  width: `${block.width / canvas.width * 100}%`,
-                  height: `${block.height / canvas.height * 100}%`
-                }}
+        <div
+          className="history-canvas-stage history-canvas-surface"
+          ref={surfaceRef}
+          style={{ background: canvas.background || "#fff" }}
+          onPointerMove={onPointerMove}
+          onPointerUp={() => setDrag(null)}
+          onPointerLeave={() => setDrag(null)}
+        >
+          {canvas.blocks.map((block) => (
+            <div
+              key={block.id}
+              role="button"
+              tabIndex={0}
+              className={`history-canvas-block block-${block.type} ${selectedId === block.id ? "selected" : ""}`}
+              style={{
+                left: `${block.x / canvas.width * 100}%`,
+                top: `${block.y / canvas.height * 100}%`,
+                width: `${block.width / canvas.width * 100}%`,
+                height: `${block.height / canvas.height * 100}%`
+              }}
+              onPointerDown={(event) => {
+                event.currentTarget.setPointerCapture(event.pointerId);
+                const point = eventToCanvas(event);
+                setSelectedId(block.id);
+                setDrag({ id: block.id, mode: "move", startX: point.x, startY: point.y, block });
+              }}
+            >
+              {renderBlock(block)}
+              <span
+                className="history-canvas-resize"
                 onPointerDown={(event) => {
+                  event.stopPropagation();
                   event.currentTarget.setPointerCapture(event.pointerId);
                   const point = eventToCanvas(event);
                   setSelectedId(block.id);
-                  setDrag({ id: block.id, mode: "move", startX: point.x, startY: point.y, block });
+                  setDrag({ id: block.id, mode: "resize", startX: point.x, startY: point.y, block });
                 }}
-              >
-                {renderBlock(block)}
-                <span
-                  className="history-canvas-resize"
-                  onPointerDown={(event) => {
-                    event.stopPropagation();
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                    const point = eventToCanvas(event);
-                    setSelectedId(block.id);
-                    setDrag({ id: block.id, mode: "resize", startX: point.x, startY: point.y, block });
-                  }}
-                />
-              </div>
-            ))}
-          </div>
+              />
+            </div>
+          ))}
         </div>
 
         <aside className="history-canvas-inspector">

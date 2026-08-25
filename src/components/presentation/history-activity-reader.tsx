@@ -340,7 +340,7 @@ function HistoryCanvasStage({
   }
 
   return (
-    <div className="history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
+    <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
       {canvas.blocks.map((block) => (
         <div
           key={block.id}

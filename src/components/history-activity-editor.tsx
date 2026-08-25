@@ -397,9 +397,9 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
         </div>
       </Card>
 
-      <Card className="history-editor-panel history-canvas-editor-card">
+      <div className="history-canvas-editor-section">
         <HistoryCanvasEditor canvas={canvas} documents={documents} question={question} onChange={setCanvas} onQuestionChange={setQuestion} />
-      </Card>
+      </div>
 
       <Card className="history-editor-panel">
         <h3>Action interactive</h3>
