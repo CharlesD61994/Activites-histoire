@@ -25,6 +25,76 @@
   --portal-gold: #ffb322;
 }
 
+/* V55 — surface lecteur/éditeur de même grandeur */
+:root {
+  --history-stage-max-width: 1600px;
+  --history-stage-reader-height: calc(100vh - 104px);
+  --history-stage-editor-height: calc(100vh - 250px);
+}
+
+.reader-scene-main-history {
+  height: calc(100vh - 64px) !important;
+  padding: 20px 30px !important;
+  overflow: hidden !important;
+}
+
+.reader-scene-main-history .reader-activity-flow {
+  height: 100% !important;
+  display: grid;
+  place-items: center;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.reader-scene-main-history .history-reader,
+.reader-scene-main-history .history-reader-canvas-mode {
+  width: 100% !important;
+  height: 100% !important;
+  display: grid;
+  place-items: center;
+}
+
+.reader-scene-main-history .history-canvas-reader-stage {
+  width: min(
+    var(--history-stage-max-width),
+    calc(var(--history-stage-reader-height) * 16 / 9),
+    100%
+  ) !important;
+  height: auto !important;
+  max-height: var(--history-stage-reader-height);
+  aspect-ratio: 16 / 9;
+}
+
+.history-canvas-editor-card {
+  padding: 18px !important;
+}
+
+.history-canvas-shell {
+  display: grid;
+  justify-items: center;
+  padding: 14px !important;
+}
+
+.history-canvas-surface {
+  width: min(
+    var(--history-stage-max-width),
+    calc(var(--history-stage-reader-height) * 16 / 9),
+    100%
+  ) !important;
+  min-height: 0 !important;
+  aspect-ratio: 16 / 9;
+}
+
+@media (max-height: 760px) {
+  :root {
+    --history-stage-reader-height: calc(100vh - 88px);
+  }
+
+  .reader-scene-main-history {
+    padding: 12px 20px !important;
+  }
+}
+
 /* V54 — créateur d'histoire en tableau vierge */
 .history-canvas-editor { display: grid; gap: 14px; }
 .page:has(.history-canvas-editor) { max-width: 1780px; }
