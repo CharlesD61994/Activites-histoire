@@ -4,7 +4,7 @@
 import { useRef, useState } from "react";
 import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
 import { historyActionLabels } from "@/lib/history-activities";
 
 type Props = {
@@ -12,6 +12,7 @@ type Props = {
   documents: HistorySourceDocument[];
   question: HistoryQuestion;
   onChange: (canvas: HistoryActivityCanvas) => void;
+  onQuestionChange: (question: HistoryQuestion) => void;
 };
 
 type DragState = {
@@ -57,7 +58,11 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
   };
 }
 
-export function HistoryCanvasEditor({ canvas, documents, question, onChange }: Props) {
+function makeChoice(text: string, isCorrect = false): HistoryChoiceOption {
+  return { id: crypto.randomUUID(), text, isCorrect };
+}
+
+export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const [selectedId, setSelectedId] = useState(canvas.blocks[0]?.id ?? "");
   const [drag, setDrag] = useState<DragState | null>(null);
@@ -69,6 +74,18 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange }: P
 
   function updateBlock(id: string, patch: Partial<HistoryCanvasBlock>) {
     patchCanvas({ blocks: canvas.blocks.map((block) => block.id === id ? { ...block, ...patch } : block) });
+  }
+
+  function updateQuestion(patch: Partial<HistoryQuestion>) {
+    onQuestionChange({ ...question, ...patch });
+  }
+
+  function updateChoice(id: string, patch: Partial<HistoryChoiceOption>) {
+    updateQuestion({ choices: question.choices?.map((choice) => choice.id === id ? { ...choice, ...patch } : choice) });
+  }
+
+  function stopEditingPointer(event: React.PointerEvent) {
+    event.stopPropagation();
   }
 
   function addBlock(type: HistoryCanvasBlockType) {
@@ -113,12 +130,22 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange }: P
   function renderBlock(block: HistoryCanvasBlock) {
     const document = documents.find((item) => item.id === block.documentId);
     if (block.type === "document") {
-      return document?.src ? <img src={document.src} alt={document.title} /> : <span>{document?.text || "Document"}</span>;
+      return (
+        <div className="history-canvas-document-edit">
+          <select value={block.documentId ?? ""} onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { documentId: event.target.value })}>
+            <option value="">Choisir un document</option>
+            {documents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+          </select>
+          <div>
+            {document?.src ? <img src={document.src} alt={document.title} /> : <span>{document?.text || "Document"}</span>}
+          </div>
+        </div>
+      );
     }
-    if (block.type === "interaction") return <HistoryInteractionPreview action={question.action} />;
-    if (block.type === "validation") return <button type="button">{block.text || "Valider"}</button>;
-    if (block.type === "feedback") return <strong>{block.text || "Feedback"}</strong>;
-    return <p>{block.text || "Texte"}</p>;
+    if (block.type === "interaction") return <HistoryInteractionEditor question={question} updateQuestion={updateQuestion} updateChoice={updateChoice} stopEditingPointer={stopEditingPointer} />;
+    if (block.type === "validation") return <input className="history-canvas-button-edit" value={block.text ?? "Valider"} onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { text: event.target.value })} />;
+    if (block.type === "feedback") return <textarea className="history-canvas-text-edit" value={block.text ?? "Feedback"} onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { text: event.target.value })} />;
+    return <textarea className="history-canvas-text-edit" value={block.text ?? ""} placeholder="Texte" onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { text: event.target.value })} />;
   }
 
   return (
@@ -188,15 +215,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange }: P
                 <strong>{blockLabels[selectedBlock.type]}</strong>
                 <button type="button" onClick={() => removeBlock(selectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
               </div>
-              {selectedBlock.type === "text" || selectedBlock.type === "validation" || selectedBlock.type === "feedback" ? (
-                <label>Texte<textarea value={selectedBlock.text ?? ""} onChange={(event) => updateBlock(selectedBlock.id, { text: event.target.value })} /></label>
-              ) : null}
-              {selectedBlock.type === "document" && (
-                <label>Document<select value={selectedBlock.documentId ?? ""} onChange={(event) => updateBlock(selectedBlock.id, { documentId: event.target.value })}>
-                  <option value="">Choisir</option>
-                  {documents.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}
-                </select></label>
-              )}
+              <p>Modifie le contenu directement dans le tableau. Utilise ces champs seulement pour placer précisément le bloc.</p>
               <div className="history-canvas-number-grid">
                 <label>X<input type="number" value={Math.round(selectedBlock.x)} onChange={(event) => updateBlock(selectedBlock.id, { x: Number(event.target.value) })} /></label>
                 <label>Y<input type="number" value={Math.round(selectedBlock.y)} onChange={(event) => updateBlock(selectedBlock.id, { y: Number(event.target.value) })} /></label>
@@ -218,4 +237,45 @@ function HistoryInteractionPreview({ action }: { action: HistoryInteractiveActio
       <span>Bloc interactif</span>
     </div>
   );
+}
+
+function HistoryInteractionEditor({
+  question,
+  updateQuestion,
+  updateChoice,
+  stopEditingPointer
+}: {
+  question: HistoryQuestion;
+  updateQuestion: (patch: Partial<HistoryQuestion>) => void;
+  updateChoice: (id: string, patch: Partial<HistoryChoiceOption>) => void;
+  stopEditingPointer: (event: React.PointerEvent) => void;
+}) {
+  if (question.action === "choice_single" || question.action === "choice_multiple") {
+    return (
+      <div className="history-canvas-choice-editor">
+        <strong>{historyActionLabels[question.action]}</strong>
+        {(question.choices ?? []).map((choice) => (
+          <label key={choice.id}>
+            <input type="checkbox" checked={choice.isCorrect} onPointerDown={stopEditingPointer} onChange={(event) => updateChoice(choice.id, { isCorrect: event.target.checked })} />
+            <input value={choice.text} onPointerDown={stopEditingPointer} onChange={(event) => updateChoice(choice.id, { text: event.target.value })} />
+          </label>
+        ))}
+        <button type="button" onPointerDown={stopEditingPointer} onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice("Nouvelle réponse")] })}>Ajouter une réponse</button>
+      </div>
+    );
+  }
+
+  if (question.action === "short_text") {
+    return (
+      <div className="history-canvas-short-editor">
+        <strong>Réponse courte</strong>
+        {(question.acceptedTextAnswers ?? []).map((answer, index) => (
+          <input key={index} value={answer} onPointerDown={stopEditingPointer} onChange={(event) => updateQuestion({ acceptedTextAnswers: (question.acceptedTextAnswers ?? []).map((item, itemIndex) => itemIndex === index ? event.target.value : item) })} />
+        ))}
+        <button type="button" onPointerDown={stopEditingPointer} onClick={() => updateQuestion({ acceptedTextAnswers: [...(question.acceptedTextAnswers ?? []), ""] })}>Ajouter une réponse</button>
+      </div>
+    );
+  }
+
+  return <HistoryInteractionPreview action={question.action} />;
 }
