@@ -129,47 +129,57 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           <h1>{question.prompt}</h1>
         </div>
 
-        {linkedDocuments.length > 0 && (
-          <div className="history-reader-documents">
-            {linkedDocuments.map((document) => (
-              <button key={document.id} type="button" className="history-reader-document-card" onClick={() => setSelectedDocument(document)}>
-                {document.src ? <img src={document.src} alt={document.title} /> : <span><FileText size={30} /></span>}
-                <strong>{document.title}</strong>
-                {document.caption && <small>{document.caption}</small>}
-              </button>
-            ))}
+        <div className={`history-reader-workspace ${linkedDocuments.length ? "" : "without-documents"}`}>
+          {linkedDocuments.length > 0 && (
+            <aside className="history-reader-documents-panel">
+              <span className="history-reader-panel-title">Documents</span>
+              <div className="history-reader-documents">
+                {linkedDocuments.map((document, index) => (
+                  <button key={document.id} type="button" className="history-reader-document-card" onClick={() => setSelectedDocument(document)}>
+                    <span className="history-reader-document-index">{index + 1}</span>
+                    <span className="history-reader-document-media">
+                      {document.src ? <img src={document.src} alt={document.title} /> : <FileText size={30} />}
+                    </span>
+                    <strong>{document.title}</strong>
+                    {document.caption && <small>{document.caption}</small>}
+                  </button>
+                ))}
+              </div>
+            </aside>
+          )}
+
+          <div className="history-reader-task-panel">
+            <HistoryQuestionInteraction
+              question={question}
+              selectedChoices={selectedChoices}
+              toggleChoice={toggleChoice}
+              classificationAnswers={classificationAnswers}
+              setClassificationAnswers={setClassificationAnswers}
+              matchingAnswers={matchingAnswers}
+              setMatchingAnswers={setMatchingAnswers}
+              eventOrder={eventOrder}
+              moveEvent={moveEvent}
+              hotspotDocument={hotspotDocument}
+              hotspotAnswer={hotspotAnswer}
+              setHotspotAnswer={setHotspotAnswer}
+              clozeAnswers={clozeAnswers}
+              setClozeAnswers={setClozeAnswers}
+              shortTextAnswer={shortTextAnswer}
+              setShortTextAnswer={setShortTextAnswer}
+              resetValidation={() => setValidation("idle")}
+            />
+
+            {statusText && (
+              <div className={`history-result ${validation}`}>
+                {validation === "correct" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
+                <strong>{statusText}</strong>
+              </div>
+            )}
+
+            <div className="history-reader-actions">
+              <Button onClick={validate}>Valider</Button>
+            </div>
           </div>
-        )}
-
-        <HistoryQuestionInteraction
-          question={question}
-          selectedChoices={selectedChoices}
-          toggleChoice={toggleChoice}
-          classificationAnswers={classificationAnswers}
-          setClassificationAnswers={setClassificationAnswers}
-          matchingAnswers={matchingAnswers}
-          setMatchingAnswers={setMatchingAnswers}
-          eventOrder={eventOrder}
-          moveEvent={moveEvent}
-          hotspotDocument={hotspotDocument}
-          hotspotAnswer={hotspotAnswer}
-          setHotspotAnswer={setHotspotAnswer}
-          clozeAnswers={clozeAnswers}
-          setClozeAnswers={setClozeAnswers}
-          shortTextAnswer={shortTextAnswer}
-          setShortTextAnswer={setShortTextAnswer}
-          resetValidation={() => setValidation("idle")}
-        />
-
-        {statusText && (
-          <div className={`history-result ${validation}`}>
-            {validation === "correct" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
-            <strong>{statusText}</strong>
-          </div>
-        )}
-
-        <div className="history-reader-actions">
-          <Button onClick={validate}>Valider</Button>
         </div>
       </Card>
 
