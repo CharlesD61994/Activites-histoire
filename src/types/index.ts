@@ -64,7 +64,123 @@ export type ActivityType =
   | "word_classes"
   | "word_groups"
   | "tree_analysis"
+  | "history"
   | "worksheet";
+
+export type HistoryOperation =
+  | "establish_facts"
+  | "causality_links"
+  | "situate_time"
+  | "situate_space"
+  | "relate_facts"
+  | "causes_consequences"
+  | "differences_similarities"
+  | "changes_continuities";
+
+export type HistoryInteractiveAction =
+  | "choice_single"
+  | "choice_multiple"
+  | "classification"
+  | "matching"
+  | "chronological_order"
+  | "timeline"
+  | "document_hotspot"
+  | "cloze_choice";
+
+export type HistorySocietyAspect =
+  | "politics"
+  | "economy"
+  | "territory"
+  | "culture"
+  | "society"
+  | "power"
+  | "techniques"
+  | "population"
+  | "relations";
+
+export type HistorySourceDocument = {
+  id: string;
+  title: string;
+  kind: "image" | "text" | "map";
+  src?: string;
+  text?: string;
+  caption?: string;
+  source?: string;
+};
+
+export type HistoryChoiceOption = {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+};
+
+export type HistoryClassificationCategory = {
+  id: string;
+  label: string;
+};
+
+export type HistoryClassificationItem = {
+  id: string;
+  text: string;
+  correctCategoryId: string;
+};
+
+export type HistoryMatchingPrompt = {
+  id: string;
+  prompt: string;
+  correctTargetId: string;
+};
+
+export type HistoryMatchingTarget = {
+  id: string;
+  text: string;
+};
+
+export type HistoryTimelineEvent = {
+  id: string;
+  text: string;
+  dateLabel?: string;
+  correctOrder: number;
+};
+
+export type HistoryHotspot = {
+  documentId: string;
+  x: number;
+  y: number;
+  radius: number;
+};
+
+export type HistoryClozeBlank = {
+  id: string;
+  label: string;
+  options: HistoryChoiceOption[];
+};
+
+export type HistoryQuestion = {
+  id: string;
+  prompt: string;
+  action: HistoryInteractiveAction;
+  documentIds: string[];
+  points: number;
+  choices?: HistoryChoiceOption[];
+  categories?: HistoryClassificationCategory[];
+  classificationItems?: HistoryClassificationItem[];
+  matchingPrompts?: HistoryMatchingPrompt[];
+  matchingTargets?: HistoryMatchingTarget[];
+  timelineEvents?: HistoryTimelineEvent[];
+  hotspot?: HistoryHotspot;
+  clozeText?: string;
+  clozeBlanks?: HistoryClozeBlank[];
+  feedbackCorrect?: string;
+  feedbackIncorrect?: string;
+};
+
+export type HistoryActivityData = {
+  operation: HistoryOperation;
+  aspects: HistorySocietyAspect[];
+  documents: HistorySourceDocument[];
+  questions: HistoryQuestion[];
+};
 
 export type GrammarObjective =
   | "sentence_correction"
@@ -485,6 +601,7 @@ export type Sentence = {
   title: string;
   primaryObjective?: GrammarObjective;
   isMixedActivity?: boolean;
+  historyActivity?: HistoryActivityData;
   workflowPhases?: GrammarWorkflowPhase[];
   grammarAnnotations?: GrammarAnnotation[];
   originalText: string;

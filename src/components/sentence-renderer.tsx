@@ -1,4 +1,5 @@
 import { wordClassLabels } from "@/lib/activity-types";
+import { getHistoryActivitySummary } from "@/lib/history-activities";
 import type { Sentence } from "@/types";
 
 type Props = {
@@ -8,6 +9,19 @@ type Props = {
 };
 
 export function SentenceRenderer({ sentence, highlightErrors = true, showCorrected = false }: Props) {
+  if (sentence.activityType === "history") {
+    const summary = getHistoryActivitySummary(sentence);
+    return (
+      <div className="sentence-preview worksheet-bank-preview history-bank-preview">
+        <strong>{summary?.action ?? "Action interactive"}</strong>
+        <span>{sentence.originalText}</span>
+        <small>
+          {summary?.documentCount ?? 0} document{(summary?.documentCount ?? 0) > 1 ? "s" : ""} · {summary?.questionCount ?? 0} question{(summary?.questionCount ?? 0) > 1 ? "s" : ""}
+        </small>
+      </div>
+    );
+  }
+
   if (sentence.activityType === "worksheet") {
     const pageCount = sentence.treeAnalysisDocumentPages?.length ?? 1;
     const interactiveCount = (sentence.worksheetAnswerLines?.length ?? 0) + (sentence.treeAnalysisTables?.filter((table) => table.cells.some((cell) => cell.isCorrect || Boolean(cell.answer?.trim()))).length ?? 0);

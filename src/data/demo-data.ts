@@ -14,49 +14,39 @@ const now = "2026-08-04T12:00:00.000Z";
 const demoSentences: Sentence[] = [
   {
     id: "activite-1",
-    activityType: "sentence_correction",
+    activityType: "history",
     levelId: "sec-2",
     title: "Établir un fait : bataille des plaines d’Abraham",
-    originalText: "La bataille des plaines d'Abraham a lieu en 1760 près de Québec.",
+    originalText: "Quel énoncé établit correctement un fait historique?",
     difficulty: "medium",
     tags: ["établir des faits", "Nouvelle-France", "chronologie"],
-    corrections: [
-      {
-        id: "corr-fait-1",
-        start: 44,
-        end: 48,
-        originalText: "1760",
-        correctedText: "1759",
-        correctionCodeId: "code-date",
-        points: 1,
-        revealOrder: 1
-      }
-    ],
+    corrections: [],
+    historyActivity: {
+      operation: "establish_facts",
+      aspects: ["politics", "territory"],
+      documents: [{ id: "doc-plaines", title: "Repère historique", kind: "text", text: "La bataille des plaines d’Abraham se déroule près de Québec en 1759.", source: "Donnée de démonstration" }],
+      questions: [{ id: "q-plaines", prompt: "Quel énoncé établit correctement le fait?", action: "choice_single", documentIds: ["doc-plaines"], points: 1, choices: [{ id: "a", text: "La bataille a lieu près de Québec en 1759.", isCorrect: true }, { id: "b", text: "La bataille a lieu à Montréal en 1760.", isCorrect: false }, { id: "c", text: "La bataille a lieu avant l’arrivée des Européens.", isCorrect: false }] }]
+    },
     assignedGroupIds: ["groupe-201"],
-    showCorrectionCount: true,
+    showCorrectionCount: false,
     createdAt: now,
     updatedAt: now
   },
   {
     id: "activite-2",
-    activityType: "sentence_correction",
+    activityType: "history",
     levelId: "sec-1",
     title: "Repérer une date dans un énoncé",
-    originalText: "L'Acte constitutionnel de 1774 divise la province de Québec en Haut-Canada et Bas-Canada.",
+    originalText: "Remets les événements dans l’ordre chronologique.",
     difficulty: "easy",
     tags: ["établir des faits", "chronologie", "régime britannique"],
-    corrections: [
-      {
-        id: "corr-fait-2",
-        start: 26,
-        end: 30,
-        originalText: "1774",
-        correctedText: "1791",
-        correctionCodeId: "code-date",
-        points: 1,
-        revealOrder: 1
-      }
-    ],
+    corrections: [],
+    historyActivity: {
+      operation: "situate_time",
+      aspects: ["politics"],
+      documents: [],
+      questions: [{ id: "q-ordre-constitutionnel", prompt: "Place ces événements du Régime britannique du plus ancien au plus récent.", action: "chronological_order", documentIds: [], points: 2, timelineEvents: [{ id: "e-1763", text: "Proclamation royale", dateLabel: "1763", correctOrder: 1 }, { id: "e-1774", text: "Acte de Québec", dateLabel: "1774", correctOrder: 2 }, { id: "e-1791", text: "Acte constitutionnel", dateLabel: "1791", correctOrder: 3 }] }]
+    },
     assignedGroupIds: ["groupe-101", "groupe-102"],
     showCorrectionCount: true,
     createdAt: now,
@@ -64,24 +54,19 @@ const demoSentences: Sentence[] = [
   },
   {
     id: "activite-3",
-    activityType: "sentence_correction",
+    activityType: "history",
     levelId: "sec-4",
     title: "Identifier un changement économique",
-    originalText: "Le commerce du bois devient important au début du 18e siècle au Bas-Canada.",
+    originalText: "Classe les éléments en changements ou continuités.",
     difficulty: "hard",
     tags: ["changements et continuités", "économie", "Bas-Canada"],
-    corrections: [
-      {
-        id: "corr-fait-3",
-        start: 50,
-        end: 60,
-        originalText: "18e siècle",
-        correctedText: "19e siècle",
-        correctionCodeId: "code-date",
-        points: 1,
-        revealOrder: 1
-      }
-    ],
+    corrections: [],
+    historyActivity: {
+      operation: "changes_continuities",
+      aspects: ["economy", "territory"],
+      documents: [],
+      questions: [{ id: "q-bois", prompt: "Classe chaque élément dans la bonne catégorie.", action: "classification", documentIds: [], points: 3, categories: [{ id: "cat-changement", label: "Changement" }, { id: "cat-continuite", label: "Continuité" }], classificationItems: [{ id: "item-bois", text: "Le commerce du bois prend de l’importance au 19e siècle.", correctCategoryId: "cat-changement" }, { id: "item-agri", text: "L’agriculture demeure présente dans la vallée du Saint-Laurent.", correctCategoryId: "cat-continuite" }] }]
+    },
     assignedGroupIds: ["groupe-401"],
     showCorrectionCount: false,
     createdAt: now,
@@ -89,24 +74,19 @@ const demoSentences: Sentence[] = [
   },
   {
     id: "activite-4",
-    activityType: "sentence_correction",
+    activityType: "history",
     levelId: "sec-1",
     title: "Associer un événement à son contexte",
-    originalText: "La Grande Paix de Montréal est signée en 1700 entre la France et plusieurs nations autochtones.",
+    originalText: "Associe l’événement à son contexte.",
     difficulty: "easy",
     tags: ["établir des faits", "relations", "Autochtones"],
-    corrections: [
-      {
-        id: "corr-fait-4",
-        start: 41,
-        end: 45,
-        originalText: "1700",
-        correctedText: "1701",
-        correctionCodeId: "code-date",
-        points: 1,
-        revealOrder: 1
-      }
-    ],
+    corrections: [],
+    historyActivity: {
+      operation: "relate_facts",
+      aspects: ["relations", "power"],
+      documents: [{ id: "doc-paix", title: "Contexte", kind: "text", text: "En 1701, la Grande Paix de Montréal officialise une alliance entre la France et plusieurs nations autochtones." }],
+      questions: [{ id: "q-paix", prompt: "Associe chaque élément à la bonne information.", action: "matching", documentIds: ["doc-paix"], points: 2, matchingTargets: [{ id: "target-date", text: "1701" }, { id: "target-lieu", text: "Montréal" }], matchingPrompts: [{ id: "prompt-date", prompt: "Année de la Grande Paix", correctTargetId: "target-date" }, { id: "prompt-lieu", prompt: "Lieu de signature", correctTargetId: "target-lieu" }] }]
+    },
     assignedGroupIds: ["groupe-101"],
     showCorrectionCount: true,
     createdAt: now,
@@ -114,13 +94,19 @@ const demoSentences: Sentence[] = [
   },
   {
     id: "activite-5",
-    activityType: "text_correction",
+    activityType: "history",
     levelId: "sec-2",
     title: "Distinguer cause et conséquence",
-    originalText: "La croissance du commerce du bois transforme les emplois, les transports et l’occupation du territoire.",
+    originalText: "Distingue les causes et les conséquences.",
     difficulty: "medium",
     tags: ["causes et conséquences", "économie", "territoire"],
     corrections: [],
+    historyActivity: {
+      operation: "causes_consequences",
+      aspects: ["economy", "territory"],
+      documents: [],
+      questions: [{ id: "q-cause-consequence", prompt: "Classe chaque carte comme cause ou conséquence.", action: "classification", documentIds: [], points: 2, categories: [{ id: "cat-cause", label: "Cause" }, { id: "cat-consequence", label: "Conséquence" }], classificationItems: [{ id: "item-demande", text: "La demande britannique en bois augmente.", correctCategoryId: "cat-cause" }, { id: "item-transport", text: "Les réseaux de transport se développent.", correctCategoryId: "cat-consequence" }] }]
+    },
     assignedGroupIds: ["groupe-201"],
     showCorrectionCount: true,
     createdAt: now,
@@ -128,13 +114,19 @@ const demoSentences: Sentence[] = [
   },
   {
     id: "activite-6",
-    activityType: "text_correction",
+    activityType: "history",
     levelId: "sec-4",
     title: "Comparer deux sociétés",
-    originalText: "Compare deux aspects de société : le pouvoir politique et l’économie dans la colonie avant et après 1760.",
+    originalText: "Compare deux sociétés à partir d’aspects précis.",
     difficulty: "medium",
     tags: ["différences et similitudes", "politique", "économie"],
     corrections: [],
+    historyActivity: {
+      operation: "differences_similarities",
+      aspects: ["politics", "economy"],
+      documents: [],
+      questions: [{ id: "q-comparer", prompt: "Quels éléments représentent des différences entre les deux périodes?", action: "choice_multiple", documentIds: [], points: 2, choices: [{ id: "c1", text: "Le pouvoir politique change après 1760.", isCorrect: true }, { id: "c2", text: "L’économie conserve uniquement les mêmes activités.", isCorrect: false }, { id: "c3", text: "Le cadre impérial passe de français à britannique.", isCorrect: true }] }]
+    },
     assignedGroupIds: ["groupe-401"],
     showCorrectionCount: false,
     createdAt: now,

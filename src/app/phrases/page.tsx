@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Copy, FileText, Pencil, Plus, Search, Tags, Trash2, Users, X } from "lucide-react";
+import { Check, Copy, FileText, Landmark, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SentenceRenderer } from "@/components/sentence-renderer";
@@ -12,6 +12,7 @@ import {
   getWordClassActivityPointTotal,
   getWordClassAnalysisTargetCount
 } from "@/lib/activity-types";
+import { getHistoryActivityPointTotal, getHistoryActivitySummary } from "@/lib/history-activities";
 import type { ActivityType, SentenceDifficulty } from "@/types";
 
 const difficultyLabels: Record<SentenceDifficulty, string> = {
@@ -83,11 +84,7 @@ export default function SentencesPage() {
           aria-label="Filtrer par type"
         >
           <option value="all">Tous les types</option>
-          <option value="sentence_correction">Faits à établir</option>
-          <option value="text_correction">Document à analyser</option>
-          <option value="word_classes">Classes de mots</option>
-          <option value="word_groups">Groupes de mots</option>
-          <option value="tree_analysis">Analyse en arbre</option>
+          <option value="history">Activité d’histoire</option>
           <option value="worksheet">Feuille d’activité</option>
         </select>
 
@@ -114,6 +111,8 @@ export default function SentencesPage() {
           const isWordGroupActivity = sentence.activityType === "word_groups";
           const isTreeAnalysisActivity = sentence.activityType === "tree_analysis";
           const isWorksheetActivity = sentence.activityType === "worksheet";
+          const isHistoryActivity = sentence.activityType === "history";
+          const historySummary = getHistoryActivitySummary(sentence);
           const targetCount =
             getWordClassAnalysisTargetCount(sentence);
           const wordGroupCount = sentence.wordGroupTargets?.length ?? 0;
@@ -128,6 +127,8 @@ export default function SentencesPage() {
               ? wordGroupCount * 2
               : isTreeAnalysisActivity
                 ? treeAnalysisStepCount
+                : isHistoryActivity
+                  ? getHistoryActivityPointTotal(sentence)
                 : isWorksheetActivity
                   ? worksheetStepCount
                   : sentence.corrections.reduce(
@@ -199,6 +200,8 @@ export default function SentencesPage() {
                     ? `${targetCount} mot${targetCount > 1 ? "s" : ""}`
                     : isWordGroupActivity
                       ? `${wordGroupCount} groupe${wordGroupCount > 1 ? "s" : ""}`
+                      : isHistoryActivity
+                        ? `${historySummary?.questionCount ?? 0} question${(historySummary?.questionCount ?? 0) > 1 ? "s" : ""}`
                       : isWorksheetActivity
                         ? `${sentence.treeAnalysisDocumentPages?.length ?? 1} page${(sentence.treeAnalysisDocumentPages?.length ?? 1) > 1 ? "s" : ""}`
                       : `${sentence.corrections.length} erreur${sentence.corrections.length > 1 ? "s" : ""}`}
@@ -233,33 +236,16 @@ export default function SentencesPage() {
 
             <div className="activity-type-choice-grid">
               <Link
-                href="/phrases/nouvelle?type=sentence_correction&objective=mixed_grammar"
+                href="/phrases/nouvelle?type=history"
                 className="activity-type-choice"
                 onClick={() => setShowTypeModal(false)}
               >
                 <span className="activity-choice-icon">
-                  <Plus size={29} />
+                  <Landmark size={29} />
                 </span>
                 <div>
                   <strong>Activité d’histoire</strong>
-                  <p>Prépare une activité simple autour d’un document, d’une consigne ou d’un fait à valider.</p>
-                </div>
-              </Link>
-
-              <Link
-                href="/phrases/nouvelle?type=tree_analysis"
-                className="activity-type-choice"
-                onClick={() => setShowTypeModal(false)}
-              >
-                <span className="activity-choice-icon">
-                  <Tags size={29} />
-                </span>
-                <div>
-                  <strong>Analyse en arbre</strong>
-                  <p>
-                    Construis une analyse syntaxique destinée à l’écran
-                    et à l’impression en format paysage.
-                  </p>
+                  <p>Choisis une opération intellectuelle, puis une action interactive adaptée.</p>
                 </div>
               </Link>
               <Link href="/phrases/nouvelle?type=worksheet" className="activity-type-choice">

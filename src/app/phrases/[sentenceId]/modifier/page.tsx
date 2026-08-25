@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { TreeAnalysisEditor } from "@/components/tree-analysis-editor";
 import { MixedActivityEditor } from "@/components/mixed-activity-editor";
+import { HistoryActivityEditor } from "@/components/history-activity-editor";
 import { WorksheetEditor } from "@/components/worksheet-editor";
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store/app-store";
@@ -21,6 +22,7 @@ export default function EditSentencePage({ params }: { params: Promise<{ sentenc
   }
 
   const isTreeAnalysisActivity = sentence.activityType === "tree_analysis";
+  const isHistoryActivity = sentence.activityType === "history";
   const isWorksheetActivity = sentence.activityType === "worksheet";
 
   return (
@@ -32,6 +34,7 @@ export default function EditSentencePage({ params }: { params: Promise<{ sentenc
         <p>
           {isTreeAnalysisActivity
             ? "Modifie la phrase et sa mise en page d’analyse en arbre."
+            : isHistoryActivity ? "Modifie l’opération, les documents, la consigne et les réponses de l’activité d’histoire."
             : isWorksheetActivity ? "Modifie la mise en page, les réponses et le déroulement de la feuille." : "Modifie le contenu, les réponses et le déroulement dans l’éditeur grammatical unifié."}
         </p>
       </div>
@@ -47,6 +50,8 @@ export default function EditSentencePage({ params }: { params: Promise<{ sentenc
         />
       ) : isWorksheetActivity ? (
         <WorksheetEditor initialSentence={sentence} levels={data.levels} onSave={(updated) => { saveSentence(updated); router.push("/phrases"); }}/>
+      ) : isHistoryActivity ? (
+        <HistoryActivityEditor initialSentence={sentence} levels={data.levels} onSave={(updated) => { saveSentence(updated); router.push("/phrases"); }}/>
       ) : (
         <MixedActivityEditor
           initialSentence={sentence}

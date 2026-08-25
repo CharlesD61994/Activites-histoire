@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { TreeAnalysisEditor } from "@/components/tree-analysis-editor";
-import { MixedActivityEditor } from "@/components/mixed-activity-editor";
+import { HistoryActivityEditor } from "@/components/history-activity-editor";
 import { WorksheetEditor } from "@/components/worksheet-editor";
 import { useAppStore } from "@/store/app-store";
 
@@ -14,7 +13,6 @@ export default function NewSentencePage() {
   const searchParams = useSearchParams();
   const { data, saveSentence } = useAppStore();
 
-  const isTreeAnalysis = searchParams.get("type") === "tree_analysis";
   const isWorksheet = searchParams.get("type") === "worksheet";
   const [worksheetTitle, setWorksheetTitle] = useState("");
 
@@ -35,27 +33,19 @@ export default function NewSentencePage() {
         {isWorksheet ? (
           <input className="worksheet-page-title-input" value={worksheetTitle} onChange={(event) => setWorksheetTitle(event.target.value)} placeholder="Titre de la feuille" />
         ) : (
-          <h1>{isTreeAnalysis ? "Nouvelle analyse en arbre" : "Nouvelle activité d’histoire"}</h1>
+          <h1>Nouvelle activité d’histoire</h1>
         )}
         <p>
-          {isTreeAnalysis
-            ? "Écris une phrase compatible avec une feuille Lettre en paysage, puis construis son arbre."
-            : isWorksheet
+          {isWorksheet
               ? "Compose une feuille Lettre en portrait et ajoute des réponses révélables dans le lecteur."
-            : "Prépare une première activité avec le lecteur existant; le modèle historique spécialisé arrivera dans l’étape suivante."}
+              : "Choisis une opération intellectuelle, ajoute des documents au besoin, puis construis une question interactive autocorrigée."}
         </p>
       </div>
 
-      {isTreeAnalysis ? (
-        <TreeAnalysisEditor
-          levels={data.levels}
-          groups={data.groups}
-          onSave={saveAndReturn}
-        />
-      ) : isWorksheet ? (
+      {isWorksheet ? (
         <WorksheetEditor levels={data.levels} onSave={saveAndReturn} controlledTitle={worksheetTitle} onTitleChange={setWorksheetTitle}/>
       ) : (
-        <MixedActivityEditor levels={data.levels} correctionCodes={data.correctionCodes} onSave={saveAndReturn}/>
+        <HistoryActivityEditor levels={data.levels} onSave={saveAndReturn}/>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import {
   grammarObjectiveLabels,
   grammarPhaseLabels
 } from "@/lib/grammar-workflow";
+import { historyOperationLabels } from "@/lib/history-activities";
 import type { Sentence } from "@/types";
 
 type Props = {
@@ -15,6 +16,8 @@ type Props = {
 export function getActivityObjectiveKey(sentence: Sentence) {
   return sentence.activityType === "tree_analysis"
     ? "tree_analysis" as const
+    : sentence.activityType === "history"
+      ? "history" as const
     : sentence.activityType === "worksheet"
       ? "worksheet" as const
     : getSentenceObjective(sentence);
@@ -26,13 +29,17 @@ export function ActivityObjectiveBadges({
   primaryOnly = false
 }: Props) {
   const secondaryObjectives =
-    sentence.activityType === "tree_analysis" || sentence.activityType === "worksheet"
+    sentence.activityType === "tree_analysis" || sentence.activityType === "worksheet" || sentence.activityType === "history"
       ? []
       : getSecondaryObjectives(sentence);
   const primaryKey = getActivityObjectiveKey(sentence);
   const primaryLabel =
     primaryKey === "tree_analysis"
       ? "Analyse en arbre"
+      : primaryKey === "history"
+        ? sentence.historyActivity?.operation
+          ? historyOperationLabels[sentence.historyActivity.operation]
+          : "Activité d’histoire"
       : primaryKey === "worksheet"
         ? "Feuille d’activité"
       : grammarObjectiveLabels[primaryKey];

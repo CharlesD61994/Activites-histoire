@@ -17,6 +17,7 @@ import { WordClassReader } from "@/components/presentation/word-class-reader";
 import { WordGroupReader } from "@/components/presentation/word-group-reader";
 import { TreeAnalysisReader } from "@/components/presentation/tree-analysis-reader";
 import { WorksheetReader } from "@/components/presentation/worksheet-reader";
+import { HistoryActivityReader } from "@/components/presentation/history-activity-reader";
 import {
   ReaderChromeProvider,
   ReaderChromeTarget
@@ -180,6 +181,7 @@ export default function PresentationPage({
   const isWordClassActivity = sentence?.activityType === "word_classes";
   const isWordGroupActivity = sentence?.activityType === "word_groups";
   const isTreeAnalysisActivity = sentence?.activityType === "tree_analysis";
+  const isHistoryActivity = sentence?.activityType === "history";
   const isWorksheetActivity = sentence?.activityType === "worksheet";
   const treeAnalysisPointCount = useMemo(() => {
     if (!sentence || sentence.activityType !== "tree_analysis") return 0;
@@ -226,6 +228,30 @@ export default function PresentationPage({
       return [
         ...items,
         { correction, stage, points: 1, pointId }
+      ];
+    });
+  }
+
+  function queueHistoryPoint(pointId: string, points: number) {
+    setPendingPoints((items) => {
+      if (items.some((item) => item.pointId === pointId)) return items;
+      return [
+        ...items,
+        {
+          correction: {
+            id: pointId,
+            start: 0,
+            end: 0,
+            originalText: sentence?.title ?? "Activité d’histoire",
+            correctedText: sentence?.title ?? "Activité d’histoire",
+            correctionCodeId: "",
+            points,
+            revealOrder: 0
+          },
+          stage: "find",
+          points: Math.max(1, points),
+          pointId
+        }
       ];
     });
   }
@@ -686,7 +712,7 @@ export default function PresentationPage({
         className={`reader-scene-main ${
           isTextActivity ? "reader-scene-main-text" : ""
         } ${
-          isWordClassActivity || isWordGroupActivity || isTreeAnalysisActivity || isWorksheetActivity
+          isWordClassActivity || isWordGroupActivity || isTreeAnalysisActivity || isHistoryActivity || isWorksheetActivity
             ? "reader-scene-main-word-classes"
             : ""
         }`}
@@ -709,7 +735,13 @@ export default function PresentationPage({
         </section>
 
         <section className="reader-activity-flow">
-        {isWorksheetActivity ? (
+        {isHistoryActivity ? (
+          <HistoryActivityReader
+            sentence={sentence}
+            onPoint={queueHistoryPoint}
+            onCompleteChange={setReaderComplete}
+          />
+        ) : isWorksheetActivity ? (
           <WorksheetReader
             sentence={sentence}
             persistenceKey={readerPersistenceKey}
