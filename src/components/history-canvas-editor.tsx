@@ -37,11 +37,11 @@ function clamp(value: number, min: number, max: number) {
 
 function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryCanvasBlock {
   const id = crypto.randomUUID();
-  if (type === "document") return { id, type, x: 80, y: 130, width: 720, height: 560, documentId: documents[0]?.id };
-  if (type === "interaction") return { id, type, x: 900, y: 360, width: 540, height: 210 };
-  if (type === "validation") return { id, type, x: 1220, y: 760, width: 220, height: 80, text: "Valider" };
-  if (type === "feedback") return { id, type, x: 900, y: 610, width: 540, height: 110, text: "Feedback" };
-  return { id, type, x: 80, y: 60, width: 780, height: 95, text: question.prompt };
+  if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, documentId: documents[0]?.id };
+  if (type === "interaction") return { id, type, x: 900, y: 300, width: 520, height: 150 };
+  if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, text: "Valider" };
+  if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, text: "Feedback" };
+  return { id, type, x: 80, y: 60, width: 1440, height: 110, text: question.prompt };
 }
 
 export function createDefaultHistoryCanvas(question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryActivityCanvas {

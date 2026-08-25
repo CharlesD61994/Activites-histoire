@@ -27,18 +27,20 @@
 
 /* V55 — surface lecteur/éditeur de même grandeur */
 :root {
-  --history-stage-max-width: 1600px;
-  --history-stage-reader-height: calc(100vh - 104px);
-  --history-stage-frame-width: min(
-    var(--history-stage-max-width),
-    calc(100vw - 60px),
-    calc(var(--history-stage-reader-height) * 16 / 9)
-  );
-  --history-stage-frame-height: calc(var(--history-stage-frame-width) * 9 / 16);
+  --history-stage-frame-width: calc(100vw - 60px);
+  --history-stage-frame-height: calc(100dvh - 104px);
+}
+
+.reader-scene:has(.reader-scene-main-history) {
+  height: 100dvh !important;
+  min-height: 0 !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  overflow: hidden !important;
 }
 
 .reader-scene-main-history {
-  height: calc(100vh - 64px) !important;
+  height: 100% !important;
+  min-height: 0 !important;
   padding: 20px 30px !important;
   overflow: hidden !important;
 }
@@ -65,6 +67,7 @@
   max-width: var(--history-stage-frame-width) !important;
   max-height: var(--history-stage-frame-height) !important;
   aspect-ratio: auto !important;
+  margin: 0 !important;
 }
 
 .history-canvas-editor-card {
@@ -88,7 +91,8 @@
 
 @media (max-height: 760px) {
   :root {
-    --history-stage-reader-height: calc(100vh - 88px);
+    --history-stage-frame-width: calc(100vw - 40px);
+    --history-stage-frame-height: calc(100dvh - 88px);
   }
 
   .reader-scene-main-history {
