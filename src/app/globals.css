@@ -261,6 +261,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 
 .app-shell { min-height: 100vh; display: grid; grid-template-columns: 268px 1fr; }
+.app-shell.sidebar-hidden { grid-template-columns: 1fr; }
 .sidebar {
   position: sticky; top: 0; height: 100vh;
   padding: 24px 18px;
@@ -268,6 +269,37 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   border-right: 1px solid rgb(24 67 105 / 10%);
   box-shadow: 12px 0 36px rgb(15 55 88 / 5%);
   backdrop-filter: blur(16px);
+}
+.app-shell.sidebar-hidden .sidebar { display: none; }
+.sidebar-toggle {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 86%);
+  color: var(--primary);
+  box-shadow: 0 8px 18px rgb(15 55 88 / 7%);
+}
+.sidebar-restore {
+  position: fixed;
+  z-index: 80;
+  top: 18px;
+  left: 18px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(24 67 105 / 14%);
+  border-radius: 13px;
+  background: rgb(255 255 255 / 94%);
+  color: var(--primary);
+  box-shadow: 0 12px 30px rgb(15 55 88 / 14%);
+  backdrop-filter: blur(12px);
 }
 .brand { display: flex; gap: 12px; align-items: center; margin-bottom: 30px; }
 .brand-mark {

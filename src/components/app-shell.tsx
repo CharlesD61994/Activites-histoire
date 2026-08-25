@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, BookOpenCheck, CalendarDays, Home, MonitorPlay, Tags } from "lucide-react";
+import { BarChart3, BookOpenCheck, CalendarDays, Home, MonitorPlay, PanelLeftClose, PanelLeftOpen, Tags } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { SyncStatus } from "@/components/sync-status";
 import { useAppStore } from "@/store/app-store";
 
@@ -19,6 +20,19 @@ const items = [
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { hydrated } = useAppStore();
+  const [sidebarHidden, setSidebarHidden] = useState(false);
+
+  useEffect(() => {
+    setSidebarHidden(window.localStorage.getItem("alinea-history-sidebar-hidden") === "true");
+  }, []);
+
+  function toggleSidebar() {
+    setSidebarHidden((hidden) => {
+      const next = !hidden;
+      window.localStorage.setItem("alinea-history-sidebar-hidden", String(next));
+      return next;
+    });
+  }
 
   if (!hydrated && pathname !== "/connexion") {
     return (
@@ -34,8 +48,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${sidebarHidden ? "sidebar-hidden" : ""}`}>
       <aside className="sidebar">
+        <button type="button" className="sidebar-toggle" onClick={toggleSidebar} aria-label="Cacher la navigation">
+          <PanelLeftClose size={18} />
+        </button>
         <div className="brand">
           <Image className="brand-mark" src="/alinea-icon.svg" alt="" width={42} height={42} aria-hidden="true" />
           <div>
@@ -60,6 +77,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SyncStatus />
         </div>
       </aside>
+
+      {sidebarHidden && (
+        <button type="button" className="sidebar-restore" onClick={toggleSidebar} aria-label="Afficher la navigation">
+          <PanelLeftOpen size={20} />
+        </button>
+      )}
 
       <div className="page-area">
         <header className="mobile-header">
