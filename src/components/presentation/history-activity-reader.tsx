@@ -5,7 +5,6 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ReaderChromePortal } from "@/components/presentation/reader-chrome";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import type { HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
@@ -50,6 +49,8 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     ? documents.filter((document) => question.documentIds.includes(document.id))
     : documents;
   const hotspotDocument = documents.find((document) => document.id === question?.hotspot?.documentId);
+  const showDocumentPanel = linkedDocuments.length > 1;
+  const primaryDocument = linkedDocuments.length === 1 && question?.action !== "document_hotspot" ? linkedDocuments[0] : null;
 
   const statusText = useMemo(() => {
     if (validation === "correct") return question?.feedbackCorrect || "Bonne réponse.";
@@ -119,18 +120,22 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
   return (
     <div className="history-reader">
-      <ReaderChromePortal slot="instruction">
-        <span>{historyOperationLabels[activity.operation]} · {historyActionLabels[question.action]}</span>
-      </ReaderChromePortal>
-
       <Card className="history-reader-main">
         <div className="history-reader-heading">
           <span className="activity-type-badge objective-history">{historyOperationLabels[activity.operation]}</span>
+          <span className="history-reader-action-label">{historyActionLabels[question.action]}</span>
           <h1>{question.prompt}</h1>
         </div>
 
-        <div className={`history-reader-workspace ${linkedDocuments.length ? "" : "without-documents"}`}>
-          {linkedDocuments.length > 0 && (
+        <div
+          className={[
+            "history-reader-workspace",
+            showDocumentPanel || primaryDocument ? "" : "without-documents",
+            primaryDocument ? "with-primary-document" : "",
+            question.action === "document_hotspot" ? "with-hotspot-document" : ""
+          ].filter(Boolean).join(" ")}
+        >
+          {showDocumentPanel && (
             <aside className="history-reader-documents-panel">
               <span className="history-reader-panel-title">Documents</span>
               <div className="history-reader-documents">
@@ -146,6 +151,16 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
                 ))}
               </div>
             </aside>
+          )}
+
+          {primaryDocument && (
+            <button type="button" className="history-reader-primary-document" onClick={() => setSelectedDocument(primaryDocument)}>
+              <span className="history-reader-panel-title">{primaryDocument.title}</span>
+              <span className="history-reader-primary-document-media">
+                {primaryDocument.src ? <img src={primaryDocument.src} alt={primaryDocument.title} /> : <span>{primaryDocument.text}</span>}
+              </span>
+              {(primaryDocument.caption || primaryDocument.source) && <small>{[primaryDocument.caption, primaryDocument.source].filter(Boolean).join(" · ")}</small>}
+            </button>
           )}
 
           <div className="history-reader-task-panel">

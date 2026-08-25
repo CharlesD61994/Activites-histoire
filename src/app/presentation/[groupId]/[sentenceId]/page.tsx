@@ -680,7 +680,7 @@ export default function PresentationPage({
   return (
     <ReaderChromeProvider>
     <div className="reader-scene">
-      <header className="reader-scene-header">
+      <header className={`reader-scene-header ${isHistoryActivity ? "reader-scene-header-history" : ""}`}>
         <button
           type="button"
           onClick={leaveSentence}
@@ -690,9 +690,23 @@ export default function PresentationPage({
           Quitter
         </button>
 
-        <strong>{group.name}</strong>
+        <div className="reader-scene-title">
+          <strong>{group.name}</strong>
+          {isHistoryActivity && (
+            <span>{sentence.title}</span>
+          )}
+        </div>
 
         <div className="reader-scene-view-controls">
+          {isHistoryActivity && (
+            <div className="reader-history-score-pill">
+              <ClassroomPointsMedal compact />
+              <div>
+                <strong>{pendingTotal} point{pendingTotal === 1 ? "" : "s"}</strong>
+                <span>{finished ? "Enregistré" : "Pointage actuel"}</span>
+              </div>
+            </div>
+          )}
           <ReaderChromeTarget slot="viewTools" className="reader-scene-context-view-tools" />
           <button
             className="icon-control"
@@ -717,22 +731,24 @@ export default function PresentationPage({
             : ""
         } ${isHistoryActivity ? "reader-scene-main-history" : ""}`}
       >
-        <section className={`reader-command-ribbon ${isWorksheetActivity ? "worksheet-reader-ribbon" : ""} ${isHistoryActivity ? "history-reader-ribbon" : ""}`}>
-          <div className="reader-command-instruction">
-            <span className="reader-command-number"><Target size={25} /></span>
-            <div>
-              <span className="eyebrow">{sentence.title}</span>
-              <ReaderChromeTarget slot="instruction" className="reader-command-instruction-slot" />
+        {!isHistoryActivity && (
+          <section className={`reader-command-ribbon ${isWorksheetActivity ? "worksheet-reader-ribbon" : ""}`}>
+            <div className="reader-command-instruction">
+              <span className="reader-command-number"><Target size={25} /></span>
+              <div>
+                <span className="eyebrow">{sentence.title}</span>
+                <ReaderChromeTarget slot="instruction" className="reader-command-instruction-slot" />
+              </div>
             </div>
-          </div>
-          <div className="reader-command-score">
-            <ClassroomPointsMedal compact />
-            <div>
-              <strong>{pendingTotal} point{pendingTotal === 1 ? "" : "s"}</strong>
-              <span>{finished ? "Enregistré" : "Pointage actuel"}</span>
+            <div className="reader-command-score">
+              <ClassroomPointsMedal compact />
+              <div>
+                <strong>{pendingTotal} point{pendingTotal === 1 ? "" : "s"}</strong>
+                <span>{finished ? "Enregistré" : "Pointage actuel"}</span>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
         <section className="reader-activity-flow">
         {isHistoryActivity ? (
@@ -786,14 +802,14 @@ export default function PresentationPage({
         )}
         </section>
 
-        <section
-          className={[
-            "reader-command-dock",
-            isWorksheetActivity ? "worksheet-reader-dock" : "",
-            isHistoryActivity ? "history-reader-dock" : "",
-            competitionActive ? "has-competition" : ""
-          ].filter(Boolean).join(" ")}
-        >
+        {!isHistoryActivity && (
+          <section
+            className={[
+              "reader-command-dock",
+              isWorksheetActivity ? "worksheet-reader-dock" : "",
+              competitionActive ? "has-competition" : ""
+            ].filter(Boolean).join(" ")}
+          >
           <ReaderChromeTarget slot="progress" className="reader-command-progress-slot" />
           <ReaderChromeTarget slot="contextTools" className="reader-command-context-slot" />
 
@@ -856,7 +872,8 @@ export default function PresentationPage({
             <ReaderChromeTarget slot="actions" className="reader-command-actions-slot" />
             {readerComplete && finishControl}
           </div>
-        </section>
+          </section>
+        )}
 
       </main>
 
