@@ -6,7 +6,7 @@ import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
-import type { HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
 type Props = {
   sentence: Sentence;
@@ -118,6 +118,54 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     }
   }
 
+  const documentModal = selectedDocument && (
+    <div className="history-document-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && setSelectedDocument(null)}>
+      <div className="history-document-modal-content">
+        <button type="button" className="icon-control" onClick={() => setSelectedDocument(null)} aria-label="Fermer"><X size={20} /></button>
+        <div className="history-document-modal-header">
+          <h2>{selectedDocument.title}</h2>
+          {(selectedDocument.caption || selectedDocument.source) && <small>{[selectedDocument.caption, selectedDocument.source].filter(Boolean).join(" · ")}</small>}
+        </div>
+        <div className="history-document-modal-body">
+          {selectedDocument.src ? <img src={selectedDocument.src} alt={selectedDocument.title} /> : <p>{selectedDocument.text}</p>}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (activity.canvas?.blocks.length) {
+    return (
+      <div className="history-reader history-reader-canvas-mode">
+        <HistoryCanvasStage
+          canvas={activity.canvas}
+          documents={documents}
+          question={question}
+          selectedChoices={selectedChoices}
+          toggleChoice={toggleChoice}
+          classificationAnswers={classificationAnswers}
+          setClassificationAnswers={setClassificationAnswers}
+          matchingAnswers={matchingAnswers}
+          setMatchingAnswers={setMatchingAnswers}
+          eventOrder={eventOrder}
+          moveEvent={moveEvent}
+          hotspotDocument={hotspotDocument}
+          hotspotAnswer={hotspotAnswer}
+          setHotspotAnswer={setHotspotAnswer}
+          clozeAnswers={clozeAnswers}
+          setClozeAnswers={setClozeAnswers}
+          shortTextAnswer={shortTextAnswer}
+          setShortTextAnswer={setShortTextAnswer}
+          validation={validation}
+          statusText={statusText}
+          onValidate={validate}
+          onOpenDocument={setSelectedDocument}
+          resetValidation={() => setValidation("idle")}
+        />
+        {documentModal}
+      </div>
+    );
+  }
+
   return (
     <div className="history-reader">
       <Card className="history-reader-main">
@@ -198,20 +246,115 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
         </div>
       </Card>
 
-      {selectedDocument && (
-        <div className="history-document-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && setSelectedDocument(null)}>
-          <div className="history-document-modal-content">
-            <button type="button" className="icon-control" onClick={() => setSelectedDocument(null)} aria-label="Fermer"><X size={20} /></button>
-            <div className="history-document-modal-header">
-              <h2>{selectedDocument.title}</h2>
-              {(selectedDocument.caption || selectedDocument.source) && <small>{[selectedDocument.caption, selectedDocument.source].filter(Boolean).join(" · ")}</small>}
-            </div>
-            <div className="history-document-modal-body">
-              {selectedDocument.src ? <img src={selectedDocument.src} alt={selectedDocument.title} /> : <p>{selectedDocument.text}</p>}
-            </div>
-          </div>
+      {documentModal}
+    </div>
+  );
+}
+
+function HistoryCanvasStage({
+  canvas,
+  documents,
+  question,
+  selectedChoices,
+  toggleChoice,
+  classificationAnswers,
+  setClassificationAnswers,
+  matchingAnswers,
+  setMatchingAnswers,
+  eventOrder,
+  moveEvent,
+  hotspotDocument,
+  hotspotAnswer,
+  setHotspotAnswer,
+  clozeAnswers,
+  setClozeAnswers,
+  shortTextAnswer,
+  setShortTextAnswer,
+  validation,
+  statusText,
+  onValidate,
+  onOpenDocument,
+  resetValidation
+}: {
+  canvas: HistoryActivityCanvas;
+  documents: HistorySourceDocument[];
+  question: HistoryQuestion;
+  selectedChoices: string[];
+  toggleChoice: (id: string) => void;
+  classificationAnswers: Record<string, string>;
+  setClassificationAnswers: (next: Record<string, string>) => void;
+  matchingAnswers: Record<string, string>;
+  setMatchingAnswers: (next: Record<string, string>) => void;
+  eventOrder: string[];
+  moveEvent: (id: string, direction: -1 | 1) => void;
+  hotspotDocument?: HistorySourceDocument;
+  hotspotAnswer: { x: number; y: number } | null;
+  setHotspotAnswer: (answer: { x: number; y: number }) => void;
+  clozeAnswers: Record<string, string>;
+  setClozeAnswers: (next: Record<string, string>) => void;
+  shortTextAnswer: string;
+  setShortTextAnswer: (next: string) => void;
+  validation: Validation;
+  statusText: string;
+  onValidate: () => void;
+  onOpenDocument: (document: HistorySourceDocument) => void;
+  resetValidation: () => void;
+}) {
+  function renderBlock(block: HistoryCanvasBlock) {
+    if (block.type === "document") {
+      const document = documents.find((item) => item.id === block.documentId);
+      return (
+        <button type="button" className="history-canvas-reader-document" disabled={!document} onClick={() => document && onOpenDocument(document)}>
+          {document?.src ? <img src={document.src} alt={document.title} /> : <span>{document?.text || "Document"}</span>}
+        </button>
+      );
+    }
+    if (block.type === "interaction") {
+      return (
+        <HistoryQuestionInteraction
+          question={question}
+          selectedChoices={selectedChoices}
+          toggleChoice={toggleChoice}
+          classificationAnswers={classificationAnswers}
+          setClassificationAnswers={setClassificationAnswers}
+          matchingAnswers={matchingAnswers}
+          setMatchingAnswers={setMatchingAnswers}
+          eventOrder={eventOrder}
+          moveEvent={moveEvent}
+          hotspotDocument={hotspotDocument}
+          hotspotAnswer={hotspotAnswer}
+          setHotspotAnswer={setHotspotAnswer}
+          clozeAnswers={clozeAnswers}
+          setClozeAnswers={setClozeAnswers}
+          shortTextAnswer={shortTextAnswer}
+          setShortTextAnswer={setShortTextAnswer}
+          resetValidation={resetValidation}
+        />
+      );
+    }
+    if (block.type === "validation") return <Button onClick={onValidate}>{block.text || "Valider"}</Button>;
+    if (block.type === "feedback") {
+      return statusText ? <div className={`history-result ${validation}`}>{validation === "correct" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}<strong>{statusText}</strong></div> : <span className="history-canvas-reader-muted">{block.text || "Feedback"}</span>;
+    }
+    return <p>{block.text || question.prompt}</p>;
+  }
+
+  return (
+    <div className="history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
+      {canvas.blocks.map((block) => (
+        <div
+          key={block.id}
+          className={`history-canvas-reader-block block-${block.type}`}
+          style={{
+            left: `${block.x / canvas.width * 100}%`,
+            top: `${block.y / canvas.height * 100}%`,
+            width: `${block.width / canvas.width * 100}%`,
+            height: `${block.height / canvas.height * 100}%`
+          }}
+        >
+          {renderBlock(block)}
         </div>
-      )}
+      ))}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ImagePlus, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { HistoryCanvasEditor, createDefaultHistoryCanvas } from "@/components/history-canvas-editor";
 import {
   allHistoryOperations,
   allHistorySocietyAspects,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/history-activities";
 import type {
   HistoryActivityData,
+  HistoryActivityCanvas,
   HistoryChoiceOption,
   HistoryClassificationItem,
   HistoryHotspot,
@@ -96,6 +98,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   const [aspects, setAspects] = useState<HistorySocietyAspect[]>(initialHistory?.aspects ?? ["society"]);
   const [documents, setDocuments] = useState<HistorySourceDocument[]>(initialHistory?.documents ?? []);
   const [question, setQuestion] = useState<HistoryQuestion>(() => normalizeQuestion(initialHistory?.questions[0] ?? defaultQuestion(historyActionsByOperation[initialHistory?.operation ?? "establish_facts"][0]), historyActionsByOperation[initialHistory?.operation ?? "establish_facts"][0]));
+  const [canvas, setCanvas] = useState<HistoryActivityCanvas>(() => initialHistory?.canvas ?? createDefaultHistoryCanvas(initialHistory?.questions[0] ?? defaultQuestion(historyActionsByOperation[initialHistory?.operation ?? "establish_facts"][0]), initialHistory?.documents ?? []));
 
   const allowedActions = historyActionsByOperation[operation];
   const imageDocuments = documents.filter((document) => document.kind === "image" || document.kind === "map");
@@ -140,7 +143,8 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
       operation,
       aspects,
       documents,
-      questions: [normalizeQuestion(question, question.action)]
+      questions: [normalizeQuestion(question, question.action)],
+      canvas
     };
     const sentence: Sentence = {
       id: initialSentence?.id ?? crypto.randomUUID(),
@@ -391,6 +395,10 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
           ))}
           {documents.length === 0 && <p>Aucun document pour l’instant. Plusieurs opérations peuvent fonctionner sans document.</p>}
         </div>
+      </Card>
+
+      <Card className="history-editor-panel">
+        <HistoryCanvasEditor canvas={canvas} documents={documents} question={question} onChange={setCanvas} />
       </Card>
 
       <Card className="history-editor-panel">

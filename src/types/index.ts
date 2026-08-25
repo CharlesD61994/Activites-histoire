@@ -157,6 +157,31 @@ export type HistoryClozeBlank = {
   options: HistoryChoiceOption[];
 };
 
+export type HistoryCanvasBlockType =
+  | "text"
+  | "document"
+  | "interaction"
+  | "validation"
+  | "feedback";
+
+export type HistoryCanvasBlock = {
+  id: string;
+  type: HistoryCanvasBlockType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  text?: string;
+  documentId?: string;
+};
+
+export type HistoryActivityCanvas = {
+  width: number;
+  height: number;
+  background?: string;
+  blocks: HistoryCanvasBlock[];
+};
+
 export type HistoryQuestion = {
   id: string;
   prompt: string;
@@ -183,6 +208,7 @@ export type HistoryActivityData = {
   aspects: HistorySocietyAspect[];
   documents: HistorySourceDocument[];
   questions: HistoryQuestion[];
+  canvas?: HistoryActivityCanvas;
 };
 
 export type GrammarObjective =
