@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BarChart3, BookOpenCheck, CalendarDays, Home, MonitorPlay, Tags } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { SyncStatus } from "@/components/sync-status";
-import { useAuth } from "@/features/auth/auth-provider";
 import { useAppStore } from "@/store/app-store";
 
 const items = [
@@ -20,32 +18,7 @@ const items = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { configured, loading: authLoading, user } = useAuth();
   const { hydrated } = useAppStore();
-  const publicRoute =
-    pathname === "/connexion" ||
-    pathname.startsWith("/portail") ||
-    pathname.startsWith("/presentation/");
-  const requiresAuth = !publicRoute;
-
-  useEffect(() => {
-    if (!requiresAuth || authLoading) return;
-    if (!configured || !user) router.replace("/connexion");
-  }, [authLoading, configured, requiresAuth, router, user]);
-
-  if (requiresAuth && authLoading) {
-    return (
-      <div className="app-loading-screen">
-        <div className="app-loading-indicator" />
-        <span>Vérification de la connexion…</span>
-      </div>
-    );
-  }
-
-  if (requiresAuth && (!configured || !user)) {
-    return null;
-  }
 
   if (!hydrated && pathname !== "/connexion") {
     return (

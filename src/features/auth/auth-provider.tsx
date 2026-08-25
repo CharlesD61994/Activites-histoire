@@ -5,6 +5,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
+const LOCAL_TEST_MODE = true;
+
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
@@ -16,9 +18,15 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [loading, setLoading] = useState(LOCAL_TEST_MODE ? false : isSupabaseConfigured);
 
   useEffect(() => {
+    if (LOCAL_TEST_MODE) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
       setLoading(false);
@@ -41,8 +49,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthContextValue>(() => ({
     user,
     loading,
-    configured: isSupabaseConfigured,
+    configured: LOCAL_TEST_MODE ? false : isSupabaseConfigured,
     signOut: async () => {
+      if (LOCAL_TEST_MODE) {
+        setUser(null);
+        return;
+      }
+
       const supabase = createSupabaseBrowserClient();
       await supabase?.auth.signOut();
       setUser(null);

@@ -24,7 +24,6 @@ import {
 import { ClassroomPointsMedal } from "@/components/classroom-portal-ornaments";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/features/auth/auth-provider";
 import { useAppStore } from "@/store/app-store";
 import { buildCompetitionStandings } from "@/lib/competition";
 import type { CompetitionResult, ScoreEvent, SentenceCorrection, WordClassTarget, WordGroupTarget } from "@/types";
@@ -59,7 +58,6 @@ export default function PresentationPage({
   const { groupId, sentenceId } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { configured, loading: authLoading, user } = useAuth();
   const {
     data,
     addScoreEvent,
@@ -74,7 +72,6 @@ export default function PresentationPage({
   const plannedSessionId = searchParams.get("plan");
   const launchedFromClasse = searchParams.get("from") === "classe";
   const launchedFromPortal = searchParams.get("from") === "portail";
-  const requiresTeacherAccess = !launchedFromPortal;
   const competitionMode = searchParams.get("competition");
   const competitionSourceId = searchParams.get("source");
   const competitionActive =
@@ -119,11 +116,6 @@ export default function PresentationPage({
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
-
-  useEffect(() => {
-    if (!requiresTeacherAccess || authLoading) return;
-    if (!configured || !user) router.replace("/connexion");
-  }, [authLoading, configured, requiresTeacherAccess, router, user]);
 
   useEffect(() => {
     if (!launchedFromPortal || !group) return;
@@ -397,19 +389,6 @@ export default function PresentationPage({
         <Link href="/">Retour à l’accueil</Link>
       </div>
     );
-  }
-
-  if (requiresTeacherAccess && authLoading) {
-    return (
-      <div className="app-loading-screen">
-        <div className="app-loading-indicator" />
-        <span>Vérification de la connexion…</span>
-      </div>
-    );
-  }
-
-  if (requiresTeacherAccess && (!configured || !user)) {
-    return null;
   }
 
   if (launchedFromPortal && !portalUnlocked) {
