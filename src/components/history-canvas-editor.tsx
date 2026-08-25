@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useRef, useState } from "react";
-import { FileText, MessageSquareText, MousePointer2, PanelRightClose, PanelRightOpen, PanelTop, Trash2 } from "lucide-react";
+import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
 import { historyActionLabels } from "@/lib/history-activities";
@@ -65,7 +65,6 @@ function makeChoice(text: string, isCorrect = false): HistoryChoiceOption {
 export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const [selectedId, setSelectedId] = useState(canvas.blocks[0]?.id ?? "");
-  const [inspectorOpen, setInspectorOpen] = useState(true);
   const [drag, setDrag] = useState<DragState | null>(null);
   const selectedBlock = canvas.blocks.find((block) => block.id === selectedId);
 
@@ -150,7 +149,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   return (
-    <section className={`history-canvas-editor ${inspectorOpen ? "inspector-open" : "inspector-closed"}`}>
+    <section className="history-canvas-editor">
       <div className="history-canvas-toolbar">
         <div>
           <span className="eyebrow">Tableau du lecteur</span>
@@ -161,10 +160,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           <Button type="button" variant="secondary" onClick={() => addBlock("document")}><FileText size={16} /> Document</Button>
           <Button type="button" variant="secondary" onClick={() => addBlock("interaction")}><MousePointer2 size={16} /> Interaction</Button>
           <Button type="button" variant="secondary" onClick={() => addBlock("validation")}><PanelTop size={16} /> Valider</Button>
-          <Button type="button" variant="secondary" onClick={() => setInspectorOpen((open) => !open)}>
-            {inspectorOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
-            {inspectorOpen ? "Cacher le panneau" : "Afficher le panneau"}
-          </Button>
         </div>
       </div>
 
@@ -213,21 +208,12 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           </div>
         </div>
 
-        {!inspectorOpen && (
-          <button type="button" className="history-canvas-inspector-tab" onClick={() => setInspectorOpen(true)} aria-label="Afficher le panneau de réglages">
-            <PanelRightOpen size={18} />
-          </button>
-        )}
-
-        <aside className="history-canvas-inspector" aria-hidden={!inspectorOpen}>
+        <aside className="history-canvas-inspector">
           {selectedBlock ? (
             <>
               <div className="history-canvas-inspector-heading">
                 <strong>{blockLabels[selectedBlock.type]}</strong>
-                <div>
-                  <button type="button" onClick={() => setInspectorOpen(false)} aria-label="Cacher le panneau"><PanelRightClose size={16} /></button>
-                  <button type="button" onClick={() => removeBlock(selectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
-                </div>
+                <button type="button" onClick={() => removeBlock(selectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
               </div>
               <p>Modifie le contenu directement dans le tableau. Utilise ces champs seulement pour placer précisément le bloc.</p>
               <div className="history-canvas-number-grid">
