@@ -65,7 +65,9 @@ function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
     matchingTargets: [],
     timelineEvents: [],
     clozeText: "La réponse est [[1]].",
-    clozeBlanks: [{ id: crypto.randomUUID(), label: "1", options: [makeChoice("bon choix", true), makeChoice("autre choix")] }]
+    clozeBlanks: [{ id: crypto.randomUUID(), label: "1", options: [makeChoice("bon choix", true), makeChoice("autre choix")] }],
+    acceptedTextAnswers: ["réponse acceptée"],
+    textAnswerCaseSensitive: false
   };
 }
 
@@ -80,6 +82,7 @@ function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractive
   if (!next.matchingPrompts?.length) next.matchingPrompts = [{ id: crypto.randomUUID(), prompt: "Élément de départ", correctTargetId: next.matchingTargets[0].id }];
   if (!next.timelineEvents?.length) next.timelineEvents = [{ id: crypto.randomUUID(), text: "Événement 1", correctOrder: 1 }, { id: crypto.randomUUID(), text: "Événement 2", correctOrder: 2 }];
   if (!next.clozeBlanks?.length) next.clozeBlanks = [{ id: crypto.randomUUID(), label: "1", options: [makeChoice("bon choix", true), makeChoice("autre choix")] }];
+  if (!next.acceptedTextAnswers?.length) next.acceptedTextAnswers = ["réponse acceptée"];
   return next;
 }
 
@@ -294,6 +297,26 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
             </button>
           ) : <p>Ajoute une image ou une carte dans les documents, puis clique dessus pour placer la bonne zone.</p>}
           <label>Rayon de tolérance (%)<input type="number" min={2} max={30} value={question.hotspot?.radius ?? 10} onChange={(event) => setHotspot({ radius: Number(event.target.value) })} /></label>
+        </section>
+      );
+    }
+
+    if (question.action === "short_text") {
+      return (
+        <section className="history-editor-panel">
+          <h3>Réponses acceptées</h3>
+          <p>Ajoute les variantes qui doivent être validées automatiquement. Les majuscules et les accents sont ignorés par défaut.</p>
+          {(question.acceptedTextAnswers ?? []).map((answer, index) => (
+            <div className="history-inline-row" key={index}>
+              <input value={answer} onChange={(event) => updateQuestion({ acceptedTextAnswers: (question.acceptedTextAnswers ?? []).map((item, answerIndex) => answerIndex === index ? event.target.value : item) })} placeholder="Mot ou courte phrase" />
+              <button type="button" onClick={() => updateQuestion({ acceptedTextAnswers: (question.acceptedTextAnswers ?? []).filter((_, answerIndex) => answerIndex !== index) })} aria-label="Supprimer"><Trash2 size={16} /></button>
+            </div>
+          ))}
+          <Button type="button" variant="secondary" onClick={() => updateQuestion({ acceptedTextAnswers: [...(question.acceptedTextAnswers ?? []), ""] })}><Plus size={16} /> Ajouter une réponse acceptée</Button>
+          <label className="history-check">
+            <input type="checkbox" checked={Boolean(question.textAnswerCaseSensitive)} onChange={(event) => updateQuestion({ textAnswerCaseSensitive: event.target.checked })} />
+            Distinguer les majuscules/minuscules
+          </label>
         </section>
       );
     }

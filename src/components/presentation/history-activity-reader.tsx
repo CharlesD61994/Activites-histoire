@@ -25,6 +25,12 @@ function distancePercent(a: { x: number; y: number }, b: { x: number; y: number 
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+function normalizeTextAnswer(value: string, caseSensitive?: boolean) {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (caseSensitive) return normalized;
+  return normalized.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("fr-CA");
+}
+
 export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: Props) {
   const activity = sentence.historyActivity;
   const question = activity?.questions[0];
@@ -35,6 +41,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   const [eventOrder, setEventOrder] = useState<string[]>(() => question?.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
   const [hotspotAnswer, setHotspotAnswer] = useState<{ x: number; y: number } | null>(null);
   const [clozeAnswers, setClozeAnswers] = useState<Record<string, string>>({});
+  const [shortTextAnswer, setShortTextAnswer] = useState("");
   const [validation, setValidation] = useState<Validation>("idle");
   const [awarded, setAwarded] = useState(false);
 
@@ -95,6 +102,9 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
         const expected = blank.options.find((option) => option.isCorrect)?.id;
         return expected && clozeAnswers[blank.id] === expected;
       });
+    } else if (question.action === "short_text") {
+      const answer = normalizeTextAnswer(shortTextAnswer, question.textAnswerCaseSensitive);
+      correct = Boolean(answer) && (question.acceptedTextAnswers ?? []).some((accepted) => normalizeTextAnswer(accepted, question.textAnswerCaseSensitive) === answer);
     }
 
     setValidation(correct ? "correct" : "incorrect");
@@ -146,6 +156,8 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           setHotspotAnswer={setHotspotAnswer}
           clozeAnswers={clozeAnswers}
           setClozeAnswers={setClozeAnswers}
+          shortTextAnswer={shortTextAnswer}
+          setShortTextAnswer={setShortTextAnswer}
           resetValidation={() => setValidation("idle")}
         />
 
@@ -190,6 +202,8 @@ function HistoryQuestionInteraction({
   setHotspotAnswer,
   clozeAnswers,
   setClozeAnswers,
+  shortTextAnswer,
+  setShortTextAnswer,
   resetValidation
 }: {
   question: HistoryQuestion;
@@ -206,6 +220,8 @@ function HistoryQuestionInteraction({
   setHotspotAnswer: (answer: { x: number; y: number }) => void;
   clozeAnswers: Record<string, string>;
   setClozeAnswers: (next: Record<string, string>) => void;
+  shortTextAnswer: string;
+  setShortTextAnswer: (next: string) => void;
   resetValidation: () => void;
 }) {
   if (question.action === "choice_single" || question.action === "choice_multiple") {
@@ -236,6 +252,24 @@ function HistoryQuestionInteraction({
         {hotspotAnswer && <span style={{ left: `${hotspotAnswer.x}%`, top: `${hotspotAnswer.y}%` }} />}
       </button>
     ) : <p>Cette action demande un document image ou une carte.</p>;
+  }
+
+  if (question.action === "short_text") {
+    return (
+      <div className="history-short-text-reader">
+        <input
+          value={shortTextAnswer}
+          onChange={(event) => {
+            resetValidation();
+            setShortTextAnswer(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.preventDefault();
+          }}
+          placeholder="Écrire un mot ou une courte phrase"
+        />
+      </div>
+    );
   }
 
   return (

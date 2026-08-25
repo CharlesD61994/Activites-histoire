@@ -85,7 +85,8 @@ export type HistoryInteractiveAction =
   | "chronological_order"
   | "timeline"
   | "document_hotspot"
-  | "cloze_choice";
+  | "cloze_choice"
+  | "short_text";
 
 export type HistorySocietyAspect =
   | "politics"
@@ -171,6 +172,8 @@ export type HistoryQuestion = {
   hotspot?: HistoryHotspot;
   clozeText?: string;
   clozeBlanks?: HistoryClozeBlank[];
+  acceptedTextAnswers?: string[];
+  textAnswerCaseSensitive?: boolean;
   feedbackCorrect?: string;
   feedbackIncorrect?: string;
 };

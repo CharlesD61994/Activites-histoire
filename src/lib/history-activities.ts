@@ -19,7 +19,8 @@ export const historyActionLabels: Record<HistoryInteractiveAction, string> = {
   chronological_order: "Ordre chronologique",
   timeline: "Repères sur une ligne du temps",
   document_hotspot: "Zone cliquable sur document",
-  cloze_choice: "Texte à compléter"
+  cloze_choice: "Texte à compléter",
+  short_text: "Réponse courte"
 };
 
 export const historyActionDescriptions: Record<HistoryInteractiveAction, string> = {
@@ -30,7 +31,8 @@ export const historyActionDescriptions: Record<HistoryInteractiveAction, string>
   chronological_order: "Des événements à remettre dans le bon ordre.",
   timeline: "Des repères datés à placer ou ordonner.",
   document_hotspot: "Une image ou une carte à observer, puis une zone à cliquer.",
-  cloze_choice: "Un court énoncé à compléter avec des choix fermés."
+  cloze_choice: "Un court énoncé à compléter avec des choix fermés.",
+  short_text: "Un mot ou une courte phrase à écrire, validé avec une liste de réponses acceptées."
 };
 
 export const historySocietyAspectLabels: Record<HistorySocietyAspect, string> = {
@@ -46,11 +48,11 @@ export const historySocietyAspectLabels: Record<HistorySocietyAspect, string> = 
 };
 
 export const historyActionsByOperation: Record<HistoryOperation, HistoryInteractiveAction[]> = {
-  establish_facts: ["choice_single", "choice_multiple", "document_hotspot", "cloze_choice"],
-  causality_links: ["matching", "chronological_order", "cloze_choice", "choice_single"],
-  situate_time: ["chronological_order", "timeline", "choice_single"],
-  situate_space: ["document_hotspot", "matching", "choice_single"],
-  relate_facts: ["matching", "classification", "choice_single"],
+  establish_facts: ["choice_single", "short_text", "choice_multiple", "document_hotspot", "cloze_choice"],
+  causality_links: ["matching", "chronological_order", "cloze_choice", "choice_single", "short_text"],
+  situate_time: ["chronological_order", "timeline", "choice_single", "short_text"],
+  situate_space: ["document_hotspot", "matching", "choice_single", "short_text"],
+  relate_facts: ["matching", "classification", "choice_single", "short_text"],
   causes_consequences: ["classification", "matching", "choice_single"],
   differences_similarities: ["classification", "matching", "choice_multiple"],
   changes_continuities: ["classification", "chronological_order", "choice_multiple"]

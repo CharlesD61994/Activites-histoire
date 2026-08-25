@@ -81,6 +81,16 @@
   grid-template-columns: minmax(0, 1fr) minmax(220px, 32%);
   align-items: center; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
 }
+.history-short-text-reader input {
+  min-height: 72px;
+  padding: 0 22px;
+  border-width: 2px;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--portal-ink);
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+  font-weight: 850;
+}
 .history-order-list { display: grid; gap: 10px; }
 .history-order-list > div {
   display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center;
