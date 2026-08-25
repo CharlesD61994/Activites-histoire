@@ -4,8 +4,7 @@
 import { useRef, useState } from "react";
 import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
-import { historyActionLabels } from "@/lib/history-activities";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryQuestion, HistorySourceDocument } from "@/types";
 
 type Props = {
   canvas: HistoryActivityCanvas;
@@ -56,10 +55,6 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
       defaultBlock("validation", question, documents)
     ]
   };
-}
-
-function makeChoice(text: string, isCorrect = false): HistoryChoiceOption {
-  return { id: crypto.randomUUID(), text, isCorrect };
 }
 
 export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange }: Props) {
@@ -131,18 +126,12 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     const document = documents.find((item) => item.id === block.documentId);
     if (block.type === "document") {
       return (
-        <div className="history-canvas-document-edit">
-          <select value={block.documentId ?? ""} onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { documentId: event.target.value })}>
-            <option value="">Choisir un document</option>
-            {documents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-          </select>
-          <div>
-            {document?.src ? <img src={document.src} alt={document.title} /> : <span>{document?.text || "Document"}</span>}
-          </div>
+        <div className="history-canvas-reader-document">
+          {document?.src ? <img src={document.src} alt={document.title} /> : <span>{document?.text || "Document"}</span>}
         </div>
       );
     }
-    if (block.type === "interaction") return <HistoryInteractionEditor question={question} updateQuestion={updateQuestion} updateChoice={updateChoice} stopEditingPointer={stopEditingPointer} />;
+    if (block.type === "interaction") return <HistoryInteractionEditor question={question} documents={documents} updateChoice={updateChoice} stopEditingPointer={stopEditingPointer} />;
     if (block.type === "validation") return <input className="history-canvas-button-edit" value={block.text ?? "Valider"} onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { text: event.target.value })} />;
     if (block.type === "feedback") return <textarea className="history-canvas-text-edit" value={block.text ?? "Feedback"} onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { text: event.target.value })} />;
     return <textarea className="history-canvas-text-edit" value={block.text ?? ""} placeholder="Texte" onPointerDown={stopEditingPointer} onChange={(event) => updateBlock(block.id, { text: event.target.value })} />;
@@ -214,6 +203,15 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 <button type="button" onClick={() => removeBlock(selectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
               </div>
               <p>Modifie le contenu directement dans le tableau. Utilise ces champs seulement pour placer précisément le bloc.</p>
+              {selectedBlock.type === "document" && (
+                <label className="history-canvas-document-picker">
+                  Document
+                  <select value={selectedBlock.documentId ?? ""} onChange={(event) => updateBlock(selectedBlock.id, { documentId: event.target.value })}>
+                    <option value="">Choisir un document</option>
+                    {documents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                  </select>
+                </label>
+              )}
               <div className="history-canvas-number-grid">
                 <label>X<input type="number" value={Math.round(selectedBlock.x)} onChange={(event) => updateBlock(selectedBlock.id, { x: Number(event.target.value) })} /></label>
                 <label>Y<input type="number" value={Math.round(selectedBlock.y)} onChange={(event) => updateBlock(selectedBlock.id, { y: Number(event.target.value) })} /></label>
@@ -228,52 +226,60 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   );
 }
 
-function HistoryInteractionPreview({ action }: { action: HistoryInteractiveAction }) {
-  return (
-    <div className="history-canvas-interaction-preview">
-      <strong>{historyActionLabels[action]}</strong>
-      <span>Bloc interactif</span>
-    </div>
-  );
-}
-
 function HistoryInteractionEditor({
   question,
-  updateQuestion,
+  documents,
   updateChoice,
   stopEditingPointer
 }: {
   question: HistoryQuestion;
-  updateQuestion: (patch: Partial<HistoryQuestion>) => void;
+  documents: HistorySourceDocument[];
   updateChoice: (id: string, patch: Partial<HistoryChoiceOption>) => void;
   stopEditingPointer: (event: React.PointerEvent) => void;
 }) {
   if (question.action === "choice_single" || question.action === "choice_multiple") {
     return (
-      <div className="history-canvas-choice-editor">
-        <strong>{historyActionLabels[question.action]}</strong>
+      <div className="history-choice-grid history-canvas-choice-editor">
         {(question.choices ?? []).map((choice) => (
-          <label key={choice.id}>
-            <input type="checkbox" checked={choice.isCorrect} onPointerDown={stopEditingPointer} onChange={(event) => updateChoice(choice.id, { isCorrect: event.target.checked })} />
+          <div className="history-canvas-choice" key={choice.id}>
             <input value={choice.text} onPointerDown={stopEditingPointer} onChange={(event) => updateChoice(choice.id, { text: event.target.value })} />
-          </label>
+          </div>
         ))}
-        <button type="button" onPointerDown={stopEditingPointer} onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice("Nouvelle réponse")] })}>Ajouter une réponse</button>
       </div>
     );
+  }
+
+  if (question.action === "classification") {
+    return <div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value="" disabled><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>;
+  }
+
+  if (question.action === "matching") {
+    return <div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}>{prompt.prompt}<select value="" disabled><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>;
+  }
+
+  if (question.action === "chronological_order" || question.action === "timeline") {
+    return <div className="history-order-list">{[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => <div key={event.id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" disabled>Monter</button><button type="button" disabled>Descendre</button></div>)}</div>;
+  }
+
+  if (question.action === "document_hotspot") {
+    const document = documents.find((item) => question.documentIds.includes(item.id) && item.src);
+    return document?.src ? <div className="history-hotspot-reader"><img src={document.src} alt={document.title} /></div> : <p>Cette action demande un document image ou une carte.</p>;
   }
 
   if (question.action === "short_text") {
     return (
       <div className="history-canvas-short-editor">
-        <strong>Réponse courte</strong>
-        {(question.acceptedTextAnswers ?? []).map((answer, index) => (
-          <input key={index} value={answer} onPointerDown={stopEditingPointer} onChange={(event) => updateQuestion({ acceptedTextAnswers: (question.acceptedTextAnswers ?? []).map((item, itemIndex) => itemIndex === index ? event.target.value : item) })} />
-        ))}
-        <button type="button" onPointerDown={stopEditingPointer} onClick={() => updateQuestion({ acceptedTextAnswers: [...(question.acceptedTextAnswers ?? []), ""] })}>Ajouter une réponse</button>
+        <div className="history-short-text-reader">
+          <input readOnly value="" placeholder="Écrire un mot ou une courte phrase" onPointerDown={stopEditingPointer} />
+        </div>
       </div>
     );
   }
 
-  return <HistoryInteractionPreview action={question.action} />;
+  return (
+    <div className="history-cloze-reader">
+      <p>{question.clozeText}</p>
+      {(question.clozeBlanks ?? []).map((blank) => <label key={blank.id}>Blanc {blank.label}<select value="" disabled><option value="">Choisir</option>{blank.options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}
+    </div>
+  );
 }
