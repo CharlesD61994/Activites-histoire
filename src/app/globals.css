@@ -29,7 +29,12 @@
 :root {
   --history-stage-max-width: 1600px;
   --history-stage-reader-height: calc(100vh - 104px);
-  --history-stage-editor-height: calc(100vh - 250px);
+  --history-stage-frame-width: min(
+    var(--history-stage-max-width),
+    calc(100vw - 60px),
+    calc(var(--history-stage-reader-height) * 16 / 9)
+  );
+  --history-stage-frame-height: calc(var(--history-stage-frame-width) * 9 / 16);
 }
 
 .reader-scene-main-history {
@@ -55,14 +60,11 @@
 }
 
 .reader-scene-main-history .history-canvas-reader-stage {
-  width: min(
-    var(--history-stage-max-width),
-    calc(var(--history-stage-reader-height) * 16 / 9),
-    100%
-  ) !important;
-  height: auto !important;
-  max-height: var(--history-stage-reader-height);
-  aspect-ratio: 16 / 9;
+  width: var(--history-stage-frame-width) !important;
+  height: var(--history-stage-frame-height) !important;
+  max-width: var(--history-stage-frame-width) !important;
+  max-height: var(--history-stage-frame-height) !important;
+  aspect-ratio: auto !important;
 }
 
 .history-canvas-editor-card {
@@ -73,16 +75,15 @@
   display: grid;
   justify-items: center;
   padding: 14px !important;
+  overflow: auto;
 }
 
 .history-canvas-surface {
-  width: min(
-    var(--history-stage-max-width),
-    calc(var(--history-stage-reader-height) * 16 / 9),
-    100%
-  ) !important;
+  width: var(--history-stage-frame-width) !important;
+  height: var(--history-stage-frame-height) !important;
+  max-width: none !important;
   min-height: 0 !important;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: auto !important;
 }
 
 @media (max-height: 760px) {
