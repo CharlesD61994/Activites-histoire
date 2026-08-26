@@ -29,9 +29,9 @@ export function blockScale(block: HistoryCanvasBlock, question: HistoryQuestion)
 }
 
 export function blockAspectRatio(block: HistoryCanvasBlock, question: HistoryQuestion) {
-  void block;
-  void question;
-  return undefined;
+  if (block.type === "document") return block.aspectRatio;
+  const base = scalableBlockSize(block, question);
+  return base ? base.width / base.height : undefined;
 }
 
 export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, question: HistoryQuestion): HistoryActivityCanvas {
