@@ -128,20 +128,17 @@
 .history-canvas-inspector-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .history-canvas-inspector-heading button { width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--danger); }
 .history-canvas-number-grid { display: grid; grid-template-columns: repeat(4, minmax(90px, 1fr)); gap: 8px; }
-.history-canvas-text-edit { width: 100%; height: 100%; min-height: 0; padding: 0; overflow: hidden; border: 0; background: transparent; color: var(--portal-ink); font: inherit; resize: none; }
-.history-canvas-text-edit:focus { outline: 0; }
-.history-canvas-button-edit { width: 100%; height: 100%; min-height: 0; padding: 0 17px; border: 1px solid transparent; border-radius: 12px; background: var(--primary); color: #fff; box-shadow: 0 7px 18px rgb(15 55 88 / 8%); font-weight: 950; font-size: clamp(1rem, 1.6vw, 1.35rem); text-align: center; }
 .history-canvas-choice-editor { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
-.history-canvas-choice input { width: 100%; height: 100%; padding: 0; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-weight: inherit; text-align: inherit; }
-.history-canvas-short-editor { width: 100%; height: 100%; min-height: 0; }
-.history-canvas-short-editor .history-short-text-reader,
-.history-canvas-short-editor .history-short-text-reader input { width: 100%; height: 100%; }
+.history-canvas-choice-editor button span { display: block; width: 100%; min-height: 1lh; outline: 0; }
+.history-canvas-block.block-text > p { width: 100%; height: 100%; outline: 0; }
+.history-canvas-block.block-validation .button { width: 100%; height: 100%; min-height: 0; font-size: clamp(1rem, 1.6vw, 1.35rem); }
+.history-canvas-block.block-validation .button span { outline: 0; }
 .history-canvas-document-picker { display: grid; min-width: 220px; gap: 4px; }
 .history-reader-canvas-mode { height: 100%; }
 .history-canvas-reader-stage { min-height: 0; }
 .history-canvas-reader-block { position: absolute; min-width: 0; min-height: 0; display: grid; overflow: hidden; }
 .history-canvas-reader-block.block-text p,
-.history-canvas-block.block-text .history-canvas-text-edit { margin: 0; color: var(--portal-ink); font-size: clamp(1.2rem, 2.8vw, 3.25rem); font-weight: 850; line-height: 1.08; }
+.history-canvas-block.block-text > p { margin: 0; color: var(--portal-ink); font-size: clamp(1.2rem, 2.8vw, 3.25rem); font-weight: 850; line-height: 1.08; }
 .history-canvas-reader-document { display: grid; width: 100%; height: 100%; min-height: 0; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--secondary) 40%, #fff); }
 .history-canvas-reader-document img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
 .history-canvas-reader-document span { width: 100%; max-height: 100%; overflow: auto; padding: 18px; color: var(--portal-ink); font-size: clamp(1rem, 1.8vw, 1.65rem); line-height: 1.45; }
@@ -203,8 +200,7 @@
 .history-reader-document-card span { display: grid; height: 130px; place-items: center; border-radius: 8px; background: #fff; color: var(--primary); }
 .history-reader-document-card small { color: var(--text-muted); }
 .history-choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.history-choice-grid button,
-.history-canvas-choice {
+.history-choice-grid button {
   min-height: 86px; padding: 18px; border: 2px solid var(--border); border-radius: 14px; background: #fff;
   color: var(--portal-ink); font-size: 1.08rem; font-weight: 900; text-align: left;
 }
