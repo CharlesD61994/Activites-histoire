@@ -111,33 +111,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     patchCanvas({ blocks: canvas.blocks.map((block) => block.id === id ? { ...block, ...patch } : block) });
   }
 
-  function updateBlockDimension(block: HistoryCanvasBlock, axis: "width" | "height", value: number) {
-    const base = scalableBlockSize(block, question);
-    if (base) {
-      const requestedScale = value / base[axis];
-      const maximumScale = Math.min(
-        (canvas.width - block.x) / base.width,
-        (canvas.height - block.y) / base.height
-      );
-      const scale = clamp(requestedScale, 0.25, maximumScale);
-      updateBlock(block.id, { width: base.width * scale, height: base.height * scale });
-      return;
-    }
-
-    if (block.type === "document" && block.aspectRatio) {
-      if (axis === "width") {
-        const width = clamp(value, 120, canvas.width - block.x);
-        updateBlock(block.id, { width, height: width / block.aspectRatio });
-      } else {
-        const height = clamp(value, 90, canvas.height - block.y);
-        updateBlock(block.id, { width: height * block.aspectRatio, height });
-      }
-      return;
-    }
-
-    updateBlock(block.id, { [axis]: value });
-  }
-
   function updateQuestion(patch: Partial<HistoryQuestion>) {
     onQuestionChange({ ...question, ...patch });
   }
@@ -384,7 +357,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 <button type="button" onClick={() => setSelectedId("")} aria-label="Fermer les propriétés"><X size={16} /></button>
               </div>
             </div>
-            <p>Modifie le contenu directement dans le tableau. Utilise ces champs seulement pour placer précisément le bloc.</p>
             {selectedBlock.type === "document" && (
               <label className="history-canvas-document-picker">
                 Document
@@ -394,12 +366,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 </select>
               </label>
             )}
-            <div className="history-canvas-number-grid">
-              <label>X<input type="number" value={Math.round(selectedBlock.x)} onChange={(event) => updateBlock(selectedBlock.id, { x: Number(event.target.value) })} /></label>
-              <label>Y<input type="number" value={Math.round(selectedBlock.y)} onChange={(event) => updateBlock(selectedBlock.id, { y: Number(event.target.value) })} /></label>
-              <label>Largeur<input type="number" value={Math.round(selectedBlock.width)} onChange={(event) => updateBlockDimension(selectedBlock, "width", Number(event.target.value))} /></label>
-              <label>Hauteur<input type="number" value={Math.round(selectedBlock.height)} onChange={(event) => updateBlockDimension(selectedBlock, "height", Number(event.target.value))} /></label>
-            </div>
             {selectedBlock.type === "interaction" && contextPanel}
           </aside>
         )}

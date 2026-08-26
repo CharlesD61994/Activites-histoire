@@ -151,7 +151,6 @@
 .history-canvas-inspector .history-inline-row { flex-wrap: nowrap; }
 .history-canvas-inspector .history-inline-row input,
 .history-canvas-inspector .history-inline-row select { min-width: 0; }
-.history-canvas-number-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .history-canvas-choice-editor { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
 .history-canvas-choice-editor button span { display: block; width: 100%; min-height: 1lh; outline: 0; }
 .history-canvas-block.block-text p { width: 100%; height: 100%; outline: 0; }
