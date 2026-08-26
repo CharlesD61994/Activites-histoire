@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
+import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { blockAspectRatio, blockScale, historyCanvasLayoutVersion, interactionBlockSize, scalableBlockSize } from "@/lib/history-canvas";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryQuestion, HistorySourceDocument } from "@/types";
@@ -94,7 +94,7 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
 export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const fittedDocumentsRef = useRef(new Set<string>());
-  const [selectedId, setSelectedId] = useState(canvas.blocks[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState("");
   const [drag, setDrag] = useState<DragState | null>(null);
   const selectedBlock = canvas.blocks.find((block) => block.id === selectedId);
 
@@ -299,6 +299,9 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           onPointerMove={onPointerMove}
           onPointerUp={() => setDrag(null)}
           onPointerCancel={() => setDrag(null)}
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedId("");
+          }}
         >
           {canvas.blocks.map((block) => {
             const aspectRatio = blockAspectRatio(block, question);
@@ -344,32 +347,33 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           })}
         </div>
 
-        <aside className="history-canvas-inspector">
-          {selectedBlock ? (
-            <>
-              <div className="history-canvas-inspector-heading">
-                <strong>{blockLabels[selectedBlock.type]}</strong>
+        {selectedBlock && (
+          <aside className="history-canvas-inspector">
+            <div className="history-canvas-inspector-heading">
+              <strong>{blockLabels[selectedBlock.type]}</strong>
+              <div className="history-canvas-inspector-actions">
                 <button type="button" onClick={() => removeBlock(selectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
+                <button type="button" onClick={() => setSelectedId("")} aria-label="Fermer les propriétés"><X size={16} /></button>
               </div>
-              <p>Modifie le contenu directement dans le tableau. Utilise ces champs seulement pour placer précisément le bloc.</p>
-              {selectedBlock.type === "document" && (
-                <label className="history-canvas-document-picker">
-                  Document
-                  <select value={selectedBlock.documentId ?? ""} onChange={(event) => void selectDocument(selectedBlock.id, event.target.value)}>
-                    <option value="">Choisir un document</option>
-                    {documents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-                  </select>
-                </label>
-              )}
-              <div className="history-canvas-number-grid">
-                <label>X<input type="number" value={Math.round(selectedBlock.x)} onChange={(event) => updateBlock(selectedBlock.id, { x: Number(event.target.value) })} /></label>
-                <label>Y<input type="number" value={Math.round(selectedBlock.y)} onChange={(event) => updateBlock(selectedBlock.id, { y: Number(event.target.value) })} /></label>
-                <label>Largeur<input type="number" value={Math.round(selectedBlock.width)} onChange={(event) => updateBlockDimension(selectedBlock, "width", Number(event.target.value))} /></label>
-                <label>Hauteur<input type="number" value={Math.round(selectedBlock.height)} onChange={(event) => updateBlockDimension(selectedBlock, "height", Number(event.target.value))} /></label>
-              </div>
-            </>
-          ) : <p>Sélectionne un bloc sur le tableau.</p>}
-        </aside>
+            </div>
+            <p>Modifie le contenu directement dans le tableau. Utilise ces champs seulement pour placer précisément le bloc.</p>
+            {selectedBlock.type === "document" && (
+              <label className="history-canvas-document-picker">
+                Document
+                <select value={selectedBlock.documentId ?? ""} onChange={(event) => void selectDocument(selectedBlock.id, event.target.value)}>
+                  <option value="">Choisir un document</option>
+                  {documents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+                </select>
+              </label>
+            )}
+            <div className="history-canvas-number-grid">
+              <label>X<input type="number" value={Math.round(selectedBlock.x)} onChange={(event) => updateBlock(selectedBlock.id, { x: Number(event.target.value) })} /></label>
+              <label>Y<input type="number" value={Math.round(selectedBlock.y)} onChange={(event) => updateBlock(selectedBlock.id, { y: Number(event.target.value) })} /></label>
+              <label>Largeur<input type="number" value={Math.round(selectedBlock.width)} onChange={(event) => updateBlockDimension(selectedBlock, "width", Number(event.target.value))} /></label>
+              <label>Hauteur<input type="number" value={Math.round(selectedBlock.height)} onChange={(event) => updateBlockDimension(selectedBlock, "height", Number(event.target.value))} /></label>
+            </div>
+          </aside>
+        )}
       </div>
     </section>
   );
