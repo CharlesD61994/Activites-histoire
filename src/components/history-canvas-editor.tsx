@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { blockScale, historyCanvasLayoutVersion, interactionBlockSize, scalableBlockSize } from "@/lib/history-canvas";
+import { blockAspectRatio, blockScale, historyCanvasLayoutVersion, interactionBlockSize, scalableBlockSize } from "@/lib/history-canvas";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryQuestion, HistorySourceDocument } from "@/types";
 
 type Props = {
@@ -69,10 +69,10 @@ function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, d
   if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, documentId: documents[0]?.id };
   if (type === "interaction") {
     const size = interactionBlockSize(question);
-    return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size, scale: 1 };
+    return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size };
   }
-  if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, scale: 1, text: "Valider" };
-  if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, scale: 1, text: "Feedback" };
+  if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, text: "Valider" };
+  if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, text: "Feedback" };
   return { id, type, x: 80, y: 60, width: 1440, height: 110, text: question.prompt };
 }
 
@@ -115,7 +115,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
         (canvas.height - block.y) / base.height
       );
       const scale = clamp(requestedScale, 0.25, maximumScale);
-      updateBlock(block.id, { width: base.width * scale, height: base.height * scale, scale });
+      updateBlock(block.id, { width: base.width * scale, height: base.height * scale });
       return;
     }
 
@@ -238,8 +238,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       const scale = clamp(desiredScale, minimumScale, maximumScale);
       updateBlock(drag.id, {
         width: drag.block.width * scale,
-        height: drag.block.height * scale,
-        ...(scalableSize ? { scale: blockScale(drag.block, question) * scale } : {})
+        height: drag.block.height * scale
       });
       return;
     }
@@ -301,8 +300,10 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           onPointerUp={() => setDrag(null)}
           onPointerCancel={() => setDrag(null)}
         >
-          {canvas.blocks.map((block) => (
-            <div
+          {canvas.blocks.map((block) => {
+            const aspectRatio = blockAspectRatio(block, question);
+            return (
+              <div
               key={block.id}
               role="button"
               tabIndex={0}
@@ -311,8 +312,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 left: `${block.x / canvas.width * 100}%`,
                 top: `${block.y / canvas.height * 100}%`,
                 width: `${block.width / canvas.width * 100}%`,
-                height: block.type === "document" && block.aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
-                aspectRatio: block.type === "document" ? block.aspectRatio : undefined
+                height: aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
+                aspectRatio
               }}
               onPointerDownCapture={(event) => {
                 if ((event.target as HTMLElement).closest(".history-canvas-resize")) return;
@@ -338,8 +339,9 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                   setDrag({ id: block.id, mode: "resize", startX: point.x, startY: point.y, block });
                 }}
               />
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
 
         <aside className="history-canvas-inspector">

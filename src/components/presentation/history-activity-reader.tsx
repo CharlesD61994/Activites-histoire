@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { blockScale, scalableBlockSize } from "@/lib/history-canvas";
+import { blockAspectRatio, blockScale, scalableBlockSize } from "@/lib/history-canvas";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
@@ -355,21 +355,24 @@ function HistoryCanvasStage({
 
   return (
     <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
-      {canvas.blocks.map((block) => (
-        <div
+      {canvas.blocks.map((block) => {
+        const aspectRatio = blockAspectRatio(block, question);
+        return (
+          <div
           key={block.id}
           className={`history-canvas-reader-block block-${block.type}`}
           style={{
             left: `${block.x / canvas.width * 100}%`,
             top: `${block.y / canvas.height * 100}%`,
             width: `${block.width / canvas.width * 100}%`,
-            height: block.type === "document" && block.aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
-            aspectRatio: block.type === "document" ? block.aspectRatio : undefined
+            height: aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
+            aspectRatio
           }}
         >
           {renderScaledBlock(block)}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
-export const historyCanvasLayoutVersion = 3;
+export const historyCanvasLayoutVersion = 5;
 
 export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 103 };
@@ -15,6 +15,7 @@ export function interactionBlockSize(question: HistoryQuestion) {
 }
 
 export function scalableBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
+  if (block.type === "text") return { width: 1440, height: 110 };
   if (block.type === "interaction") return interactionBlockSize(question);
   if (block.type === "validation") return { width: 260, height: 95 };
   if (block.type === "feedback") return { width: 520, height: 110 };
@@ -24,7 +25,13 @@ export function scalableBlockSize(block: HistoryCanvasBlock, question: HistoryQu
 export function blockScale(block: HistoryCanvasBlock, question: HistoryQuestion) {
   const base = scalableBlockSize(block, question);
   if (!base) return 1;
-  return block.scale ?? block.width / base.width;
+  return block.width / base.width;
+}
+
+export function blockAspectRatio(block: HistoryCanvasBlock, question: HistoryQuestion) {
+  if (block.type === "document") return block.aspectRatio;
+  const base = scalableBlockSize(block, question);
+  return base ? base.width / base.height : undefined;
 }
 
 export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, question: HistoryQuestion): HistoryActivityCanvas {
@@ -36,7 +43,6 @@ export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, qu
       ...block,
       width: size.width,
       height: size.height,
-      scale: 1,
       x: Math.min(block.x, canvas.width - size.width),
       y: Math.min(block.y, canvas.height - size.height)
     } : block)
@@ -61,7 +67,6 @@ export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, ques
         ...block,
         width,
         height,
-        scale,
         x: Math.min(block.x, canvas.width - width),
         y: Math.min(block.y, canvas.height - height)
       };
