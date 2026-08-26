@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { historyCanvasLayoutVersion, interactionBlockSize } from "@/lib/history-canvas";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryQuestion, HistorySourceDocument } from "@/types";
 
 type Props = {
@@ -66,7 +67,10 @@ function measureDocument(document: HistorySourceDocument | undefined, canvas: Hi
 function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryCanvasBlock {
   const id = crypto.randomUUID();
   if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, documentId: documents[0]?.id };
-  if (type === "interaction") return { id, type, x: 900, y: 300, width: 520, height: 150 };
+  if (type === "interaction") {
+    const size = interactionBlockSize(question);
+    return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size };
+  }
   if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, text: "Valider" };
   if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, text: "Feedback" };
   return { id, type, x: 80, y: 60, width: 1440, height: 110, text: question.prompt };
@@ -77,6 +81,7 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
     width: 1600,
     height: 900,
     background: "#ffffff",
+    layoutVersion: historyCanvasLayoutVersion,
     blocks: [
       defaultBlock("text", question, documents),
       ...(documents[0] ? [defaultBlock("document", question, documents)] : []),
@@ -137,7 +142,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     const targets = canvas.blocks.flatMap((block) => {
       if (block.type !== "document") return [];
       const document = documents.find((item) => item.id === block.documentId);
-      if (!document?.src) return [];
+      if (!document?.src || block.aspectRatio) return [];
       const key = `${block.id}:${document.id}:${document.src.length}`;
       if (fittedDocumentsRef.current.has(key)) return [];
       fittedDocumentsRef.current.add(key);
@@ -250,7 +255,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           style={{ background: canvas.background || "#fff" }}
           onPointerMove={onPointerMove}
           onPointerUp={() => setDrag(null)}
-          onPointerLeave={() => setDrag(null)}
+          onPointerCancel={() => setDrag(null)}
         >
           {canvas.blocks.map((block) => (
             <div
@@ -270,7 +275,13 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 const point = eventToCanvas(event);
                 setSelectedId(block.id);
                 setDrag({ id: block.id, mode: "move", startX: point.x, startY: point.y, block });
+                try {
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                } catch {
+                  // Some browsers only allow capture after pointerdown reaches its target.
+                }
               }}
+              onClick={() => setSelectedId(block.id)}
             >
               {renderBlock(block)}
               <span

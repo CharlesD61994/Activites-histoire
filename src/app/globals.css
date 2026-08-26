@@ -117,12 +117,12 @@
 .history-canvas-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .history-canvas-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; }
 .history-canvas-block { position: absolute; display: grid; min-width: 0; min-height: 0; padding: 0; overflow: hidden; border: 0; border-radius: 0; background: transparent; color: var(--portal-ink); text-align: left; }
-.history-canvas-block.selected { outline: 0; }
+.history-canvas-block.selected { outline: 2px solid color-mix(in srgb, var(--primary) 76%, transparent); outline-offset: 0; }
 .history-canvas-block img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; }
 .history-canvas-block p, .history-canvas-block span { margin: 0; min-width: 0; overflow: hidden; }
 .history-canvas-block.block-validation { place-items: center; }
 .history-canvas-block.block-validation button { width: 100%; height: 100%; border: 0; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 950; }
-.history-canvas-resize { position: absolute; right: 0; bottom: 0; width: 18px; height: 18px; border-radius: 10px 0 8px; background: var(--primary); cursor: nwse-resize; }
+.history-canvas-resize { position: absolute !important; right: 0 !important; bottom: 0 !important; width: 18px !important; height: 18px !important; min-width: 18px !important; min-height: 18px !important; border-radius: 10px 0 0; background: var(--primary); box-shadow: none !important; cursor: nwse-resize; }
 .history-canvas-block:not(.selected) .history-canvas-resize { display: none; }
 .history-canvas-inspector { display: grid; grid-template-columns: auto minmax(220px, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #d4e4f0; border-radius: 14px; background: #fff; }
 .history-canvas-inspector-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -133,17 +133,25 @@
 .history-canvas-block.block-text > p { width: 100%; height: 100%; outline: 0; }
 .history-canvas-block.block-validation .button { width: 100%; height: 100%; min-height: 0; font-size: clamp(1rem, 1.6vw, 1.35rem); }
 .history-canvas-block.block-validation .button span { outline: 0; }
+.history-canvas-block.block-document { overflow: visible; }
 .history-canvas-document-picker { display: grid; min-width: 220px; gap: 4px; }
 .history-reader-canvas-mode { height: 100%; }
 .history-canvas-reader-stage { min-height: 0; }
 .history-canvas-reader-block { position: absolute; min-width: 0; min-height: 0; display: grid; overflow: hidden; }
 .history-canvas-reader-block.block-text p,
 .history-canvas-block.block-text > p { margin: 0; color: var(--portal-ink); font-size: clamp(1.2rem, 2.8vw, 3.25rem); font-weight: 850; line-height: 1.08; }
-.history-canvas-reader-document { display: grid; width: 100%; height: 100%; min-height: 0; padding: 0; place-items: center; overflow: hidden; border: 0; border-radius: 12px; background: color-mix(in srgb, var(--secondary) 40%, #fff); }
+.history-canvas-reader-document { display: grid; width: 100%; height: 100%; min-height: 0; padding: 2px; place-items: center; overflow: visible; border: 0; border-radius: 0; background: #fff; }
 .history-canvas-reader-document img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
 .history-canvas-reader-document span { width: 100%; max-height: 100%; overflow: auto; padding: 18px; color: var(--portal-ink); font-size: clamp(1rem, 1.8vw, 1.65rem); line-height: 1.45; }
 .history-canvas-reader-block.block-interaction > *,
 .history-canvas-block.block-interaction > :not(.history-canvas-resize) { width: 100%; }
+.history-canvas-reader-block.block-interaction .history-short-text-reader,
+.history-canvas-reader-block.block-interaction .history-short-text-reader input,
+.history-canvas-block.block-interaction .history-short-text-reader,
+.history-canvas-block.block-interaction .history-short-text-reader input { height: 100%; }
+.history-canvas-reader-block.block-interaction .history-hotspot-reader,
+.history-canvas-block.block-interaction .history-hotspot-reader { width: 100%; height: 100%; max-height: none; }
+.history-canvas-block.block-interaction .history-hotspot-reader { pointer-events: none; }
 .history-canvas-reader-block.block-validation { place-items: center; }
 .history-canvas-reader-block.block-validation .button { width: 100%; height: 100%; min-height: 0; font-size: clamp(1rem, 1.6vw, 1.35rem); }
 .history-canvas-reader-block.block-feedback { align-items: center; }

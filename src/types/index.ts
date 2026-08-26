@@ -180,6 +180,7 @@ export type HistoryActivityCanvas = {
   width: number;
   height: number;
   background?: string;
+  layoutVersion?: number;
   blocks: HistoryCanvasBlock[];
 };
 

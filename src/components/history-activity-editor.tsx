@@ -6,6 +6,7 @@ import { ImagePlus, Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryCanvasEditor, createDefaultHistoryCanvas } from "@/components/history-canvas-editor";
+import { normalizeHistoryCanvasLayout, resizeHistoryInteractionBlocks } from "@/lib/history-canvas";
 import {
   allHistoryOperations,
   allHistorySocietyAspects,
@@ -104,16 +105,27 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
     const initialAction = getInitialHistoryAction(initialOperation, savedQuestion?.action);
     return normalizeQuestion(savedQuestion ?? defaultQuestion(initialAction), initialAction);
   });
-  const [canvas, setCanvas] = useState<HistoryActivityCanvas>(() => initialHistory?.canvas ?? createDefaultHistoryCanvas(initialHistory?.questions[0] ?? defaultQuestion(historyActionsByOperation[initialHistory?.operation ?? "establish_facts"][0]), initialHistory?.documents ?? []));
+  const [canvas, setCanvas] = useState<HistoryActivityCanvas>(() => normalizeHistoryCanvasLayout(
+    initialHistory?.canvas ?? createDefaultHistoryCanvas(question, initialHistory?.documents ?? []),
+    question
+  ));
 
   const allowedActions = historyActionsByOperation[operation];
   const imageDocuments = documents.filter((document) => document.kind === "image" || document.kind === "map");
 
   useEffect(() => {
     if (!allowedActions.includes(question.action)) {
-      setQuestion((current) => normalizeQuestion(current, allowedActions[0]));
+      const nextQuestion = normalizeQuestion(question, allowedActions[0]);
+      setQuestion(nextQuestion);
+      setCanvas((current) => resizeHistoryInteractionBlocks(current, nextQuestion));
     }
-  }, [allowedActions, question.action]);
+  }, [allowedActions, question]);
+
+  function selectInteractiveAction(action: HistoryInteractiveAction) {
+    const nextQuestion = normalizeQuestion(question, action);
+    setQuestion(nextQuestion);
+    setCanvas((current) => resizeHistoryInteractionBlocks(current, nextQuestion));
+  }
 
   function updateQuestion(patch: Partial<HistoryQuestion>) {
     setQuestion((current) => ({ ...current, ...patch }));
@@ -410,7 +422,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
       <Card className="history-editor-panel">
         <h3>Action interactive</h3>
         <div className="history-action-grid">
-          {allowedActions.map((action) => <button key={action} type="button" className={question.action === action ? "active" : ""} onClick={() => setQuestion((current) => normalizeQuestion(current, action))}><strong>{historyActionLabels[action]}</strong><span>{historyActionDescriptions[action]}</span></button>)}
+          {allowedActions.map((action) => <button key={action} type="button" className={question.action === action ? "active" : ""} onClick={() => selectInteractiveAction(action)}><strong>{historyActionLabels[action]}</strong><span>{historyActionDescriptions[action]}</span></button>)}
         </div>
         <label>Consigne<textarea value={question.prompt} onChange={(event) => updateQuestion({ prompt: event.target.value })} /></label>
         <label>Points<input type="number" min={1} max={20} value={question.points} onChange={(event) => updateQuestion({ points: Number(event.target.value) })} /></label>
