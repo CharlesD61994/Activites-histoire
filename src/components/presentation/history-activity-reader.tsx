@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { HistoryDocumentContent } from "@/components/history-document-content";
 import { blockAspectRatio, blockScale, scalableBlockSize } from "@/lib/history-canvas";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
@@ -123,10 +124,12 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     <div className="history-document-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && setSelectedDocument(null)}>
       <div className="history-document-modal-content">
         <button type="button" className="icon-control" onClick={() => setSelectedDocument(null)} aria-label="Fermer"><X size={20} /></button>
-        <div className="history-document-modal-header">
-          <h2>{selectedDocument.title}</h2>
-          {(selectedDocument.caption || selectedDocument.source) && <small>{[selectedDocument.caption, selectedDocument.source].filter(Boolean).join(" · ")}</small>}
-        </div>
+        {(selectedDocument.showTitle || selectedDocument.showCaption || selectedDocument.showSource) && (
+          <div className="history-document-modal-header">
+            {selectedDocument.showTitle && <h2>{selectedDocument.displayTitle?.trim() || selectedDocument.title}</h2>}
+            {(selectedDocument.showCaption || selectedDocument.showSource) && <small>{[selectedDocument.showCaption ? selectedDocument.caption : "", selectedDocument.showSource ? selectedDocument.source : ""].filter(Boolean).join(" · ")}</small>}
+          </div>
+        )}
         <div className="history-document-modal-body">
           {selectedDocument.src ? <img src={selectedDocument.src} alt={selectedDocument.title} /> : <p>{selectedDocument.text}</p>}
         </div>
@@ -194,8 +197,8 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
                     <span className="history-reader-document-media">
                       {document.src ? <img src={document.src} alt={document.title} /> : <FileText size={30} />}
                     </span>
-                    <strong>{document.title}</strong>
-                    {document.caption && <small>{document.caption}</small>}
+                    {document.showTitle && <strong>{document.displayTitle?.trim() || document.title}</strong>}
+                    {document.showCaption && document.caption && <small>{document.caption}</small>}
                   </button>
                 ))}
               </div>
@@ -204,11 +207,11 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
           {primaryDocument && (
             <button type="button" className="history-reader-primary-document" onClick={() => setSelectedDocument(primaryDocument)}>
-              <span className="history-reader-panel-title">{primaryDocument.title}</span>
+              {primaryDocument.showTitle && <span className="history-reader-panel-title">{primaryDocument.displayTitle?.trim() || primaryDocument.title}</span>}
               <span className="history-reader-primary-document-media">
                 {primaryDocument.src ? <img src={primaryDocument.src} alt={primaryDocument.title} /> : <span>{primaryDocument.text}</span>}
               </span>
-              {(primaryDocument.caption || primaryDocument.source) && <small>{[primaryDocument.caption, primaryDocument.source].filter(Boolean).join(" · ")}</small>}
+              {(primaryDocument.showCaption || primaryDocument.showSource) && <small>{[primaryDocument.showCaption ? primaryDocument.caption : "", primaryDocument.showSource ? primaryDocument.source : ""].filter(Boolean).join(" · ")}</small>}
             </button>
           )}
 
@@ -306,7 +309,7 @@ function HistoryCanvasStage({
       const document = documents.find((item) => item.id === block.documentId);
       return (
         <button type="button" className="history-canvas-reader-document" disabled={!document} onClick={() => document && onOpenDocument(document)}>
-          {document?.src ? <img src={document.src} alt={document.title} /> : <span>{document?.text || "Document"}</span>}
+          <HistoryDocumentContent document={document} />
         </button>
       );
     }

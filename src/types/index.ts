@@ -105,8 +105,12 @@ export type HistorySourceDocument = {
   kind: "image" | "text" | "map";
   src?: string;
   text?: string;
+  displayTitle?: string;
   caption?: string;
   source?: string;
+  showTitle?: boolean;
+  showCaption?: boolean;
+  showSource?: boolean;
 };
 
 export type HistoryChoiceOption = {

@@ -131,6 +131,35 @@
   background: color-mix(in srgb, var(--primary) 10%, #fff);
 }
 .history-canvas-tool-popover button span { color: var(--text-muted); font-size: .82rem; line-height: 1.3; }
+.history-document-library-popover {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 45; display: grid; gap: 14px;
+  width: min(680px, calc(100vw - 32px)); max-height: min(720px, calc(100dvh - 130px)); overflow: auto;
+  padding: 16px; border: 1px solid #d4e4f0; border-radius: 14px; background: #fff;
+  box-shadow: 0 18px 42px rgb(8 47 85 / 22%);
+}
+.history-document-library-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.history-document-library-heading > div { display: grid; gap: 3px; }
+.history-document-library-heading > div span { color: var(--text-muted); font-size: .88rem; }
+.history-document-library-heading > button { width: 36px; height: 36px; display: grid; flex: 0 0 auto; place-items: center; border: 1px solid var(--border); border-radius: 9px; background: #fff; color: var(--portal-ink); }
+.history-document-import-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.history-document-import-action {
+  display: grid; min-width: 0; min-height: 112px; align-content: center; justify-items: start; gap: 5px;
+  padding: 13px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--portal-ink); text-align: left;
+}
+.history-document-import-action:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, #fff); }
+.history-document-import-action span { color: var(--text-muted); font-size: .8rem; line-height: 1.25; }
+.history-document-import-action input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
+.history-document-drop-hint { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 0; padding: 9px; border: 1px dashed var(--border); border-radius: 9px; color: var(--text-muted); font-size: .84rem; }
+.history-document-library-grid { display: grid; grid-template-columns: 1fr; gap: 9px; }
+.history-document-library-card { display: grid; grid-template-columns: 72px minmax(0, 1fr) auto auto; gap: 9px; align-items: center; padding: 8px; border: 1px solid var(--border); border-radius: 10px; }
+.history-document-library-preview { display: grid; width: 72px; height: 58px; place-items: center; overflow: hidden; padding: 3px; border: 0; border-radius: 7px; background: var(--surface-elevated); color: var(--primary); }
+.history-document-library-preview img { width: 100%; height: 100%; object-fit: contain; }
+.history-document-library-card > div { display: grid; min-width: 0; gap: 2px; }
+.history-document-library-card > div strong, .history-document-library-card > div span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-document-library-card > div span { color: var(--text-muted); font-size: .78rem; }
+.history-document-library-add { display: inline-flex; min-height: 34px; align-items: center; gap: 4px; padding: 0 9px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--portal-ink); font-weight: 800; }
+.history-document-library-delete { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--danger); }
+.history-document-library-empty { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 84px; margin: 0; border: 1px dashed var(--border); border-radius: 10px; color: var(--text-muted); }
 .history-canvas-layout { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-items: start; }
 .history-canvas-block { position: absolute; display: grid; min-width: 0; min-height: 0; padding: 0; overflow: hidden; border: 0; border-radius: 0; background: transparent; color: var(--portal-ink); text-align: left; }
 .history-canvas-block.selected { outline: 2px solid color-mix(in srgb, var(--primary) 76%, transparent); outline-offset: 0; }
@@ -148,6 +177,10 @@
 .history-canvas-inspector .history-editor-panel h3 { margin: 0; color: var(--portal-ink); font-size: 1rem; }
 .history-canvas-inspector .history-two-columns { grid-template-columns: 1fr; gap: 10px; }
 .history-canvas-inspector .history-hotspot-editor { width: 100%; }
+.history-document-inspector { display: grid; gap: 13px; }
+.history-document-display-setting { display: grid; gap: 7px; padding-top: 11px; border-top: 1px solid #e2edf5; }
+.history-document-replace { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--border); border-radius: 9px; background: #fff; color: var(--portal-ink); font-weight: 800; }
+.history-document-replace input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; pointer-events: none; }
 .history-canvas-inspector .history-inline-row { flex-wrap: nowrap; }
 .history-canvas-inspector .history-inline-row input,
 .history-canvas-inspector .history-inline-row select { min-width: 0; }
@@ -171,9 +204,14 @@
 .history-canvas-reader-block { position: absolute; min-width: 0; min-height: 0; display: grid; overflow: hidden; }
 .history-canvas-reader-block.block-text p,
 .history-canvas-block.block-text p { margin: 0; color: var(--portal-ink); font-size: clamp(1.2rem, 2.8vw, 3.25rem); font-weight: 850; line-height: 1.08; }
-.history-canvas-reader-document { display: grid; width: 100%; height: 100%; min-height: 0; padding: 2px; place-items: center; overflow: visible; border: 0; border-radius: 0; background: #fff; }
-.history-canvas-reader-document img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
-.history-canvas-reader-document span { width: 100%; max-height: 100%; overflow: auto; padding: 18px; color: var(--portal-ink); font-size: clamp(1rem, 1.8vw, 1.65rem); line-height: 1.45; }
+.history-canvas-reader-document { display: grid; width: 100%; height: 100%; min-height: 0; padding: 2px; place-items: stretch; overflow: visible; border: 0; border-radius: 0; background: #fff; }
+.history-document-content { display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; background: #fff; color: var(--portal-ink); text-align: left; }
+.history-document-visible-title { display: block; padding: 5px 7px; font-size: clamp(.72rem, 1vw, 1rem); line-height: 1.2; }
+.history-document-content-media { display: grid; width: 100%; min-width: 0; min-height: 0; place-items: center; overflow: hidden; padding: 2px; }
+.history-document-content-media img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
+.history-document-content-media > span { width: 100%; max-height: 100%; overflow: auto; padding: 14px; color: var(--portal-ink); font-size: clamp(.9rem, 1.5vw, 1.35rem); line-height: 1.4; }
+.history-document-visible-details { display: grid; gap: 2px; padding: 5px 7px; color: var(--text-muted); font-size: clamp(.58rem, .8vw, .78rem); line-height: 1.25; }
+.history-document-empty { display: grid; width: 100%; height: 100%; place-items: center; color: var(--text-muted); }
 .history-canvas-reader-block.block-interaction > *,
 .history-canvas-block.block-interaction > :not(.history-canvas-resize) { width: 100%; }
 .history-canvas-reader-block.block-interaction .history-short-text-reader,
@@ -191,6 +229,15 @@
 @media (max-width: 1050px) {
   .history-canvas-layout { grid-template-columns: 1fr; }
   .history-canvas-inspector { grid-template-columns: 1fr; }
+  .history-document-library-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .history-document-import-actions { grid-template-columns: 1fr; }
+  .history-document-library-card { grid-template-columns: 60px minmax(0, 1fr) auto; }
+  .history-document-library-preview { width: 60px; }
+  .history-document-library-add { grid-column: 2; justify-self: start; }
+  .history-document-library-delete { grid-column: 3; grid-row: 1 / span 2; }
 }
 
 /* V50 — module Activités d’histoire */

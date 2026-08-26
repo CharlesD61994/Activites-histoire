@@ -2,8 +2,9 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2, X } from "lucide-react";
+import { FileText, Image as ImageIcon, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HistoryDocumentContent } from "@/components/history-document-content";
 import { blockAspectRatio, blockScale, historyCanvasLayoutVersion, interactionBlockSize, scalableBlockSize } from "@/lib/history-canvas";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
@@ -16,6 +17,9 @@ type Props = {
   onQuestionChange: (question: HistoryQuestion) => void;
   availableActions: HistoryInteractiveAction[];
   onActionChange: (action: HistoryInteractiveAction) => void;
+  onAddDocument: (document: HistorySourceDocument) => void;
+  onUpdateDocument: (id: string, patch: Partial<HistorySourceDocument>) => void;
+  onDeleteDocument: (id: string) => void;
   contextPanel?: React.ReactNode;
 };
 
@@ -95,12 +99,13 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
   };
 }
 
-export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange, availableActions, onActionChange, contextPanel }: Props) {
+export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange, availableActions, onActionChange, onAddDocument, onUpdateDocument, onDeleteDocument, contextPanel }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const fittedDocumentsRef = useRef(new Set<string>());
   const [selectedId, setSelectedId] = useState("");
   const [drag, setDrag] = useState<DragState | null>(null);
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
+  const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
   const selectedBlock = canvas.blocks.find((block) => block.id === selectedId);
 
   function patchCanvas(patch: Partial<HistoryActivityCanvas>) {
@@ -133,6 +138,80 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     }
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
+  }
+
+  async function addDocumentBlock(document: HistorySourceDocument) {
+    const block = defaultBlock("document", question, [document]);
+    const size = await measureDocument(document, canvas);
+    const documentBlockCount = canvas.blocks.filter((item) => item.type === "document").length;
+    block.x = Math.min(120 + documentBlockCount * 36, canvas.width - size.width);
+    block.y = Math.min(180 + documentBlockCount * 36, canvas.height - size.height);
+    block.width = size.width;
+    block.height = size.height;
+    block.aspectRatio = size.aspectRatio;
+    patchCanvas({ blocks: [...canvas.blocks, block] });
+    setSelectedId(block.id);
+    setDocumentLibraryOpen(false);
+  }
+
+  function importImage(file: File | undefined, kind: "image" | "map") {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const document: HistorySourceDocument = {
+        id: crypto.randomUUID(),
+        title: file.name.replace(/\.[^.]+$/, "") || (kind === "map" ? "Nouvelle carte" : "Nouveau document"),
+        kind,
+        src: String(reader.result),
+        caption: "",
+        source: "",
+        showTitle: false,
+        showCaption: false,
+        showSource: false
+      };
+      onAddDocument(document);
+      void addDocumentBlock(document);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function createTextDocument() {
+    const document: HistorySourceDocument = {
+      id: crypto.randomUUID(),
+      title: "Nouveau document texte",
+      kind: "text",
+      text: "Écris ou colle le document historique ici.",
+      caption: "",
+      source: "",
+      showTitle: false,
+      showCaption: false,
+      showSource: false
+    };
+    onAddDocument(document);
+    void addDocumentBlock(document);
+  }
+
+  function replaceDocumentImage(document: HistorySourceDocument, file?: File) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const nextDocument = { ...document, src: String(reader.result) };
+      const size = await measureDocument(nextDocument, canvas);
+      onUpdateDocument(document.id, { src: nextDocument.src });
+      patchCanvas({
+        blocks: canvas.blocks.map((block) => block.documentId === document.id
+          ? { ...block, width: size.width, height: size.height, aspectRatio: size.aspectRatio }
+          : block)
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function deleteDocument(documentId: string) {
+    if (!window.confirm("Supprimer ce document de l’activité et retirer toutes ses occurrences du tableau?")) return;
+    onDeleteDocument(documentId);
+    patchCanvas({ blocks: canvas.blocks.filter((block) => block.documentId !== documentId) });
+    setSelectedId("");
   }
 
   function chooseInteraction(action: HistoryInteractiveAction) {
@@ -242,7 +321,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     if (block.type === "document") {
       return (
         <button type="button" className="history-canvas-reader-document">
-          {document?.src ? <img src={document.src} alt={document.title} /> : <span>{document?.text || "Document"}</span>}
+          <HistoryDocumentContent document={document} />
         </button>
       );
     }
@@ -274,9 +353,47 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
         </div>
         <div className="history-canvas-tools">
           <Button type="button" variant="secondary" onClick={() => addBlock("text")}><MessageSquareText size={16} /> Texte</Button>
-          <Button type="button" variant="secondary" onClick={() => addBlock("document")}><FileText size={16} /> Document</Button>
           <div className="history-canvas-tool-menu">
-            <Button type="button" variant="secondary" aria-expanded={interactionMenuOpen} onClick={() => setInteractionMenuOpen((open) => !open)}><MousePointer2 size={16} /> Interaction</Button>
+            <Button type="button" variant="secondary" aria-expanded={documentLibraryOpen} onClick={() => { setInteractionMenuOpen(false); setDocumentLibraryOpen((open) => !open); }}><FileText size={16} /> Document</Button>
+            {documentLibraryOpen && (
+              <div
+                className="history-document-library-popover"
+                role="dialog"
+                aria-label="Documents de l’activité"
+                tabIndex={0}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => { event.preventDefault(); importImage(event.dataTransfer.files?.[0], "image"); }}
+                onPaste={(event) => importImage(event.clipboardData.files?.[0], "image")}
+              >
+                <div className="history-document-library-heading">
+                  <div><strong>Documents de l’activité</strong><span>Importe un document ou replace un document existant.</span></div>
+                  <button type="button" onClick={() => setDocumentLibraryOpen(false)} aria-label="Fermer"><X size={17} /></button>
+                </div>
+                <div className="history-document-import-actions">
+                  <label className="history-document-import-action"><ImageIcon size={22} /><strong>Document image</strong><span>Photo, illustration ou artefact</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => importImage(event.target.files?.[0], "image")} /></label>
+                  <label className="history-document-import-action"><MapIcon size={22} /><strong>Carte</strong><span>Carte historique ou géographique</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => importImage(event.target.files?.[0], "map")} /></label>
+                  <button type="button" className="history-document-import-action" onClick={createTextDocument}><Plus size={22} /><strong>Document texte</strong><span>Écrire ou coller un extrait</span></button>
+                </div>
+                <p className="history-document-drop-hint"><Upload size={17} /> Tu peux aussi déposer ou coller une image dans cette fenêtre.</p>
+                {documents.length > 0 ? (
+                  <div className="history-document-library-grid">
+                    {documents.map((document) => (
+                      <div className="history-document-library-card" key={document.id}>
+                        <button type="button" className="history-document-library-preview" onClick={() => void addDocumentBlock(document)}>
+                          {document.src ? <img src={document.src} alt="" /> : <FileText size={28} />}
+                        </button>
+                        <div><strong>{document.title}</strong><span>{document.kind === "map" ? "Carte" : document.kind === "text" ? "Texte" : "Image"}</span></div>
+                        <button type="button" className="history-document-library-add" onClick={() => void addDocumentBlock(document)}><Plus size={15} /> Ajouter</button>
+                        <button type="button" className="history-document-library-delete" onClick={() => deleteDocument(document.id)} aria-label={`Supprimer ${document.title}`}><Trash2 size={15} /></button>
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="history-document-library-empty"><Upload size={22} /> Aucun document importé dans cette activité.</p>}
+              </div>
+            )}
+          </div>
+          <div className="history-canvas-tool-menu">
+            <Button type="button" variant="secondary" aria-expanded={interactionMenuOpen} onClick={() => { setDocumentLibraryOpen(false); setInteractionMenuOpen((open) => !open); }}><MousePointer2 size={16} /> Interaction</Button>
             {interactionMenuOpen && (
               <div className="history-canvas-tool-popover" role="menu" aria-label="Choisir une interaction">
                 {availableActions.map((action) => (
@@ -358,19 +475,78 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               </div>
             </div>
             {selectedBlock.type === "document" && (
-              <label className="history-canvas-document-picker">
-                Document
-                <select value={selectedBlock.documentId ?? ""} onChange={(event) => void selectDocument(selectedBlock.id, event.target.value)}>
-                  <option value="">Choisir un document</option>
-                  {documents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-                </select>
-              </label>
+              <DocumentInspector
+                document={documents.find((item) => item.id === selectedBlock.documentId)}
+                documents={documents}
+                documentId={selectedBlock.documentId ?? ""}
+                onSelect={(documentId) => void selectDocument(selectedBlock.id, documentId)}
+                onUpdate={onUpdateDocument}
+                onReplace={replaceDocumentImage}
+              />
             )}
             {selectedBlock.type === "interaction" && contextPanel}
           </aside>
         )}
       </div>
     </section>
+  );
+}
+
+function DocumentInspector({
+  document,
+  documents,
+  documentId,
+  onSelect,
+  onUpdate,
+  onReplace
+}: {
+  document?: HistorySourceDocument;
+  documents: HistorySourceDocument[];
+  documentId: string;
+  onSelect: (documentId: string) => void;
+  onUpdate: (id: string, patch: Partial<HistorySourceDocument>) => void;
+  onReplace: (document: HistorySourceDocument, file?: File) => void;
+}) {
+  return (
+    <div className="history-document-inspector">
+      <label>
+        Document placé
+        <select value={documentId} onChange={(event) => onSelect(event.target.value)}>
+          <option value="">Choisir un document</option>
+          {documents.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
+        </select>
+      </label>
+      {document && (
+        <>
+          <label>Nom dans la bibliothèque<input value={document.title} onChange={(event) => onUpdate(document.id, { title: event.target.value })} /></label>
+          <label>
+            Type de document
+            <select value={document.kind} onChange={(event) => onUpdate(document.id, { kind: event.target.value as HistorySourceDocument["kind"] })}>
+              <option value="image">Document image</option>
+              <option value="map">Carte</option>
+              <option value="text">Document texte</option>
+            </select>
+          </label>
+          {document.kind === "text" ? (
+            <label>Contenu<textarea rows={7} value={document.text ?? ""} onChange={(event) => onUpdate(document.id, { text: event.target.value })} /></label>
+          ) : (
+            <label className="history-document-replace"><Upload size={16} /> Remplacer l’image<input type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => onReplace(document, event.target.files?.[0])} /></label>
+          )}
+          <div className="history-document-display-setting">
+            <label className="history-check"><input type="checkbox" checked={Boolean(document.showTitle)} onChange={(event) => onUpdate(document.id, { showTitle: event.target.checked })} /> Afficher un titre</label>
+            {document.showTitle && <input value={document.displayTitle ?? document.title} onChange={(event) => onUpdate(document.id, { displayTitle: event.target.value })} placeholder="Titre affiché" />}
+          </div>
+          <div className="history-document-display-setting">
+            <label className="history-check"><input type="checkbox" checked={Boolean(document.showCaption)} onChange={(event) => onUpdate(document.id, { showCaption: event.target.checked })} /> Afficher une légende</label>
+            {document.showCaption && <textarea rows={2} value={document.caption ?? ""} onChange={(event) => onUpdate(document.id, { caption: event.target.value })} placeholder="Légende affichée" />}
+          </div>
+          <div className="history-document-display-setting">
+            <label className="history-check"><input type="checkbox" checked={Boolean(document.showSource)} onChange={(event) => onUpdate(document.id, { showSource: event.target.checked })} /> Afficher la source</label>
+            {document.showSource && <textarea rows={2} value={document.source ?? ""} onChange={(event) => onUpdate(document.id, { source: event.target.value })} placeholder="Source affichée" />}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

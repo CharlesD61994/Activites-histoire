@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useState } from "react";
-import { ImagePlus, Plus, Save, Trash2 } from "lucide-react";
+import { Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryCanvasEditor, createDefaultHistoryCanvas } from "@/components/history-canvas-editor";
@@ -129,29 +129,17 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
     setQuestion((current) => ({ ...current, ...patch }));
   }
 
-  function addDocument(kind: HistorySourceDocument["kind"]) {
-    setDocuments((items) => [
-      ...items,
-      {
-        id: crypto.randomUUID(),
-        title: kind === "text" ? "Document texte" : "Document image",
-        kind,
-        text: kind === "text" ? "Ajoute ici un court extrait ou une description." : undefined,
-        caption: "",
-        source: ""
-      }
-    ]);
+  function addDocument(document: HistorySourceDocument) {
+    setDocuments((items) => [...items, document]);
   }
 
   function updateDocument(id: string, patch: Partial<HistorySourceDocument>) {
     setDocuments((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item));
   }
 
-  function loadDocumentImage(id: string, file?: File) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => updateDocument(id, { src: String(reader.result), title: documents.find((doc) => doc.id === id)?.title || file.name.replace(/\.[^.]+$/, "") });
-    reader.readAsDataURL(file);
+  function deleteDocument(id: string) {
+    setDocuments((items) => items.filter((item) => item.id !== id));
+    updateQuestion({ documentIds: question.documentIds.filter((documentId) => documentId !== id) });
   }
 
   function save() {
@@ -389,30 +377,6 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
         </div>
       </Card>
 
-      <Card className="history-editor-panel">
-        <div className="history-editor-heading">
-          <h3>Documents</h3>
-          <div className="history-inline-actions">
-            <Button type="button" variant="secondary" onClick={() => addDocument("image")}><ImagePlus size={16} /> Image</Button>
-            <Button type="button" variant="secondary" onClick={() => addDocument("map")}><ImagePlus size={16} /> Carte</Button>
-            <Button type="button" variant="secondary" onClick={() => addDocument("text")}><Plus size={16} /> Texte</Button>
-          </div>
-        </div>
-        <div className="history-document-grid">
-          {documents.map((document) => (
-            <div className="history-document-card" key={document.id}>
-              <input value={document.title} onChange={(event) => updateDocument(document.id, { title: event.target.value })} />
-              <select value={document.kind} onChange={(event) => updateDocument(document.id, { kind: event.target.value as HistorySourceDocument["kind"] })}><option value="image">Image</option><option value="map">Carte</option><option value="text">Texte</option></select>
-              {document.kind === "text" ? <textarea value={document.text ?? ""} onChange={(event) => updateDocument(document.id, { text: event.target.value })} /> : <><input type="file" accept="image/*" onChange={(event) => loadDocumentImage(document.id, event.target.files?.[0])} />{document.src && <img src={document.src} alt={document.title} />}</>}
-              <input value={document.caption ?? ""} onChange={(event) => updateDocument(document.id, { caption: event.target.value })} placeholder="Légende" />
-              <input value={document.source ?? ""} onChange={(event) => updateDocument(document.id, { source: event.target.value })} placeholder="Source" />
-              <button type="button" onClick={() => setDocuments((items) => items.filter((item) => item.id !== document.id))}><Trash2 size={16} /> Supprimer</button>
-            </div>
-          ))}
-          {documents.length === 0 && <p>Aucun document pour l’instant. Plusieurs opérations peuvent fonctionner sans document.</p>}
-        </div>
-      </Card>
-
       <div className="history-canvas-editor-section">
         <HistoryCanvasEditor
           canvas={canvas}
@@ -422,6 +386,9 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
           onQuestionChange={setQuestion}
           availableActions={allowedActions}
           onActionChange={selectInteractiveAction}
+          onAddDocument={addDocument}
+          onUpdateDocument={updateDocument}
+          onDeleteDocument={deleteDocument}
           contextPanel={(
             <>
               {actionEditor}
