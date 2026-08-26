@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { blockAspectRatio, blockScale, historyCanvasLayoutVersion, interactionBlockSize, scalableBlockSize } from "@/lib/history-canvas";
-import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryQuestion, HistorySourceDocument } from "@/types";
+import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
 
 type Props = {
   canvas: HistoryActivityCanvas;
@@ -13,6 +14,9 @@ type Props = {
   question: HistoryQuestion;
   onChange: (canvas: HistoryActivityCanvas) => void;
   onQuestionChange: (question: HistoryQuestion) => void;
+  availableActions: HistoryInteractiveAction[];
+  onActionChange: (action: HistoryInteractiveAction) => void;
+  contextPanel?: React.ReactNode;
 };
 
 type DragState = {
@@ -91,11 +95,12 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
   };
 }
 
-export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange }: Props) {
+export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange, availableActions, onActionChange, contextPanel }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const fittedDocumentsRef = useRef(new Set<string>());
   const [selectedId, setSelectedId] = useState("");
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
   const selectedBlock = canvas.blocks.find((block) => block.id === selectedId);
 
   function patchCanvas(patch: Partial<HistoryActivityCanvas>) {
@@ -155,6 +160,17 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     }
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
+  }
+
+  function chooseInteraction(action: HistoryInteractiveAction) {
+    onActionChange(action);
+    const existingInteraction = canvas.blocks.find((block) => block.type === "interaction");
+    if (existingInteraction) {
+      setSelectedId(existingInteraction.id);
+    } else {
+      void addBlock("interaction");
+    }
+    setInteractionMenuOpen(false);
   }
 
   async function selectDocument(id: string, documentId: string) {
@@ -286,7 +302,19 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
         <div className="history-canvas-tools">
           <Button type="button" variant="secondary" onClick={() => addBlock("text")}><MessageSquareText size={16} /> Texte</Button>
           <Button type="button" variant="secondary" onClick={() => addBlock("document")}><FileText size={16} /> Document</Button>
-          <Button type="button" variant="secondary" onClick={() => addBlock("interaction")}><MousePointer2 size={16} /> Interaction</Button>
+          <div className="history-canvas-tool-menu">
+            <Button type="button" variant="secondary" aria-expanded={interactionMenuOpen} onClick={() => setInteractionMenuOpen((open) => !open)}><MousePointer2 size={16} /> Interaction</Button>
+            {interactionMenuOpen && (
+              <div className="history-canvas-tool-popover" role="menu" aria-label="Choisir une interaction">
+                {availableActions.map((action) => (
+                  <button type="button" role="menuitem" key={action} className={question.action === action ? "active" : ""} onClick={() => chooseInteraction(action)}>
+                    <strong>{historyActionLabels[action]}</strong>
+                    <span>{historyActionDescriptions[action]}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Button type="button" variant="secondary" onClick={() => addBlock("validation")}><PanelTop size={16} /> Valider</Button>
         </div>
       </div>
@@ -372,6 +400,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               <label>Largeur<input type="number" value={Math.round(selectedBlock.width)} onChange={(event) => updateBlockDimension(selectedBlock, "width", Number(event.target.value))} /></label>
               <label>Hauteur<input type="number" value={Math.round(selectedBlock.height)} onChange={(event) => updateBlockDimension(selectedBlock, "height", Number(event.target.value))} /></label>
             </div>
+            {selectedBlock.type === "interaction" && contextPanel}
           </aside>
         )}
       </div>

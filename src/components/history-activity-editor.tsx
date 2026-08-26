@@ -11,8 +11,6 @@ import {
   allHistoryOperations,
   allHistorySocietyAspects,
   getInitialHistoryAction,
-  historyActionDescriptions,
-  historyActionLabels,
   historyActionsByOperation,
   historyOperationLabels,
   historySocietyAspectLabels
@@ -416,19 +414,22 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
       </Card>
 
       <div className="history-canvas-editor-section">
-        <HistoryCanvasEditor canvas={canvas} documents={documents} question={question} onChange={setCanvas} onQuestionChange={setQuestion} />
+        <HistoryCanvasEditor
+          canvas={canvas}
+          documents={documents}
+          question={question}
+          onChange={setCanvas}
+          onQuestionChange={setQuestion}
+          availableActions={allowedActions}
+          onActionChange={selectInteractiveAction}
+          contextPanel={(
+            <>
+              {actionEditor}
+              <label>Points<input type="number" min={1} max={20} value={question.points} onChange={(event) => updateQuestion({ points: Number(event.target.value) })} /></label>
+            </>
+          )}
+        />
       </div>
-
-      <Card className="history-editor-panel">
-        <h3>Action interactive</h3>
-        <div className="history-action-grid">
-          {allowedActions.map((action) => <button key={action} type="button" className={question.action === action ? "active" : ""} onClick={() => selectInteractiveAction(action)}><strong>{historyActionLabels[action]}</strong><span>{historyActionDescriptions[action]}</span></button>)}
-        </div>
-        <label>Consigne<textarea value={question.prompt} onChange={(event) => updateQuestion({ prompt: event.target.value })} /></label>
-        <label>Points<input type="number" min={1} max={20} value={question.points} onChange={(event) => updateQuestion({ points: Number(event.target.value) })} /></label>
-      </Card>
-
-      {actionEditor}
     </div>
   );
 }
