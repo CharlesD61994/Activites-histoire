@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryQuestion, HistorySourceDocument } from "@/types";
@@ -37,8 +37,6 @@ function clamp(value: number, min: number, max: number) {
 function fittedDocumentSize(canvas: HistoryActivityCanvas, naturalWidth: number, naturalHeight: number) {
   const maxWidth = Math.min(760, canvas.width * 0.48);
   const maxHeight = Math.min(610, canvas.height * 0.68);
-  const minWidth = Math.min(360, maxWidth);
-  const minHeight = Math.min(240, maxHeight);
   const ratio = naturalWidth > 0 && naturalHeight > 0 ? naturalWidth / naturalHeight : 1.3;
   let width = maxWidth;
   let height = width / ratio;
@@ -49,17 +47,18 @@ function fittedDocumentSize(canvas: HistoryActivityCanvas, naturalWidth: number,
   }
 
   return {
-    width: clamp(Math.round(width), minWidth, maxWidth),
-    height: clamp(Math.round(height), minHeight, maxHeight)
+    width,
+    height,
+    aspectRatio: ratio
   };
 }
 
 function measureDocument(document: HistorySourceDocument | undefined, canvas: HistoryActivityCanvas) {
-  if (!document?.src) return Promise.resolve({ width: 640, height: 460 });
-  return new Promise<{ width: number; height: number }>((resolve) => {
+  if (!document?.src) return Promise.resolve({ width: 640, height: 460, aspectRatio: undefined });
+  return new Promise<{ width: number; height: number; aspectRatio?: number }>((resolve) => {
     const image = new Image();
     image.onload = () => resolve(fittedDocumentSize(canvas, image.naturalWidth, image.naturalHeight));
-    image.onerror = () => resolve({ width: 640, height: 460 });
+    image.onerror = () => resolve({ width: 640, height: 460, aspectRatio: undefined });
     image.src = document.src ?? "";
   });
 }
@@ -89,6 +88,7 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
 
 export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const fittedDocumentsRef = useRef(new Set<string>());
   const [selectedId, setSelectedId] = useState(canvas.blocks[0]?.id ?? "");
   const [drag, setDrag] = useState<DragState | null>(null);
   const selectedBlock = canvas.blocks.find((block) => block.id === selectedId);
@@ -119,6 +119,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       const size = await measureDocument(documents[0], canvas);
       block.width = size.width;
       block.height = size.height;
+      block.aspectRatio = size.aspectRatio;
     }
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
@@ -126,9 +127,41 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
   async function selectDocument(id: string, documentId: string) {
     const document = documents.find((item) => item.id === documentId);
+    fittedDocumentsRef.current.add(`${id}:${documentId}:${document?.src?.length ?? 0}`);
     const size = await measureDocument(document, canvas);
-    updateBlock(id, { documentId, width: size.width, height: size.height });
+    updateBlock(id, { documentId, width: size.width, height: size.height, aspectRatio: size.aspectRatio });
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    const targets = canvas.blocks.flatMap((block) => {
+      if (block.type !== "document") return [];
+      const document = documents.find((item) => item.id === block.documentId);
+      if (!document?.src) return [];
+      const key = `${block.id}:${document.id}:${document.src.length}`;
+      if (fittedDocumentsRef.current.has(key)) return [];
+      fittedDocumentsRef.current.add(key);
+      return [{ block, document }];
+    });
+
+    if (targets.length > 0) {
+      Promise.all(targets.map(async ({ block, document }) => ({ id: block.id, size: await measureDocument(document, canvas) }))).then((measurements) => {
+        if (cancelled) return;
+        const sizes = new Map(measurements.map((item) => [item.id, item.size]));
+        onChange({
+          ...canvas,
+          blocks: canvas.blocks.map((block) => {
+            const size = sizes.get(block.id);
+            return size ? { ...block, width: size.width, height: size.height, aspectRatio: size.aspectRatio } : block;
+          })
+        });
+      });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canvas, documents, onChange]);
 
   function removeBlock(id: string) {
     const blocks = canvas.blocks.filter((block) => block.id !== id);
@@ -151,9 +184,26 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     const dx = point.x - drag.startX;
     const dy = point.y - drag.startY;
     if (drag.mode === "move") {
+      if (Math.hypot(dx, dy) < 4) return;
       updateBlock(drag.id, {
         x: clamp(drag.block.x + dx, 0, canvas.width - drag.block.width),
         y: clamp(drag.block.y + dy, 0, canvas.height - drag.block.height)
+      });
+      return;
+    }
+    if (drag.block.type === "document") {
+      const scaleX = (drag.block.width + dx) / drag.block.width;
+      const scaleY = (drag.block.height + dy) / drag.block.height;
+      const desiredScale = Math.abs(scaleX - 1) >= Math.abs(scaleY - 1) ? scaleX : scaleY;
+      const minimumScale = Math.max(120 / drag.block.width, 90 / drag.block.height);
+      const maximumScale = Math.min(
+        (canvas.width - drag.block.x) / drag.block.width,
+        (canvas.height - drag.block.y) / drag.block.height
+      );
+      const scale = clamp(desiredScale, minimumScale, maximumScale);
+      updateBlock(drag.id, {
+        width: drag.block.width * scale,
+        height: drag.block.height * scale
       });
       return;
     }
@@ -212,10 +262,11 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 left: `${block.x / canvas.width * 100}%`,
                 top: `${block.y / canvas.height * 100}%`,
                 width: `${block.width / canvas.width * 100}%`,
-                height: `${block.height / canvas.height * 100}%`
+                height: block.type === "document" && block.aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
+                aspectRatio: block.type === "document" ? block.aspectRatio : undefined
               }}
-              onPointerDown={(event) => {
-                event.currentTarget.setPointerCapture(event.pointerId);
+              onPointerDownCapture={(event) => {
+                if ((event.target as HTMLElement).closest(".history-canvas-resize")) return;
                 const point = eventToCanvas(event);
                 setSelectedId(block.id);
                 setDrag({ id: block.id, mode: "move", startX: point.x, startY: point.y, block });

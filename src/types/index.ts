@@ -173,6 +173,7 @@ export type HistoryCanvasBlock = {
   height: number;
   text?: string;
   documentId?: string;
+  aspectRatio?: number;
 };
 
 export type HistoryActivityCanvas = {

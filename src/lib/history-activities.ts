@@ -61,6 +61,11 @@ export const historyActionsByOperation: Record<HistoryOperation, HistoryInteract
 export const allHistoryOperations = Object.keys(historyOperationLabels) as HistoryOperation[];
 export const allHistorySocietyAspects = Object.keys(historySocietyAspectLabels) as HistorySocietyAspect[];
 
+export function getInitialHistoryAction(operation: HistoryOperation, savedAction?: HistoryInteractiveAction): HistoryInteractiveAction {
+  const allowedActions = historyActionsByOperation[operation];
+  return savedAction && allowedActions.includes(savedAction) ? savedAction : allowedActions[0];
+}
+
 export function getHistoryActivityPointTotal(sentence: Sentence): number {
   return sentence.historyActivity?.questions.reduce((sum, question) => sum + question.points, 0) ?? 0;
 }

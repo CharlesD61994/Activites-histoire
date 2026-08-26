@@ -9,6 +9,7 @@ import { HistoryCanvasEditor, createDefaultHistoryCanvas } from "@/components/hi
 import {
   allHistoryOperations,
   allHistorySocietyAspects,
+  getInitialHistoryAction,
   historyActionDescriptions,
   historyActionLabels,
   historyActionsByOperation,
@@ -97,7 +98,12 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   const [operation, setOperation] = useState<HistoryOperation>(initialHistory?.operation ?? "establish_facts");
   const [aspects, setAspects] = useState<HistorySocietyAspect[]>(initialHistory?.aspects ?? ["society"]);
   const [documents, setDocuments] = useState<HistorySourceDocument[]>(initialHistory?.documents ?? []);
-  const [question, setQuestion] = useState<HistoryQuestion>(() => normalizeQuestion(initialHistory?.questions[0] ?? defaultQuestion(historyActionsByOperation[initialHistory?.operation ?? "establish_facts"][0]), historyActionsByOperation[initialHistory?.operation ?? "establish_facts"][0]));
+  const [question, setQuestion] = useState<HistoryQuestion>(() => {
+    const initialOperation = initialHistory?.operation ?? "establish_facts";
+    const savedQuestion = initialHistory?.questions[0];
+    const initialAction = getInitialHistoryAction(initialOperation, savedQuestion?.action);
+    return normalizeQuestion(savedQuestion ?? defaultQuestion(initialAction), initialAction);
+  });
   const [canvas, setCanvas] = useState<HistoryActivityCanvas>(() => initialHistory?.canvas ?? createDefaultHistoryCanvas(initialHistory?.questions[0] ?? defaultQuestion(historyActionsByOperation[initialHistory?.operation ?? "establish_facts"][0]), initialHistory?.documents ?? []));
 
   const allowedActions = historyActionsByOperation[operation];

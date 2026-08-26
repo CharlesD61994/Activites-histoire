@@ -349,7 +349,8 @@ function HistoryCanvasStage({
             left: `${block.x / canvas.width * 100}%`,
             top: `${block.y / canvas.height * 100}%`,
             width: `${block.width / canvas.width * 100}%`,
-            height: `${block.height / canvas.height * 100}%`
+            height: block.type === "document" && block.aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
+            aspectRatio: block.type === "document" ? block.aspectRatio : undefined
           }}
         >
           {renderBlock(block)}
