@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { blockAspectRatio, blockScale, scalableBlockSize } from "@/lib/history-canvas";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
+import { historyTextStyleToCss } from "@/lib/history-text-style";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
 type Props = {
@@ -336,11 +337,11 @@ function HistoryCanvasStage({
         />
       );
     }
-    if (block.type === "validation") return <Button onClick={onValidate}>{block.text || "Valider"}</Button>;
+    if (block.type === "validation") return <Button style={historyTextStyleToCss(block.textStyle)} onClick={onValidate}>{block.text || "Valider"}</Button>;
     if (block.type === "feedback") {
-      return statusText ? <div className={`history-result ${validation}`}>{validation === "correct" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}<strong>{statusText}</strong></div> : <span className="history-canvas-reader-muted">{block.text || "Feedback"}</span>;
+      return statusText ? <div className={`history-result ${validation}`}>{validation === "correct" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}<strong>{statusText}</strong></div> : <span className="history-canvas-reader-muted" style={historyTextStyleToCss(block.textStyle)}>{block.text || "Feedback"}</span>;
     }
-    return <p>{block.text || question.prompt}</p>;
+    return <p style={historyTextStyleToCss(block.textStyle)}>{block.text || question.prompt}</p>;
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
@@ -418,7 +419,7 @@ function HistoryQuestionInteraction({
   resetValidation: () => void;
 }) {
   if (question.action === "choice_single" || question.action === "choice_multiple") {
-    return <div className="history-choice-grid">{(question.choices ?? []).map((choice) => <button key={choice.id} type="button" className={selectedChoices.includes(choice.id) ? "selected" : ""} onClick={() => toggleChoice(choice.id)}>{choice.text}</button>)}</div>;
+    return <div className="history-choice-grid">{(question.choices ?? []).map((choice) => <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={selectedChoices.includes(choice.id) ? "selected" : ""} onClick={() => toggleChoice(choice.id)}>{choice.text}</button>)}</div>;
   }
 
   if (question.action === "classification") {
