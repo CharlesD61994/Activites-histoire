@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { blockScale, scalableBlockSize } from "@/lib/history-canvas";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
@@ -339,6 +340,19 @@ function HistoryCanvasStage({
     return <p>{block.text || question.prompt}</p>;
   }
 
+  function renderScaledBlock(block: HistoryCanvasBlock) {
+    const scale = blockScale(block, question);
+    if (!scalableBlockSize(block, question)) return renderBlock(block);
+    return (
+      <div
+        className="history-canvas-scaled-content"
+        style={{ width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` }}
+      >
+        {renderBlock(block)}
+      </div>
+    );
+  }
+
   return (
     <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
       {canvas.blocks.map((block) => (
@@ -353,7 +367,7 @@ function HistoryCanvasStage({
             aspectRatio: block.type === "document" ? block.aspectRatio : undefined
           }}
         >
-          {renderBlock(block)}
+          {renderScaledBlock(block)}
         </div>
       ))}
     </div>

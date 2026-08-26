@@ -133,6 +133,8 @@
 .history-canvas-block.block-text > p { width: 100%; height: 100%; outline: 0; }
 .history-canvas-block.block-validation .button { width: 100%; height: 100%; min-height: 0; font-size: clamp(1rem, 1.6vw, 1.35rem); }
 .history-canvas-block.block-validation .button span { outline: 0; }
+.history-canvas-scaled-content { min-width: 0; min-height: 0; transform-origin: top left; }
+.history-canvas-scaled-content > * { width: 100%; height: 100%; }
 .history-canvas-block.block-document { overflow: visible; }
 .history-canvas-document-picker { display: grid; min-width: 220px; gap: 4px; }
 .history-reader-canvas-mode { height: 100%; }

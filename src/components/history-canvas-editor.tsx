@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText, MessageSquareText, MousePointer2, PanelTop, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { historyCanvasLayoutVersion, interactionBlockSize } from "@/lib/history-canvas";
+import { blockScale, historyCanvasLayoutVersion, interactionBlockSize, scalableBlockSize } from "@/lib/history-canvas";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryQuestion, HistorySourceDocument } from "@/types";
 
 type Props = {
@@ -69,10 +69,10 @@ function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, d
   if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, documentId: documents[0]?.id };
   if (type === "interaction") {
     const size = interactionBlockSize(question);
-    return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size };
+    return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size, scale: 1 };
   }
-  if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, text: "Valider" };
-  if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, text: "Feedback" };
+  if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, scale: 1, text: "Valider" };
+  if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, scale: 1, text: "Feedback" };
   return { id, type, x: 80, y: 60, width: 1440, height: 110, text: question.prompt };
 }
 
@@ -104,6 +104,33 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
   function updateBlock(id: string, patch: Partial<HistoryCanvasBlock>) {
     patchCanvas({ blocks: canvas.blocks.map((block) => block.id === id ? { ...block, ...patch } : block) });
+  }
+
+  function updateBlockDimension(block: HistoryCanvasBlock, axis: "width" | "height", value: number) {
+    const base = scalableBlockSize(block, question);
+    if (base) {
+      const requestedScale = value / base[axis];
+      const maximumScale = Math.min(
+        (canvas.width - block.x) / base.width,
+        (canvas.height - block.y) / base.height
+      );
+      const scale = clamp(requestedScale, 0.25, maximumScale);
+      updateBlock(block.id, { width: base.width * scale, height: base.height * scale, scale });
+      return;
+    }
+
+    if (block.type === "document" && block.aspectRatio) {
+      if (axis === "width") {
+        const width = clamp(value, 120, canvas.width - block.x);
+        updateBlock(block.id, { width, height: width / block.aspectRatio });
+      } else {
+        const height = clamp(value, 90, canvas.height - block.y);
+        updateBlock(block.id, { width: height * block.aspectRatio, height });
+      }
+      return;
+    }
+
+    updateBlock(block.id, { [axis]: value });
   }
 
   function updateQuestion(patch: Partial<HistoryQuestion>) {
@@ -196,11 +223,14 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       });
       return;
     }
-    if (drag.block.type === "document") {
+    const scalableSize = scalableBlockSize(drag.block, question);
+    if (drag.block.type === "document" || scalableSize) {
       const scaleX = (drag.block.width + dx) / drag.block.width;
       const scaleY = (drag.block.height + dy) / drag.block.height;
       const desiredScale = Math.abs(scaleX - 1) >= Math.abs(scaleY - 1) ? scaleX : scaleY;
-      const minimumScale = Math.max(120 / drag.block.width, 90 / drag.block.height);
+      const minimumScale = scalableSize
+        ? 0.25 / blockScale(drag.block, question)
+        : Math.max(120 / drag.block.width, 90 / drag.block.height);
       const maximumScale = Math.min(
         (canvas.width - drag.block.x) / drag.block.width,
         (canvas.height - drag.block.y) / drag.block.height
@@ -208,7 +238,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       const scale = clamp(desiredScale, minimumScale, maximumScale);
       updateBlock(drag.id, {
         width: drag.block.width * scale,
-        height: drag.block.height * scale
+        height: drag.block.height * scale,
+        ...(scalableSize ? { scale: blockScale(drag.block, question) * scale } : {})
       });
       return;
     }
@@ -231,6 +262,19 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     if (block.type === "validation") return <Button type="button"><span contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text ?? "Valider"}</span></Button>;
     if (block.type === "feedback") return <span className="history-canvas-reader-muted" contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text ?? "Feedback"}</span>;
     return <p contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text || "Texte"}</p>;
+  }
+
+  function renderScaledBlock(block: HistoryCanvasBlock) {
+    const scale = blockScale(block, question);
+    if (!scalableBlockSize(block, question)) return renderBlock(block);
+    return (
+      <div
+        className="history-canvas-scaled-content"
+        style={{ width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` }}
+      >
+        {renderBlock(block)}
+      </div>
+    );
   }
 
   return (
@@ -283,7 +327,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               }}
               onClick={() => setSelectedId(block.id)}
             >
-              {renderBlock(block)}
+              {renderScaledBlock(block)}
               <span
                 className="history-canvas-resize"
                 onPointerDown={(event) => {
@@ -318,8 +362,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               <div className="history-canvas-number-grid">
                 <label>X<input type="number" value={Math.round(selectedBlock.x)} onChange={(event) => updateBlock(selectedBlock.id, { x: Number(event.target.value) })} /></label>
                 <label>Y<input type="number" value={Math.round(selectedBlock.y)} onChange={(event) => updateBlock(selectedBlock.id, { y: Number(event.target.value) })} /></label>
-                <label>Largeur<input type="number" value={Math.round(selectedBlock.width)} onChange={(event) => updateBlock(selectedBlock.id, { width: Number(event.target.value) })} /></label>
-                <label>Hauteur<input type="number" value={Math.round(selectedBlock.height)} onChange={(event) => updateBlock(selectedBlock.id, { height: Number(event.target.value) })} /></label>
+                <label>Largeur<input type="number" value={Math.round(selectedBlock.width)} onChange={(event) => updateBlockDimension(selectedBlock, "width", Number(event.target.value))} /></label>
+                <label>Hauteur<input type="number" value={Math.round(selectedBlock.height)} onChange={(event) => updateBlockDimension(selectedBlock, "height", Number(event.target.value))} /></label>
               </div>
             </>
           ) : <p>Sélectionne un bloc sur le tableau.</p>}

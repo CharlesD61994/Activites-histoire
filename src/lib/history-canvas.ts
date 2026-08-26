@@ -1,6 +1,6 @@
-import type { HistoryActivityCanvas, HistoryQuestion } from "../types";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
-export const historyCanvasLayoutVersion = 2;
+export const historyCanvasLayoutVersion = 3;
 
 export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 103 };
@@ -14,6 +14,19 @@ export function interactionBlockSize(question: HistoryQuestion) {
   return { width: 720, height: Math.max(220, (question.clozeBlanks?.length ?? 1) * 105 + 100) };
 }
 
+export function scalableBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
+  if (block.type === "interaction") return interactionBlockSize(question);
+  if (block.type === "validation") return { width: 260, height: 95 };
+  if (block.type === "feedback") return { width: 520, height: 110 };
+  return null;
+}
+
+export function blockScale(block: HistoryCanvasBlock, question: HistoryQuestion) {
+  const base = scalableBlockSize(block, question);
+  if (!base) return 1;
+  return block.scale ?? block.width / base.width;
+}
+
 export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, question: HistoryQuestion): HistoryActivityCanvas {
   const size = interactionBlockSize(question);
   return {
@@ -23,6 +36,7 @@ export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, qu
       ...block,
       width: size.width,
       height: size.height,
+      scale: 1,
       x: Math.min(block.x, canvas.width - size.width),
       y: Math.min(block.y, canvas.height - size.height)
     } : block)
@@ -30,7 +44,27 @@ export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, qu
 }
 
 export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, question: HistoryQuestion): HistoryActivityCanvas {
-  return (canvas.layoutVersion ?? 0) >= historyCanvasLayoutVersion
-    ? canvas
-    : resizeHistoryInteractionBlocks(canvas, question);
+  if ((canvas.layoutVersion ?? 0) >= historyCanvasLayoutVersion) return canvas;
+
+  return {
+    ...canvas,
+    layoutVersion: historyCanvasLayoutVersion,
+    blocks: canvas.blocks.map((block) => {
+      const base = scalableBlockSize(block, question);
+      if (!base) return block;
+      const scale = block.type === "interaction" && (canvas.layoutVersion ?? 0) < 2
+        ? 1
+        : Math.max(0.25, block.width / base.width);
+      const width = base.width * scale;
+      const height = base.height * scale;
+      return {
+        ...block,
+        width,
+        height,
+        scale,
+        x: Math.min(block.x, canvas.width - width),
+        y: Math.min(block.y, canvas.height - height)
+      };
+    })
+  };
 }
