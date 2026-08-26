@@ -103,10 +103,11 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const fittedDocumentsRef = useRef(new Set<string>());
   const [selectedId, setSelectedId] = useState("");
+  const [inspectedId, setInspectedId] = useState("");
   const [drag, setDrag] = useState<DragState | null>(null);
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
   const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
-  const selectedBlock = canvas.blocks.find((block) => block.id === selectedId);
+  const inspectedBlock = canvas.blocks.find((block) => block.id === inspectedId);
 
   function patchCanvas(patch: Partial<HistoryActivityCanvas>) {
     onChange({ ...canvas, ...patch });
@@ -138,6 +139,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     }
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
+    setInspectedId("");
   }
 
   async function addDocumentBlock(document: HistorySourceDocument) {
@@ -151,6 +153,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     block.aspectRatio = size.aspectRatio;
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
+    setInspectedId("");
     setDocumentLibraryOpen(false);
   }
 
@@ -212,6 +215,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     onDeleteDocument(documentId);
     patchCanvas({ blocks: canvas.blocks.filter((block) => block.documentId !== documentId) });
     setSelectedId("");
+    setInspectedId("");
   }
 
   function chooseInteraction(action: HistoryInteractiveAction) {
@@ -219,6 +223,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     const existingInteraction = canvas.blocks.find((block) => block.type === "interaction");
     if (existingInteraction) {
       setSelectedId(existingInteraction.id);
+      setInspectedId("");
     } else {
       void addBlock("interaction");
     }
@@ -267,6 +272,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     const blocks = canvas.blocks.filter((block) => block.id !== id);
     patchCanvas({ blocks });
     setSelectedId(blocks[0]?.id ?? "");
+    setInspectedId("");
   }
 
   function eventToCanvas(event: React.PointerEvent) {
@@ -418,7 +424,10 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           onPointerUp={() => setDrag(null)}
           onPointerCancel={() => setDrag(null)}
           onPointerDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedId("");
+            if (event.target === event.currentTarget) {
+              setSelectedId("");
+              setInspectedId("");
+            }
           }}
         >
           {canvas.blocks.map((block) => {
@@ -440,6 +449,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 if ((event.target as HTMLElement).closest(".history-canvas-resize")) return;
                 const point = eventToCanvas(event);
                 setSelectedId(block.id);
+                if (inspectedId && inspectedId !== block.id) setInspectedId("");
                 setDrag({ id: block.id, mode: "move", startX: point.x, startY: point.y, block });
                 try {
                   event.currentTarget.setPointerCapture(event.pointerId);
@@ -448,6 +458,11 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 }
               }}
               onClick={() => setSelectedId(block.id)}
+              onDoubleClick={(event) => {
+                event.stopPropagation();
+                setSelectedId(block.id);
+                setInspectedId(block.id);
+              }}
             >
               {renderScaledBlock(block)}
               <span
@@ -457,6 +472,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                   event.currentTarget.setPointerCapture(event.pointerId);
                   const point = eventToCanvas(event);
                   setSelectedId(block.id);
+                  if (inspectedId && inspectedId !== block.id) setInspectedId("");
                   setDrag({ id: block.id, mode: "resize", startX: point.x, startY: point.y, block });
                 }}
               />
@@ -465,26 +481,26 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           })}
         </div>
 
-        {selectedBlock && (
+        {inspectedBlock && (
           <aside className="history-canvas-inspector">
             <div className="history-canvas-inspector-heading">
-              <strong>{blockLabels[selectedBlock.type]}</strong>
+              <strong>{blockLabels[inspectedBlock.type]}</strong>
               <div className="history-canvas-inspector-actions">
-                <button type="button" onClick={() => removeBlock(selectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
-                <button type="button" onClick={() => setSelectedId("")} aria-label="Fermer les propriétés"><X size={16} /></button>
+                <button type="button" onClick={() => removeBlock(inspectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
+                <button type="button" onClick={() => setInspectedId("")} aria-label="Fermer les propriétés"><X size={16} /></button>
               </div>
             </div>
-            {selectedBlock.type === "document" && (
+            {inspectedBlock.type === "document" && (
               <DocumentInspector
-                document={documents.find((item) => item.id === selectedBlock.documentId)}
+                document={documents.find((item) => item.id === inspectedBlock.documentId)}
                 documents={documents}
-                documentId={selectedBlock.documentId ?? ""}
-                onSelect={(documentId) => void selectDocument(selectedBlock.id, documentId)}
+                documentId={inspectedBlock.documentId ?? ""}
+                onSelect={(documentId) => void selectDocument(inspectedBlock.id, documentId)}
                 onUpdate={onUpdateDocument}
                 onReplace={replaceDocumentImage}
               />
             )}
-            {selectedBlock.type === "interaction" && contextPanel}
+            {inspectedBlock.type === "interaction" && contextPanel}
           </aside>
         )}
       </div>
