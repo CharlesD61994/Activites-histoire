@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, Bold, FileText, Image as ImageIcon, Italic, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, RotateCcw, Trash2, Underline, Upload, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, FileText, Image as ImageIcon, Italic, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, Shapes, Trash2, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, resizeHistoryCanvasBlock, type HistoryResizeHandle } from "@/lib/history-canvas";
@@ -115,6 +115,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   const [textTarget, setTextTarget] = useState<TextTarget | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
+  const [resourceMenuOpen, setResourceMenuOpen] = useState(false);
   const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
   const inspectedBlock = canvas.blocks.find((block) => block.id === inspectedId);
   const activeTextStyle = textTarget?.kind === "block"
@@ -143,6 +144,9 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
   function activateTextEditing(event: React.PointerEvent | React.FocusEvent, target: TextTarget) {
     event.stopPropagation();
+    setResourceMenuOpen(false);
+    setDocumentLibraryOpen(false);
+    setInteractionMenuOpen(false);
     setTextTarget(target);
     setSelectedId(target.kind === "block" ? target.id : target.blockId);
   }
@@ -156,15 +160,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     }
     const choice = question.choices?.find((item) => item.id === textTarget.id);
     if (choice) updateChoice(choice.id, { textStyle: { ...choice.textStyle, ...patch } });
-  }
-
-  function resetActiveTextStyle() {
-    if (!textTarget) return;
-    if (textTarget.kind === "block") {
-      updateBlock(textTarget.id, { textStyle: undefined });
-      return;
-    }
-    updateChoice(textTarget.id, { textStyle: undefined });
   }
 
   useEffect(() => {
@@ -400,9 +395,18 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       <div className="history-canvas-toolbar-stack">
         <div className="history-canvas-toolbar" aria-label="Ajouter un objet">
           <div className="history-canvas-tools">
-          <Button type="button" variant="secondary" onClick={() => addBlock("text")}><MessageSquareText size={16} /> Texte</Button>
+          <Button type="button" variant="secondary" onClick={() => { setResourceMenuOpen(false); setDocumentLibraryOpen(false); setInteractionMenuOpen(false); void addBlock("text"); }}><MessageSquareText size={16} /> Texte</Button>
           <div className="history-canvas-tool-menu">
-            <Button type="button" variant="secondary" aria-expanded={documentLibraryOpen} onClick={() => { setInteractionMenuOpen(false); setDocumentLibraryOpen((open) => !open); }}><FileText size={16} /> Document</Button>
+            <Button type="button" variant="secondary" aria-expanded={resourceMenuOpen} onClick={() => { setDocumentLibraryOpen(false); setInteractionMenuOpen(false); setResourceMenuOpen((open) => !open); }}><Shapes size={16} /> Ressources</Button>
+            {resourceMenuOpen && (
+              <div className="history-canvas-tool-popover history-resource-menu" role="menu" aria-label="Ressources">
+                <button type="button" role="menuitem" disabled><Shapes size={19} /><strong>Formes</strong></button>
+                <button type="button" role="menuitem" disabled><ImageIcon size={19} /><strong>Images</strong></button>
+              </div>
+            )}
+          </div>
+          <div className="history-canvas-tool-menu">
+            <Button type="button" variant="secondary" aria-expanded={documentLibraryOpen} onClick={() => { setResourceMenuOpen(false); setInteractionMenuOpen(false); setDocumentLibraryOpen((open) => !open); }}><FileText size={16} /> Document</Button>
             {documentLibraryOpen && (
               <div
                 className="history-document-library-popover"
@@ -441,7 +445,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             )}
           </div>
           <div className="history-canvas-tool-menu">
-            <Button type="button" variant="secondary" aria-expanded={interactionMenuOpen} onClick={() => { setDocumentLibraryOpen(false); setInteractionMenuOpen((open) => !open); }}><MousePointer2 size={16} /> Interaction</Button>
+            <Button type="button" variant="secondary" aria-expanded={interactionMenuOpen} onClick={() => { setResourceMenuOpen(false); setDocumentLibraryOpen(false); setInteractionMenuOpen((open) => !open); }}><MousePointer2 size={16} /> Interaction</Button>
             {interactionMenuOpen && (
               <div className="history-canvas-tool-popover" role="menu" aria-label="Choisir une interaction">
                 {availableActions.map((action) => (
@@ -453,17 +457,15 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               </div>
             )}
           </div>
-          <Button type="button" variant="secondary" onClick={() => addBlock("validation")}><PanelTop size={16} /> Valider</Button>
+          <Button type="button" variant="secondary" onClick={() => { setResourceMenuOpen(false); setDocumentLibraryOpen(false); setInteractionMenuOpen(false); void addBlock("validation"); }}><PanelTop size={16} /> Valider</Button>
           </div>
+          {textTarget && (
+            <>
+              <span className="history-toolbar-section-divider" aria-hidden="true" />
+              <TextFormattingToolbar style={activeTextStyle} onChange={updateActiveTextStyle} />
+            </>
+          )}
         </div>
-        {textTarget && (
-          <TextFormattingToolbar
-            style={activeTextStyle}
-            onChange={updateActiveTextStyle}
-            onReset={resetActiveTextStyle}
-            onClose={() => setTextTarget(null)}
-          />
-        )}
       </div>
 
       <div className="history-canvas-layout">
@@ -479,6 +481,9 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               setSelectedId("");
               setInspectedId("");
               setTextTarget(null);
+              setResourceMenuOpen(false);
+              setDocumentLibraryOpen(false);
+              setInteractionMenuOpen(false);
             }
           }}
         >
@@ -567,14 +572,10 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
 function TextFormattingToolbar({
   style,
-  onChange,
-  onReset,
-  onClose
+  onChange
 }: {
   style?: HistoryTextStyle;
   onChange: (patch: Partial<HistoryTextStyle>) => void;
-  onReset: () => void;
-  onClose: () => void;
 }) {
   const current = { ...defaultHistoryTextStyle, ...style };
   return (
@@ -595,9 +596,6 @@ function TextFormattingToolbar({
       <button type="button" className={current.align === "left" ? "active" : ""} onClick={() => onChange({ align: "left" })} aria-label="Aligner à gauche" title="Aligner à gauche"><AlignLeft size={18} /></button>
       <button type="button" className={current.align === "center" ? "active" : ""} onClick={() => onChange({ align: "center" })} aria-label="Centrer" title="Centrer"><AlignCenter size={18} /></button>
       <button type="button" className={current.align === "right" ? "active" : ""} onClick={() => onChange({ align: "right" })} aria-label="Aligner à droite" title="Aligner à droite"><AlignRight size={18} /></button>
-      <span className="history-toolbar-divider" />
-      <button type="button" onClick={onReset} aria-label="Réinitialiser la mise en forme" title="Réinitialiser"><RotateCcw size={18} /></button>
-      <button type="button" onClick={onClose} aria-label="Fermer la mise en forme" title="Fermer"><X size={18} /></button>
     </div>
   );
 }
