@@ -217,6 +217,7 @@ export type HistoryQuestion = {
   clozeText?: string;
   clozeBlanks?: HistoryClozeBlank[];
   clozeDistractors?: string[];
+  clozeTextStyle?: HistoryTextStyle;
   acceptedTextAnswers?: string[];
   textAnswerCaseSensitive?: boolean;
   feedbackCorrect?: string;

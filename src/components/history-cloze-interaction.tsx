@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { historyClozeTokens, parseHistoryCloze } from "@/lib/history-cloze";
+import { historyTextStyleToCss } from "@/lib/history-text-style";
 import type { HistoryQuestion } from "@/types";
 
 type Props = {
@@ -47,7 +48,7 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
   }
 
   return (
-    <div className={`history-cloze-reader ${preview ? "is-preview" : ""}`} onPointerDown={onPointerDown}>
+    <div className={`history-cloze-reader ${preview ? "is-preview" : ""}`} style={historyTextStyleToCss(question.clozeTextStyle)} onPointerDown={onPointerDown}>
       <div className="history-cloze-sentence">
         {parts.map((part, index) => {
           if (part.type === "text") return <span key={`text-${index}`} className="history-cloze-text">{part.value}</span>;

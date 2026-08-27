@@ -318,6 +318,20 @@
 .history-cloze-editor { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
 .history-cloze-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .history-cloze-editor-heading button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--danger); }
+.history-cloze-authoring { display: grid; gap: 12px; }
+.history-cloze-authoring-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.history-cloze-authoring-toolbar label { display: flex; width: auto; align-items: center; gap: 8px; font-size: .88rem; font-weight: 800; }
+.history-cloze-authoring-toolbar input { width: 82px; min-height: 40px; }
+.history-cloze-authoring-surface { min-height: 190px; padding: 18px; overflow-wrap: anywhere; border: 2px solid #cbdce8; border-radius: 10px; background: #fff; color: var(--portal-ink); line-height: 1.75; outline: 0; white-space: pre-wrap; }
+.history-cloze-authoring-surface:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent); }
+.history-cloze-authoring-blank { display: inline-flex; min-width: 112px; min-height: 42px; margin: 4px 5px; padding: 2px 7px; align-items: center; vertical-align: middle; border: 2px solid var(--primary); border-radius: 7px; background: color-mix(in srgb, var(--primary) 10%, #fff); }
+.history-cloze-authoring-blank input { min-width: 112px; max-width: min(100%, 34ch); min-height: 34px; padding: 2px 5px; border: 0; background: transparent; color: var(--portal-ink); font: inherit; font-weight: 850; text-align: center; outline: 0; }
+.history-cloze-authoring-message { margin: 0; color: var(--danger); font-size: .88rem; font-weight: 750; }
+.history-cloze-hidden-list { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid var(--border); }
+.history-cloze-hidden-list > div { display: grid; grid-template-columns: 30px minmax(0, 1fr) 38px; gap: 8px; align-items: center; }
+.history-cloze-hidden-list > div > span { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: #e8f1f7; color: var(--portal-ink); font-size: .78rem; font-weight: 900; }
+.history-cloze-hidden-list button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--danger); }
+.history-cloze-hidden-list small { color: var(--text-muted); }
 .history-bank-preview small { display: block; color: var(--text-muted); }
 .history-reader { width: min(1180px, 100%); margin: 0 auto; }
 .history-reader-main { display: grid; gap: 22px; }
@@ -342,8 +356,8 @@
   grid-template-columns: minmax(0, 1fr) minmax(220px, 32%);
   align-items: center; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
 }
-.history-cloze-reader { container: history-cloze / inline-size; display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; overflow: hidden; }
-.history-cloze-sentence { min-width: 0; padding: 18px 20px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; color: var(--portal-ink); font-size: clamp(1.15rem, 2vw, 1.65rem); font-weight: 720; line-height: 1.8; }
+.history-cloze-reader { container: history-cloze / inline-size; display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; overflow: hidden; font-size: clamp(1.15rem, 2vw, 1.65rem); }
+.history-cloze-sentence { min-width: 0; padding: 18px 20px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; color: var(--portal-ink); font-size: inherit; font-weight: 720; line-height: 1.8; }
 .history-cloze-text { white-space: pre-wrap; }
 .history-cloze-blank { display: inline-flex; min-width: 112px; min-height: 42px; margin: 4px 5px; padding: 4px 13px; align-items: center; justify-content: center; vertical-align: middle; border: 2px dashed #8ba6ba; border-radius: 7px; background: #f8fbfd; color: var(--portal-ink); font: inherit; font-weight: 850; line-height: 1.25; }
 .history-cloze-blank.ready { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, #fff); }
@@ -386,10 +400,13 @@
 .history-result.correct { background: color-mix(in srgb, var(--success) 14%, #fff); color: var(--success); }
 .history-result.incorrect { background: color-mix(in srgb, var(--warning) 18%, #fff); color: var(--warning); }
 .history-reader-actions { display: flex; justify-content: flex-end; }
-.history-document-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 22px; background: rgb(7 24 42 / 72%); }
-.history-document-modal-content { position: relative; display: grid; gap: 12px; width: min(1000px, 96vw); max-height: 92vh; overflow: auto; padding: 22px; border-radius: 16px; background: #fff; }
-.history-document-modal-content .icon-control { position: absolute; top: 12px; right: 12px; }
-.history-document-modal-content img { max-width: 100%; max-height: 72vh; object-fit: contain; margin: 0 auto; }
+.history-document-modal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 18px; background: rgb(7 24 42 / 62%); backdrop-filter: blur(10px); }
+.history-document-modal-content { position: relative; display: grid; width: min(1500px, calc(100vw - 36px)); height: min(94dvh, 1000px); min-height: 0; grid-template-rows: minmax(0, 1fr); gap: 10px; overflow: hidden; padding: 20px; border-radius: 12px; background: #fff; box-shadow: 0 24px 70px rgb(0 20 40 / 35%); }
+.history-document-modal-content.has-header { grid-template-rows: auto minmax(0, 1fr); }
+.history-document-modal-content .icon-control { position: absolute; top: 12px; right: 12px; z-index: 2; background: #fff; }
+.history-document-modal-body { display: grid; min-width: 0; min-height: 0; place-items: center; overflow: auto; }
+.history-document-modal-body img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; margin: 0 auto; }
+.history-document-modal-body p { max-width: 960px; max-height: 100%; margin: 0; overflow: auto; color: var(--portal-ink); font-size: clamp(1rem, 1.6vw, 1.4rem); line-height: 1.55; white-space: pre-wrap; }
 .history-document-modal-content small { color: var(--text-muted); }
 @media (max-width: 980px) {
   .history-form-grid, .history-action-grid, .history-document-grid, .history-reader-documents { grid-template-columns: 1fr 1fr; }

@@ -122,7 +122,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
   const documentModal = selectedDocument && (
     <div className="history-document-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && setSelectedDocument(null)}>
-      <div className="history-document-modal-content">
+      <div className={`history-document-modal-content ${selectedDocument.showTitle || selectedDocument.showCaption || selectedDocument.showSource ? "has-header" : ""}`}>
         <button type="button" className="icon-control" onClick={() => setSelectedDocument(null)} aria-label="Fermer"><X size={20} /></button>
         {(selectedDocument.showTitle || selectedDocument.showCaption || selectedDocument.showSource) && (
           <div className="history-document-modal-header">
