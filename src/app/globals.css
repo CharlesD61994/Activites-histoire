@@ -11560,11 +11560,21 @@ textarea {
   backdrop-filter: blur(11px);
 }
 
-.history-document-modal-viewport {
+.history-document-modal-workspace {
   position: absolute;
   inset: 0;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 74px;
+}
+
+.history-document-modal-viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
   overflow: auto;
-  padding: 68px 32px 30px;
+  padding: 24px;
 }
 
 .history-document-modal-stage {
@@ -11606,12 +11616,11 @@ textarea {
 }
 
 .history-document-modal-controls {
-  position: fixed;
-  top: 14px;
-  left: 50%;
-  z-index: 3;
+  position: static;
   display: flex;
+  width: 54px;
   min-height: 44px;
+  flex-direction: column;
   align-items: center;
   gap: 5px;
   padding: 5px;
@@ -11619,7 +11628,6 @@ textarea {
   border-radius: 9px;
   background: rgb(255 255 255 / 92%);
   box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
-  transform: translateX(-50%);
 }
 
 .history-document-modal-controls button,
@@ -11641,18 +11649,29 @@ textarea {
 }
 
 .history-document-modal-controls span {
-  min-width: 62px;
+  min-width: 0;
+  padding-block: 3px;
   color: var(--portal-ink);
-  font-size: .88rem;
+  font-size: .72rem;
   font-weight: 900;
   text-align: center;
 }
 
-.history-document-modal-close {
-  position: fixed;
-  top: 14px;
-  right: 18px;
+.history-document-modal-sidebar {
+  position: relative;
   z-index: 3;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 10px;
+  border-left: 1px solid rgb(255 255 255 / 16%);
+  background: rgb(7 24 42 / 20%);
+}
+
+.history-document-modal-close {
+  position: static;
   width: 46px;
   height: 46px;
   border: 1px solid rgb(255 255 255 / 35%);
@@ -11689,6 +11708,7 @@ textarea {
 
 @media (max-width: 720px) {
   .history-document-modal-header { display: none; }
-  .history-document-modal-viewport { padding: 68px 14px 18px; }
-  .history-document-modal-close { right: 10px; }
+  .history-document-modal-workspace { grid-template-columns: minmax(0, 1fr) 62px; }
+  .history-document-modal-viewport { padding: 12px; }
+  .history-document-modal-sidebar { padding-inline: 4px; }
 }

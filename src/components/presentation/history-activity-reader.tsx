@@ -156,8 +156,8 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
   const fittedDocumentSize = selectedDocument?.src && documentNaturalSize.width > 0 && documentViewportSize.width > 0
     ? (() => {
-        const availableWidth = Math.max(320, documentViewportSize.width - 72);
-        const availableHeight = Math.max(240, documentViewportSize.height - 96);
+        const availableWidth = Math.max(320, documentViewportSize.width - 150);
+        const availableHeight = Math.max(240, documentViewportSize.height - 48);
         const fit = Math.min(availableWidth / documentNaturalSize.width, availableHeight / documentNaturalSize.height);
         return { width: documentNaturalSize.width * fit * documentZoom, height: documentNaturalSize.height * fit * documentZoom };
       })()
@@ -171,26 +171,30 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           {(selectedDocument.showCaption || selectedDocument.showSource) && <small>{[selectedDocument.showCaption ? selectedDocument.caption : "", selectedDocument.showSource ? selectedDocument.source : ""].filter(Boolean).join(" · ")}</small>}
         </div>
       )}
-      <div className="history-document-modal-controls" role="toolbar" aria-label="Zoom du document">
-        <button type="button" onClick={() => setDocumentZoom((current) => Math.max(0.5, current - 0.25))} aria-label="Réduire" title="Réduire"><ZoomOut size={20} /></button>
-        <span>{Math.round(documentZoom * 100)} %</span>
-        <button type="button" onClick={() => setDocumentZoom((current) => Math.min(3, current + 0.25))} aria-label="Agrandir" title="Agrandir"><ZoomIn size={20} /></button>
-        <button type="button" onClick={() => setDocumentZoom(1)} aria-label="Réinitialiser le zoom" title="Réinitialiser le zoom"><RotateCcw size={19} /></button>
-      </div>
-      <button type="button" className="history-document-modal-close" onClick={closeDocument} aria-label="Fermer"><X size={24} /></button>
-      <div className="history-document-modal-viewport">
-        <div className="history-document-modal-stage">
-          {selectedDocument.src ? (
-            <img
-              src={selectedDocument.src}
-              alt={selectedDocument.title}
-              className={fittedDocumentSize ? "is-zoom-ready" : undefined}
-              style={fittedDocumentSize ?? { maxWidth: "calc(100vw - 72px)", maxHeight: "calc(100dvh - 96px)" }}
-              onLoad={(event) => setDocumentNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
-              onDoubleClick={() => setDocumentZoom((current) => current === 1 ? 2 : 1)}
-            />
-          ) : <p style={{ transform: `scale(${documentZoom})` }}>{selectedDocument.text}</p>}
+      <div className="history-document-modal-workspace">
+        <div className="history-document-modal-viewport">
+          <div className="history-document-modal-stage">
+            {selectedDocument.src ? (
+              <img
+                src={selectedDocument.src}
+                alt={selectedDocument.title}
+                className={fittedDocumentSize ? "is-zoom-ready" : undefined}
+                style={fittedDocumentSize ?? { maxWidth: "calc(100vw - 150px)", maxHeight: "calc(100dvh - 48px)" }}
+                onLoad={(event) => setDocumentNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+                onDoubleClick={() => setDocumentZoom((current) => current === 1 ? 2 : 1)}
+              />
+            ) : <p style={{ transform: `scale(${documentZoom})` }}>{selectedDocument.text}</p>}
+          </div>
         </div>
+        <aside className="history-document-modal-sidebar" aria-label="Commandes du document">
+          <button type="button" className="history-document-modal-close" onClick={closeDocument} aria-label="Fermer" title="Fermer"><X size={24} /></button>
+          <div className="history-document-modal-controls" role="toolbar" aria-label="Zoom du document">
+            <button type="button" onClick={() => setDocumentZoom((current) => Math.min(3, current + 0.25))} aria-label="Agrandir" title="Agrandir"><ZoomIn size={20} /></button>
+            <span>{Math.round(documentZoom * 100)} %</span>
+            <button type="button" onClick={() => setDocumentZoom((current) => Math.max(0.5, current - 0.25))} aria-label="Réduire" title="Réduire"><ZoomOut size={20} /></button>
+            <button type="button" onClick={() => setDocumentZoom(1)} aria-label="Réinitialiser le zoom" title="Réinitialiser le zoom"><RotateCcw size={19} /></button>
+          </div>
+        </aside>
       </div>
     </div>
   );

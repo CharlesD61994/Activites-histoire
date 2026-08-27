@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, Bold, FileText, Image as ImageIcon, Italic, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, Shapes, Trash2, Underline, Upload, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, FileText, Image as ImageIcon, Italic, Map as MapIcon, Maximize2, MessageSquareText, Minimize2, MousePointer2, PanelTop, Plus, Shapes, Trash2, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
@@ -118,6 +118,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
   const [resourceMenuOpen, setResourceMenuOpen] = useState(false);
   const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const inspectedBlock = canvas.blocks.find((block) => block.id === inspectedId);
   const activeTextStyle = textTarget?.kind === "block"
     ? canvas.blocks.find((block) => block.id === textTarget.id)?.textStyle
@@ -170,6 +171,26 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    function syncFullscreen() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+    syncFullscreen();
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+
+  async function toggleFullscreen() {
+    setResourceMenuOpen(false);
+    setDocumentLibraryOpen(false);
+    setInteractionMenuOpen(false);
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      return;
+    }
+    await document.documentElement.requestFullscreen();
+  }
 
   async function addBlock(type: HistoryCanvasBlockType) {
     const block = defaultBlock(type, question, documents);
@@ -459,6 +480,17 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             )}
           </div>
           {question.action !== "cloze_choice" && <Button type="button" variant="secondary" onClick={() => { setResourceMenuOpen(false); setDocumentLibraryOpen(false); setInteractionMenuOpen(false); void addBlock("validation"); }}><PanelTop size={16} /> Valider</Button>}
+          <Button
+            type="button"
+            variant="secondary"
+            className="history-canvas-fullscreen-toggle"
+            onClick={() => void toggleFullscreen()}
+            aria-pressed={isFullscreen}
+            title={isFullscreen ? "Quitter le plein écran" : "Afficher la surface comme dans le lecteur en plein écran"}
+          >
+            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            {isFullscreen ? "Retour" : "Plein écran"}
+          </Button>
           </div>
           {textTarget && (
             <>
