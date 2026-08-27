@@ -326,15 +326,16 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     if (block.type === "interaction") return <HistoryInteractionEditor question={question} documents={documents} updateChoice={updateChoice} stopEditingPointer={stopEditingPointer} />;
     if (block.type === "validation") return <Button type="button"><span contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text ?? "Valider"}</span></Button>;
     if (block.type === "feedback") return <span className="history-canvas-reader-muted" contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text ?? "Feedback"}</span>;
-    return <p contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text || "Texte"}</p>;
+    return <p contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onBlur={(event) => updateBlock(block.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{block.text || "Texte"}</p>;
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
+    if (block.type === "text") return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
       <div
-        className="history-canvas-scaled-content"
+        className={`history-canvas-scaled-content content-${block.type}`}
         style={{
           width: `${contentSize.width / block.width * 100}%`,
           height: `${contentSize.height / block.height * 100}%`,

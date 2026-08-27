@@ -344,11 +344,12 @@ function HistoryCanvasStage({
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
+    if (block.type === "text") return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
       <div
-        className="history-canvas-scaled-content"
+        className={`history-canvas-scaled-content content-${block.type}`}
         style={{
           width: `${contentSize.width / block.width * 100}%`,
           height: `${contentSize.height / block.height * 100}%`,
