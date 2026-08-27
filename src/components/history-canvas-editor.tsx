@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, Image as ImageIcon, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryDocumentContent } from "@/components/history-document-content";
-import { blockAspectRatio, blockScale, historyCanvasLayoutVersion, interactionBlockSize, scalableBlockSize } from "@/lib/history-canvas";
+import { blockScales, historyCanvasLayoutVersion, interactionBlockSize, resizeHistoryCanvasBlock, scalableBlockSize, type HistoryResizeHandle } from "@/lib/history-canvas";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
 
@@ -26,10 +26,13 @@ type Props = {
 type DragState = {
   id: string;
   mode: "move" | "resize";
+  handle?: HistoryResizeHandle;
   startX: number;
   startY: number;
   block: HistoryCanvasBlock;
 };
+
+const resizeHandles: HistoryResizeHandle[] = ["n", "e", "s", "w", "ne", "se", "sw", "nw"];
 
 const blockLabels: Record<HistoryCanvasBlockType, string> = {
   text: "Texte",
@@ -297,29 +300,14 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       });
       return;
     }
-    const scalableSize = scalableBlockSize(drag.block, question);
-    if (drag.block.type === "document" || scalableSize) {
-      const scaleX = (drag.block.width + dx) / drag.block.width;
-      const scaleY = (drag.block.height + dy) / drag.block.height;
-      const desiredScale = Math.abs(scaleX - 1) >= Math.abs(scaleY - 1) ? scaleX : scaleY;
-      const minimumScale = scalableSize
-        ? 0.25 / blockScale(drag.block, question)
-        : Math.max(120 / drag.block.width, 90 / drag.block.height);
-      const maximumScale = Math.min(
-        (canvas.width - drag.block.x) / drag.block.width,
-        (canvas.height - drag.block.y) / drag.block.height
-      );
-      const scale = clamp(desiredScale, minimumScale, maximumScale);
-      updateBlock(drag.id, {
-        width: drag.block.width * scale,
-        height: drag.block.height * scale
-      });
-      return;
-    }
-    updateBlock(drag.id, {
-      width: clamp(drag.block.width + dx, 80, canvas.width - drag.block.x),
-      height: clamp(drag.block.height + dy, 55, canvas.height - drag.block.y)
-    });
+    updateBlock(drag.id, resizeHistoryCanvasBlock(
+      drag.block,
+      drag.handle ?? "se",
+      dx,
+      dy,
+      canvas,
+      question
+    ));
   }
 
   function renderBlock(block: HistoryCanvasBlock) {
@@ -338,12 +326,12 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    const scale = blockScale(block, question);
+    const scale = blockScales(block, question);
     if (!scalableBlockSize(block, question)) return renderBlock(block);
     return (
       <div
         className="history-canvas-scaled-content"
-        style={{ width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` }}
+        style={{ width: `${100 / scale.x}%`, height: `${100 / scale.y}%`, transform: `scale(${scale.x}, ${scale.y})` }}
       >
         {renderBlock(block)}
       </div>
@@ -431,7 +419,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           }}
         >
           {canvas.blocks.map((block) => {
-            const aspectRatio = blockAspectRatio(block, question);
             return (
               <div
               key={block.id}
@@ -442,11 +429,10 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 left: `${block.x / canvas.width * 100}%`,
                 top: `${block.y / canvas.height * 100}%`,
                 width: `${block.width / canvas.width * 100}%`,
-                height: aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
-                aspectRatio
+                height: `${block.height / canvas.height * 100}%`
               }}
               onPointerDownCapture={(event) => {
-                if ((event.target as HTMLElement).closest(".history-canvas-resize")) return;
+                if ((event.target as HTMLElement).closest(".history-canvas-resize-handle")) return;
                 const point = eventToCanvas(event);
                 setSelectedId(block.id);
                 if (inspectedId && inspectedId !== block.id) setInspectedId("");
@@ -465,17 +451,20 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               }}
             >
               {renderScaledBlock(block)}
-              <span
-                className="history-canvas-resize"
-                onPointerDown={(event) => {
-                  event.stopPropagation();
-                  event.currentTarget.setPointerCapture(event.pointerId);
-                  const point = eventToCanvas(event);
-                  setSelectedId(block.id);
-                  if (inspectedId && inspectedId !== block.id) setInspectedId("");
-                  setDrag({ id: block.id, mode: "resize", startX: point.x, startY: point.y, block });
-                }}
-              />
+              {resizeHandles.map((handle) => (
+                <span
+                  key={handle}
+                  className={`history-canvas-resize-handle resize-${handle}`}
+                  onPointerDown={(event) => {
+                    event.stopPropagation();
+                    event.currentTarget.setPointerCapture(event.pointerId);
+                    const point = eventToCanvas(event);
+                    setSelectedId(block.id);
+                    if (inspectedId && inspectedId !== block.id) setInspectedId("");
+                    setDrag({ id: block.id, mode: "resize", handle, startX: point.x, startY: point.y, block });
+                  }}
+                />
+              ))}
               </div>
             );
           })}

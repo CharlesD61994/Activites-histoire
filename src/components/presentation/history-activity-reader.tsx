@@ -6,7 +6,7 @@ import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryDocumentContent } from "@/components/history-document-content";
-import { blockAspectRatio, blockScale, scalableBlockSize } from "@/lib/history-canvas";
+import { blockScales, scalableBlockSize } from "@/lib/history-canvas";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
@@ -344,12 +344,12 @@ function HistoryCanvasStage({
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    const scale = blockScale(block, question);
+    const scale = blockScales(block, question);
     if (!scalableBlockSize(block, question)) return renderBlock(block);
     return (
       <div
         className="history-canvas-scaled-content"
-        style={{ width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` }}
+        style={{ width: `${100 / scale.x}%`, height: `${100 / scale.y}%`, transform: `scale(${scale.x}, ${scale.y})` }}
       >
         {renderBlock(block)}
       </div>
@@ -359,7 +359,6 @@ function HistoryCanvasStage({
   return (
     <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
       {canvas.blocks.map((block) => {
-        const aspectRatio = blockAspectRatio(block, question);
         return (
           <div
           key={block.id}
@@ -368,8 +367,7 @@ function HistoryCanvasStage({
             left: `${block.x / canvas.width * 100}%`,
             top: `${block.y / canvas.height * 100}%`,
             width: `${block.width / canvas.width * 100}%`,
-            height: aspectRatio ? "auto" : `${block.height / canvas.height * 100}%`,
-            aspectRatio
+            height: `${block.height / canvas.height * 100}%`
           }}
         >
           {renderScaledBlock(block)}
