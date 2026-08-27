@@ -2,12 +2,13 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { FileText, Image as ImageIcon, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, Trash2, Upload, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, Bold, FileText, Image as ImageIcon, Italic, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, RotateCcw, Trash2, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, resizeHistoryCanvasBlock, type HistoryResizeHandle } from "@/lib/history-canvas";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
-import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
+import { defaultHistoryTextStyle, historyTextStyleToCss } from "@/lib/history-text-style";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument, HistoryTextStyle } from "@/types";
 
 type Props = {
   canvas: HistoryActivityCanvas;
@@ -31,6 +32,10 @@ type DragState = {
   startY: number;
   block: HistoryCanvasBlock;
 };
+
+type TextTarget =
+  | { kind: "block"; id: string }
+  | { kind: "choice"; id: string; blockId: string };
 
 const resizeHandles: HistoryResizeHandle[] = ["n", "e", "s", "w", "ne", "se", "sw", "nw"];
 
@@ -107,10 +112,14 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   const fittedDocumentsRef = useRef(new Set<string>());
   const [selectedId, setSelectedId] = useState("");
   const [inspectedId, setInspectedId] = useState("");
+  const [textTarget, setTextTarget] = useState<TextTarget | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
   const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
   const inspectedBlock = canvas.blocks.find((block) => block.id === inspectedId);
+  const activeTextStyle = textTarget?.kind === "block"
+    ? canvas.blocks.find((block) => block.id === textTarget.id)?.textStyle
+    : question.choices?.find((choice) => choice.id === textTarget?.id)?.textStyle;
 
   function patchCanvas(patch: Partial<HistoryActivityCanvas>) {
     onChange({ ...canvas, ...patch });
@@ -132,6 +141,40 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     event.stopPropagation();
   }
 
+  function activateTextEditing(event: React.PointerEvent | React.FocusEvent, target: TextTarget) {
+    event.stopPropagation();
+    setTextTarget(target);
+    setSelectedId(target.kind === "block" ? target.id : target.blockId);
+  }
+
+  function updateActiveTextStyle(patch: Partial<HistoryTextStyle>) {
+    if (!textTarget) return;
+    if (textTarget.kind === "block") {
+      const block = canvas.blocks.find((item) => item.id === textTarget.id);
+      if (block) updateBlock(block.id, { textStyle: { ...block.textStyle, ...patch } });
+      return;
+    }
+    const choice = question.choices?.find((item) => item.id === textTarget.id);
+    if (choice) updateChoice(choice.id, { textStyle: { ...choice.textStyle, ...patch } });
+  }
+
+  function resetActiveTextStyle() {
+    if (!textTarget) return;
+    if (textTarget.kind === "block") {
+      updateBlock(textTarget.id, { textStyle: undefined });
+      return;
+    }
+    updateChoice(textTarget.id, { textStyle: undefined });
+  }
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setTextTarget(null);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   async function addBlock(type: HistoryCanvasBlockType) {
     const block = defaultBlock(type, question, documents);
     if (type === "document") {
@@ -145,6 +188,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
     setInspectedId("");
+    setTextTarget(null);
   }
 
   async function addDocumentBlock(document: HistorySourceDocument) {
@@ -161,6 +205,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
     setInspectedId("");
+    setTextTarget(null);
     setDocumentLibraryOpen(false);
   }
 
@@ -223,6 +268,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     patchCanvas({ blocks: canvas.blocks.filter((block) => block.documentId !== documentId) });
     setSelectedId("");
     setInspectedId("");
+    setTextTarget(null);
   }
 
   function chooseInteraction(action: HistoryInteractiveAction) {
@@ -231,6 +277,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     if (existingInteraction) {
       setSelectedId(existingInteraction.id);
       setInspectedId("");
+      setTextTarget(null);
     } else {
       void addBlock("interaction");
     }
@@ -280,6 +327,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     patchCanvas({ blocks });
     setSelectedId(blocks[0]?.id ?? "");
     setInspectedId("");
+    setTextTarget(null);
   }
 
   function eventToCanvas(event: React.PointerEvent) {
@@ -323,10 +371,10 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
         </button>
       );
     }
-    if (block.type === "interaction") return <HistoryInteractionEditor question={question} documents={documents} updateChoice={updateChoice} stopEditingPointer={stopEditingPointer} />;
-    if (block.type === "validation") return <Button type="button"><span contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text ?? "Valider"}</span></Button>;
-    if (block.type === "feedback") return <span className="history-canvas-reader-muted" contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateBlock(block.id, { text: event.currentTarget.textContent ?? "" })}>{block.text ?? "Feedback"}</span>;
-    return <p contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onBlur={(event) => updateBlock(block.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{block.text || "Texte"}</p>;
+    if (block.type === "interaction") return <HistoryInteractionEditor question={question} documents={documents} blockId={block.id} updateChoice={updateChoice} activateTextEditing={activateTextEditing} stopEditingPointer={stopEditingPointer} />;
+    if (block.type === "validation") return <Button type="button" style={historyTextStyleToCss(block.textStyle)}><span contentEditable suppressContentEditableWarning onPointerDown={(event) => activateTextEditing(event, { kind: "block", id: block.id })} onFocus={(event) => activateTextEditing(event, { kind: "block", id: block.id })} onBlur={(event) => updateBlock(block.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{block.text ?? "Valider"}</span></Button>;
+    if (block.type === "feedback") return <span className="history-canvas-reader-muted" style={historyTextStyleToCss(block.textStyle)} contentEditable suppressContentEditableWarning onPointerDown={(event) => activateTextEditing(event, { kind: "block", id: block.id })} onFocus={(event) => activateTextEditing(event, { kind: "block", id: block.id })} onBlur={(event) => updateBlock(block.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{block.text ?? "Feedback"}</span>;
+    return <p style={historyTextStyleToCss(block.textStyle)} contentEditable suppressContentEditableWarning onPointerDown={(event) => activateTextEditing(event, { kind: "block", id: block.id })} onFocus={(event) => activateTextEditing(event, { kind: "block", id: block.id })} onBlur={(event) => updateBlock(block.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{block.text || "Texte"}</p>;
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
@@ -349,12 +397,9 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
   return (
     <section className="history-canvas-editor">
-      <div className="history-canvas-toolbar">
-        <div>
-          <span className="eyebrow">Tableau du lecteur</span>
-          <h3>Place les éléments affichés au tableau</h3>
-        </div>
-        <div className="history-canvas-tools">
+      <div className="history-canvas-toolbar-stack">
+        <div className="history-canvas-toolbar" aria-label="Ajouter un objet">
+          <div className="history-canvas-tools">
           <Button type="button" variant="secondary" onClick={() => addBlock("text")}><MessageSquareText size={16} /> Texte</Button>
           <div className="history-canvas-tool-menu">
             <Button type="button" variant="secondary" aria-expanded={documentLibraryOpen} onClick={() => { setInteractionMenuOpen(false); setDocumentLibraryOpen((open) => !open); }}><FileText size={16} /> Document</Button>
@@ -409,7 +454,16 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             )}
           </div>
           <Button type="button" variant="secondary" onClick={() => addBlock("validation")}><PanelTop size={16} /> Valider</Button>
+          </div>
         </div>
+        {textTarget && (
+          <TextFormattingToolbar
+            style={activeTextStyle}
+            onChange={updateActiveTextStyle}
+            onReset={resetActiveTextStyle}
+            onClose={() => setTextTarget(null)}
+          />
+        )}
       </div>
 
       <div className="history-canvas-layout">
@@ -424,6 +478,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             if (event.target === event.currentTarget) {
               setSelectedId("");
               setInspectedId("");
+              setTextTarget(null);
             }
           }}
         >
@@ -441,9 +496,11 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 height: `${block.height / canvas.height * 100}%`
               }}
               onPointerDownCapture={(event) => {
-                if ((event.target as HTMLElement).closest(".history-canvas-resize-handle")) return;
+                const target = event.target as HTMLElement;
+                if (target.closest(".history-canvas-resize-handle")) return;
                 const point = eventToCanvas(event);
                 setSelectedId(block.id);
+                if (!target.closest("[contenteditable='true']")) setTextTarget(null);
                 if (inspectedId && inspectedId !== block.id) setInspectedId("");
                 setDrag({ id: block.id, mode: "move", startX: point.x, startY: point.y, block });
                 try {
@@ -454,6 +511,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               }}
               onClick={() => setSelectedId(block.id)}
               onDoubleClick={(event) => {
+                if ((event.target as HTMLElement).closest("[contenteditable='true']")) return;
                 event.stopPropagation();
                 setSelectedId(block.id);
                 setInspectedId(block.id);
@@ -469,6 +527,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                     event.currentTarget.setPointerCapture(event.pointerId);
                     const point = eventToCanvas(event);
                     setSelectedId(block.id);
+                    setTextTarget(null);
                     if (inspectedId && inspectedId !== block.id) setInspectedId("");
                     setDrag({ id: block.id, mode: "resize", handle, startX: point.x, startY: point.y, block });
                   }}
@@ -503,6 +562,43 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
         )}
       </div>
     </section>
+  );
+}
+
+function TextFormattingToolbar({
+  style,
+  onChange,
+  onReset,
+  onClose
+}: {
+  style?: HistoryTextStyle;
+  onChange: (patch: Partial<HistoryTextStyle>) => void;
+  onReset: () => void;
+  onClose: () => void;
+}) {
+  const current = { ...defaultHistoryTextStyle, ...style };
+  return (
+    <div className="history-text-toolbar" role="toolbar" aria-label="Mise en forme du texte">
+      <label className="history-text-size-control" title="Taille de la police">
+        <span>Taille</span>
+        <input type="number" min={10} max={96} value={current.fontSize} onChange={(event) => onChange({ fontSize: clamp(Number(event.target.value), 10, 96) })} />
+      </label>
+      <label className="history-text-color-control" title="Couleur du texte">
+        <span style={{ background: current.color }} />
+        <input type="color" value={current.color} onChange={(event) => onChange({ color: event.target.value })} />
+      </label>
+      <span className="history-toolbar-divider" />
+      <button type="button" className={current.bold ? "active" : ""} onClick={() => onChange({ bold: !current.bold })} aria-label="Gras" title="Gras"><Bold size={18} /></button>
+      <button type="button" className={current.italic ? "active" : ""} onClick={() => onChange({ italic: !current.italic })} aria-label="Italique" title="Italique"><Italic size={18} /></button>
+      <button type="button" className={current.underline ? "active" : ""} onClick={() => onChange({ underline: !current.underline })} aria-label="Souligné" title="Souligné"><Underline size={18} /></button>
+      <span className="history-toolbar-divider" />
+      <button type="button" className={current.align === "left" ? "active" : ""} onClick={() => onChange({ align: "left" })} aria-label="Aligner à gauche" title="Aligner à gauche"><AlignLeft size={18} /></button>
+      <button type="button" className={current.align === "center" ? "active" : ""} onClick={() => onChange({ align: "center" })} aria-label="Centrer" title="Centrer"><AlignCenter size={18} /></button>
+      <button type="button" className={current.align === "right" ? "active" : ""} onClick={() => onChange({ align: "right" })} aria-label="Aligner à droite" title="Aligner à droite"><AlignRight size={18} /></button>
+      <span className="history-toolbar-divider" />
+      <button type="button" onClick={onReset} aria-label="Réinitialiser la mise en forme" title="Réinitialiser"><RotateCcw size={18} /></button>
+      <button type="button" onClick={onClose} aria-label="Fermer la mise en forme" title="Fermer"><X size={18} /></button>
+    </div>
   );
 }
 
@@ -567,12 +663,16 @@ function DocumentInspector({
 function HistoryInteractionEditor({
   question,
   documents,
+  blockId,
   updateChoice,
+  activateTextEditing,
   stopEditingPointer
 }: {
   question: HistoryQuestion;
   documents: HistorySourceDocument[];
+  blockId: string;
   updateChoice: (id: string, patch: Partial<HistoryChoiceOption>) => void;
+  activateTextEditing: (event: React.PointerEvent | React.FocusEvent, target: TextTarget) => void;
   stopEditingPointer: (event: React.PointerEvent) => void;
 }) {
   if (question.action === "choice_single" || question.action === "choice_multiple") {
@@ -580,7 +680,7 @@ function HistoryInteractionEditor({
       <div className="history-choice-grid history-canvas-choice-editor">
         {(question.choices ?? []).map((choice) => (
           <button type="button" key={choice.id}>
-            <span contentEditable suppressContentEditableWarning onPointerDown={stopEditingPointer} onInput={(event) => updateChoice(choice.id, { text: event.currentTarget.textContent ?? "" })}>{choice.text}</span>
+            <span style={historyTextStyleToCss(choice.textStyle)} contentEditable suppressContentEditableWarning onPointerDown={(event) => activateTextEditing(event, { kind: "choice", id: choice.id, blockId })} onFocus={(event) => activateTextEditing(event, { kind: "choice", id: choice.id, blockId })} onBlur={(event) => updateChoice(choice.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{choice.text}</span>
           </button>
         ))}
       </div>

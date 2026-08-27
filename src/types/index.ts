@@ -117,6 +117,16 @@ export type HistoryChoiceOption = {
   id: string;
   text: string;
   isCorrect: boolean;
+  textStyle?: HistoryTextStyle;
+};
+
+export type HistoryTextStyle = {
+  fontSize?: number;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  align?: "left" | "center" | "right";
 };
 
 export type HistoryClassificationCategory = {
@@ -180,6 +190,7 @@ export type HistoryCanvasBlock = {
   text?: string;
   documentId?: string;
   aspectRatio?: number;
+  textStyle?: HistoryTextStyle;
 };
 
 export type HistoryActivityCanvas = {
