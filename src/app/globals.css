@@ -315,7 +315,9 @@
 .history-hotspot-editor img, .history-hotspot-reader img { display: block; width: 100%; max-height: 58vh; object-fit: contain; }
 .history-hotspot-editor span { position: absolute; border: 3px solid var(--danger); border-radius: 999px; transform: translate(-50%, -50%); pointer-events: none; }
 .history-hotspot-reader span { position: absolute; width: 24px; height: 24px; border: 4px solid var(--primary); border-radius: 999px; transform: translate(-50%, -50%); background: rgb(255 255 255 / 70%); pointer-events: none; }
-.history-cloze-editor { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.history-cloze-editor { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+.history-cloze-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.history-cloze-editor-heading button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--danger); }
 .history-bank-preview small { display: block; color: var(--text-muted); }
 .history-reader { width: min(1180px, 100%); margin: 0 auto; }
 .history-reader-main { display: grid; gap: 22px; }
@@ -335,11 +337,24 @@
   color: var(--portal-ink); font-size: 1.08rem; font-weight: 900; text-align: left;
 }
 .history-choice-grid button.selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, #fff); }
-.history-answer-list, .history-cloze-reader { display: grid; gap: 12px; }
-.history-answer-list label, .history-cloze-reader label {
+.history-answer-list { display: grid; gap: 12px; }
+.history-answer-list label {
   grid-template-columns: minmax(0, 1fr) minmax(220px, 32%);
   align-items: center; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
 }
+.history-cloze-reader { display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 18px; overflow: hidden; }
+.history-cloze-sentence { min-width: 0; padding: 18px 20px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; color: var(--portal-ink); font-size: clamp(1.15rem, 2vw, 1.65rem); font-weight: 720; line-height: 1.8; }
+.history-cloze-text { white-space: pre-wrap; }
+.history-cloze-blank { display: inline-flex; min-width: 112px; min-height: 42px; margin: 4px 5px; padding: 4px 13px; align-items: center; justify-content: center; vertical-align: middle; border: 2px dashed #8ba6ba; border-radius: 7px; background: #f8fbfd; color: var(--portal-ink); font: inherit; font-weight: 850; line-height: 1.25; }
+.history-cloze-blank.ready { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, #fff); }
+.history-cloze-blank.filled { border-style: solid; border-color: var(--primary); background: color-mix(in srgb, var(--primary) 11%, #fff); }
+.history-cloze-bank { display: flex; min-height: 70px; align-content: center; align-items: center; justify-content: center; gap: 11px; padding: 12px; flex-wrap: wrap; border-top: 1px solid var(--border); }
+.history-cloze-bank button { display: inline-flex; min-height: 42px; align-items: center; gap: 7px; padding: 7px 14px; border: 1px solid #b9cddd; border-radius: 8px; background: #fff; color: var(--portal-ink); font-size: 1rem; font-weight: 850; cursor: grab; }
+.history-cloze-bank button.selected { border-color: var(--primary); outline: 3px solid color-mix(in srgb, var(--primary) 18%, transparent); }
+.history-cloze-bank button.used { display: none; }
+.history-cloze-grip { color: #6f8799; font-size: 1.15em; }
+.history-cloze-reader.is-preview { pointer-events: none; }
+.history-canvas-scaled-content .history-cloze-reader { height: 100%; }
 .history-short-text-reader input {
   min-height: 72px;
   padding: 0 22px;
@@ -373,7 +388,7 @@
 @media (max-width: 680px) {
   .history-form-grid, .history-action-grid, .history-document-grid, .history-reader-documents, .history-choice-grid { grid-template-columns: 1fr; }
   .history-editor-heading, .history-inline-actions { flex-direction: column; align-items: stretch; }
-  .history-answer-list label, .history-cloze-reader label, .history-order-list > div { grid-template-columns: 1fr; }
+  .history-answer-list label, .history-order-list > div { grid-template-columns: 1fr; }
 }
 
 * { box-sizing: border-box; }

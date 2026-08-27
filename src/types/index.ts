@@ -216,6 +216,7 @@ export type HistoryQuestion = {
   hotspot?: HistoryHotspot;
   clozeText?: string;
   clozeBlanks?: HistoryClozeBlank[];
+  clozeDistractors?: string[];
   acceptedTextAnswers?: string[];
   textAnswerCaseSensitive?: boolean;
   feedbackCorrect?: string;

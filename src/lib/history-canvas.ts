@@ -13,7 +13,7 @@ export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "classification") return { width: 720, height: Math.max(180, (question.classificationItems?.length ?? 1) * 120) };
   if (question.action === "matching") return { width: 720, height: Math.max(180, (question.matchingPrompts?.length ?? 1) * 120) };
   if (question.action === "chronological_order" || question.action === "timeline") return { width: 760, height: Math.max(200, (question.timelineEvents?.length ?? 2) * 105) };
-  return { width: 720, height: Math.max(220, (question.clozeBlanks?.length ?? 1) * 105 + 100) };
+  return { width: 920, height: Math.max(300, 190 + Math.ceil(((question.clozeBlanks?.length ?? 1) + (question.clozeDistractors?.length ?? 0)) / 4) * 62) };
 }
 
 export function scalableBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
@@ -108,18 +108,33 @@ function clampCanvasValue(value: number, minimum: number, maximum: number) {
 
 export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, question: HistoryQuestion): HistoryActivityCanvas {
   const size = interactionBlockSize(question);
+  const interaction = canvas.blocks.find((block) => block.type === "interaction");
+  const resizedInteraction = interaction ? {
+    ...interaction,
+    width: size.width,
+    height: size.height,
+    contentWidth: size.width,
+    contentHeight: size.height,
+    x: Math.min(interaction.x, canvas.width - size.width),
+    y: Math.min(interaction.y, canvas.height - size.height)
+  } : null;
+
   return {
     ...canvas,
     layoutVersion: historyCanvasLayoutVersion,
-    blocks: canvas.blocks.map((block) => block.type === "interaction" ? {
-      ...block,
-      width: size.width,
-      height: size.height,
-      contentWidth: size.width,
-      contentHeight: size.height,
-      x: Math.min(block.x, canvas.width - size.width),
-      y: Math.min(block.y, canvas.height - size.height)
-    } : block)
+    blocks: canvas.blocks.map((block) => {
+      if (block.type === "interaction" && resizedInteraction) return resizedInteraction;
+      if (block.type !== "validation" || !resizedInteraction) return block;
+      const overlaps = block.x < resizedInteraction.x + resizedInteraction.width
+        && block.x + block.width > resizedInteraction.x
+        && block.y < resizedInteraction.y + resizedInteraction.height
+        && block.y + block.height > resizedInteraction.y;
+      if (!overlaps) return block;
+      return {
+        ...block,
+        y: Math.min(canvas.height - block.height, resizedInteraction.y + resizedInteraction.height + 24)
+      };
+    })
   };
 }
 

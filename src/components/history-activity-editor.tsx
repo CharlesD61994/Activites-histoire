@@ -49,6 +49,16 @@ function makeChoice(text: string, isCorrect = false): HistoryChoiceOption {
   return { id: crypto.randomUUID(), text, isCorrect };
 }
 
+function nextClozeLabel(question: HistoryQuestion) {
+  const highest = Math.max(0, ...(question.clozeBlanks ?? []).map((blank) => Number.parseInt(blank.label, 10)).filter(Number.isFinite));
+  return String(highest + 1);
+}
+
+function removeClozeMarker(text: string, label: string) {
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text.replace(new RegExp(`\\s*(?:\\[\\[${escaped}\\]\\]|\\{\\{${escaped}\\}\\})`), "");
+}
+
 function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
   const id = crypto.randomUUID();
   return {
@@ -67,7 +77,8 @@ function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
     matchingTargets: [],
     timelineEvents: [],
     clozeText: "La réponse est [[1]].",
-    clozeBlanks: [{ id: crypto.randomUUID(), label: "1", options: [makeChoice("bon choix", true), makeChoice("autre choix")] }],
+    clozeBlanks: [{ id: crypto.randomUUID(), label: "1", options: [makeChoice("bon choix", true)] }],
+    clozeDistractors: ["autre choix"],
     acceptedTextAnswers: ["réponse acceptée"],
     textAnswerCaseSensitive: false
   };
@@ -84,6 +95,9 @@ function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractive
   if (!next.matchingPrompts?.length) next.matchingPrompts = [{ id: crypto.randomUUID(), prompt: "Élément de départ", correctTargetId: next.matchingTargets[0].id }];
   if (!next.timelineEvents?.length) next.timelineEvents = [{ id: crypto.randomUUID(), text: "Événement 1", correctOrder: 1 }, { id: crypto.randomUUID(), text: "Événement 2", correctOrder: 2 }];
   if (!next.clozeBlanks?.length) next.clozeBlanks = [{ id: crypto.randomUUID(), label: "1", options: [makeChoice("bon choix", true), makeChoice("autre choix")] }];
+  if (question.clozeDistractors === undefined) {
+    next.clozeDistractors = [...new Set((question.clozeBlanks ?? []).flatMap((blank) => blank.options.filter((option) => !option.isCorrect).map((option) => option.text.trim())).filter(Boolean))];
+  }
   if (!next.acceptedTextAnswers?.length) next.acceptedTextAnswers = ["réponse acceptée"];
   return next;
 }
@@ -332,18 +346,22 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
     return (
       <section className="history-editor-panel">
         <h3>Texte à compléter</h3>
-        <textarea value={question.clozeText ?? ""} onChange={(event) => updateQuestion({ clozeText: event.target.value })} />
+        <p>Insère <strong>[[1]]</strong>, <strong>[[2]]</strong>, etc. dans le texte à l’endroit de chaque case vide.</p>
+        <label>Texte<textarea rows={6} value={question.clozeText ?? ""} onChange={(event) => updateQuestion({ clozeText: event.target.value })} /></label>
         {(question.clozeBlanks ?? []).map((blank) => (
           <div className="history-cloze-editor" key={blank.id}>
-            <strong>Blanc {blank.label}</strong>
-            {blank.options.map((option) => (
-              <div className="history-inline-row" key={option.id}>
-                <input value={option.text} onChange={(event) => updateQuestion({ clozeBlanks: question.clozeBlanks?.map((item) => item.id === blank.id ? { ...item, options: item.options.map((candidate) => candidate.id === option.id ? { ...candidate, text: event.target.value } : candidate) } : item) })} />
-                <label className="history-check"><input type="checkbox" checked={option.isCorrect} onChange={(event) => updateQuestion({ clozeBlanks: question.clozeBlanks?.map((item) => item.id === blank.id ? { ...item, options: item.options.map((candidate) => candidate.id === option.id ? { ...candidate, isCorrect: event.target.checked } : candidate) } : item) })} /> Bon choix</label>
-              </div>
-            ))}
+            <div className="history-cloze-editor-heading"><strong>Case [[{blank.label}]]</strong><button type="button" aria-label={`Supprimer la case ${blank.label}`} onClick={() => updateQuestion({ clozeText: removeClozeMarker(question.clozeText ?? "", blank.label), clozeBlanks: question.clozeBlanks?.filter((item) => item.id !== blank.id) })}><Trash2 size={16} /></button></div>
+            <label>Bonne réponse<input value={blank.options.find((option) => option.isCorrect)?.text ?? ""} onChange={(event) => updateQuestion({ clozeBlanks: question.clozeBlanks?.map((item) => item.id === blank.id ? { ...item, options: [{ ...(item.options.find((option) => option.isCorrect) ?? makeChoice("", true)), text: event.target.value, isCorrect: true }] } : item) })} /></label>
           </div>
         ))}
+        <Button type="button" variant="secondary" onClick={() => {
+          const label = nextClozeLabel(question);
+          updateQuestion({ clozeText: `${question.clozeText ?? ""} [[${label}]]`, clozeBlanks: [...(question.clozeBlanks ?? []), { id: crypto.randomUUID(), label, options: [makeChoice("nouveau mot", true)] }] });
+        }}><Plus size={16} /> Ajouter une case</Button>
+        <h3>Mots intrus</h3>
+        <p>Ces mots seront proposés dans la banque, mais ne correspondent à aucune case.</p>
+        {(question.clozeDistractors ?? []).map((word, index) => <div className="history-inline-row" key={index}><input value={word} onChange={(event) => updateQuestion({ clozeDistractors: (question.clozeDistractors ?? []).map((item, itemIndex) => itemIndex === index ? event.target.value : item) })} /><button type="button" aria-label="Supprimer le mot intrus" onClick={() => updateQuestion({ clozeDistractors: (question.clozeDistractors ?? []).filter((_, itemIndex) => itemIndex !== index) })}><Trash2 size={16} /></button></div>)}
+        <Button type="button" variant="secondary" onClick={() => updateQuestion({ clozeDistractors: [...(question.clozeDistractors ?? []), ""] })}><Plus size={16} /> Ajouter un mot intrus</Button>
       </section>
     );
   })();

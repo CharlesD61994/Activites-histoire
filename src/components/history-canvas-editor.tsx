@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight, Bold, FileText, Image as ImageIcon, Italic, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, Shapes, Trash2, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryDocumentContent } from "@/components/history-document-content";
+import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, resizeHistoryCanvasBlock, type HistoryResizeHandle } from "@/lib/history-canvas";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import { defaultHistoryTextStyle, historyTextStyleToCss } from "@/lib/history-text-style";
@@ -711,9 +712,6 @@ function HistoryInteractionEditor({
   }
 
   return (
-    <div className="history-cloze-reader">
-      <p>{question.clozeText}</p>
-      {(question.clozeBlanks ?? []).map((blank) => <label key={blank.id}>Blanc {blank.label}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Choisir</option>{blank.options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}
-    </div>
+    <HistoryClozeInteraction question={question} preview onPointerDown={stopEditingPointer} />
   );
 }

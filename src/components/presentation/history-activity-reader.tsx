@@ -6,7 +6,9 @@ import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryDocumentContent } from "@/components/history-document-content";
+import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales } from "@/lib/history-canvas";
+import { clozeAnswerIsCorrect } from "@/lib/history-cloze";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import { historyTextStyleToCss } from "@/lib/history-text-style";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
@@ -102,10 +104,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     } else if (question.action === "document_hotspot") {
       correct = Boolean(question.hotspot && hotspotAnswer && distancePercent(hotspotAnswer, question.hotspot) <= question.hotspot.radius);
     } else if (question.action === "cloze_choice") {
-      correct = (question.clozeBlanks ?? []).every((blank) => {
-        const expected = blank.options.find((option) => option.isCorrect)?.id;
-        return expected && clozeAnswers[blank.id] === expected;
-      });
+      correct = (question.clozeBlanks ?? []).every((blank) => clozeAnswerIsCorrect(question, blank, clozeAnswers[blank.id]));
     } else if (question.action === "short_text") {
       const answer = normalizeTextAnswer(shortTextAnswer, question.textAnswerCaseSensitive);
       correct = Boolean(answer) && (question.acceptedTextAnswers ?? []).some((accepted) => normalizeTextAnswer(accepted, question.textAnswerCaseSensitive) === answer);
@@ -470,9 +469,6 @@ function HistoryQuestionInteraction({
   }
 
   return (
-    <div className="history-cloze-reader">
-      <p>{question.clozeText}</p>
-      {(question.clozeBlanks ?? []).map((blank) => <label key={blank.id}>Blanc {blank.label}<select value={clozeAnswers[blank.id] ?? ""} onChange={(event) => { resetValidation(); setClozeAnswers({ ...clozeAnswers, [blank.id]: event.target.value }); }}><option value="">Choisir</option>{blank.options.map((option) => <option key={option.id} value={option.id}>{option.text}</option>)}</select></label>)}
-    </div>
+    <HistoryClozeInteraction question={question} answers={clozeAnswers} onAnswersChange={setClozeAnswers} onInteraction={resetValidation} />
   );
 }
