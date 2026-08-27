@@ -173,28 +173,30 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
       )}
       <div className="history-document-modal-workspace">
         <div className="history-document-modal-viewport">
-          <div className="history-document-modal-stage">
-            {selectedDocument.src ? (
-              <img
-                src={selectedDocument.src}
-                alt={selectedDocument.title}
-                className={fittedDocumentSize ? "is-zoom-ready" : undefined}
-                style={fittedDocumentSize ?? { maxWidth: "calc(100vw - 150px)", maxHeight: "calc(100dvh - 48px)" }}
-                onLoad={(event) => setDocumentNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
-                onDoubleClick={() => setDocumentZoom((current) => current === 1 ? 2 : 1)}
-              />
-            ) : <p style={{ transform: `scale(${documentZoom})` }}>{selectedDocument.text}</p>}
+          <div className="history-document-modal-cluster">
+            <div className="history-document-modal-stage">
+              {selectedDocument.src ? (
+                <img
+                  src={selectedDocument.src}
+                  alt={selectedDocument.title}
+                  className={fittedDocumentSize ? "is-zoom-ready" : undefined}
+                  style={fittedDocumentSize ?? { maxWidth: "calc(100vw - 150px)", maxHeight: "calc(100dvh - 48px)" }}
+                  onLoad={(event) => setDocumentNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+                  onDoubleClick={() => setDocumentZoom((current) => current === 1 ? 2 : 1)}
+                />
+              ) : <p style={{ fontSize: `${1.2 * documentZoom}rem` }}>{selectedDocument.text}</p>}
+            </div>
+            <aside className="history-document-modal-sidebar" aria-label="Commandes du document">
+              <button type="button" className="history-document-modal-close" onClick={closeDocument} aria-label="Fermer" title="Fermer"><X size={24} /></button>
+              <div className="history-document-modal-controls" role="toolbar" aria-label="Zoom du document">
+                <button type="button" onClick={() => setDocumentZoom((current) => Math.min(3, current + 0.25))} aria-label="Agrandir" title="Agrandir"><ZoomIn size={20} /></button>
+                <span>{Math.round(documentZoom * 100)} %</span>
+                <button type="button" onClick={() => setDocumentZoom((current) => Math.max(0.5, current - 0.25))} aria-label="Réduire" title="Réduire"><ZoomOut size={20} /></button>
+                <button type="button" onClick={() => setDocumentZoom(1)} aria-label="Réinitialiser le zoom" title="Réinitialiser le zoom"><RotateCcw size={19} /></button>
+              </div>
+            </aside>
           </div>
         </div>
-        <aside className="history-document-modal-sidebar" aria-label="Commandes du document">
-          <button type="button" className="history-document-modal-close" onClick={closeDocument} aria-label="Fermer" title="Fermer"><X size={24} /></button>
-          <div className="history-document-modal-controls" role="toolbar" aria-label="Zoom du document">
-            <button type="button" onClick={() => setDocumentZoom((current) => Math.min(3, current + 0.25))} aria-label="Agrandir" title="Agrandir"><ZoomIn size={20} /></button>
-            <span>{Math.round(documentZoom * 100)} %</span>
-            <button type="button" onClick={() => setDocumentZoom((current) => Math.max(0.5, current - 0.25))} aria-label="Réduire" title="Réduire"><ZoomOut size={20} /></button>
-            <button type="button" onClick={() => setDocumentZoom(1)} aria-label="Réinitialiser le zoom" title="Réinitialiser le zoom"><RotateCcw size={19} /></button>
-          </div>
-        </aside>
       </div>
     </div>
   );
