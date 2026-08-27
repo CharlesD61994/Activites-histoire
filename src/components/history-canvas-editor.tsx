@@ -52,6 +52,11 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
+function readerFullscreenStageHeight() {
+  const fullscreenOffset = window.screen.height <= 760 ? 88 : 104;
+  return window.screen.height - fullscreenOffset;
+}
+
 function fittedDocumentSize(canvas: HistoryActivityCanvas, naturalWidth: number, naturalHeight: number) {
   const maxWidth = Math.min(760, canvas.width * 0.48);
   const maxHeight = Math.min(610, canvas.height * 0.68);
@@ -118,7 +123,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
   const [resourceMenuOpen, setResourceMenuOpen] = useState(false);
   const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSurfaceExpanded, setIsSurfaceExpanded] = useState(false);
+  const [expandedSurfaceHeight, setExpandedSurfaceHeight] = useState(0);
   const inspectedBlock = canvas.blocks.find((block) => block.id === inspectedId);
   const activeTextStyle = textTarget?.kind === "block"
     ? canvas.blocks.find((block) => block.id === textTarget.id)?.textStyle
@@ -173,23 +179,23 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }, []);
 
   useEffect(() => {
-    function syncFullscreen() {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+    if (!isSurfaceExpanded) return;
+    function updateExpandedSurfaceHeight() {
+      setExpandedSurfaceHeight(readerFullscreenStageHeight());
     }
-    syncFullscreen();
-    document.addEventListener("fullscreenchange", syncFullscreen);
-    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
-  }, []);
+    updateExpandedSurfaceHeight();
+    window.addEventListener("resize", updateExpandedSurfaceHeight);
+    return () => window.removeEventListener("resize", updateExpandedSurfaceHeight);
+  }, [isSurfaceExpanded]);
 
-  async function toggleFullscreen() {
+  function toggleExpandedSurface() {
     setResourceMenuOpen(false);
     setDocumentLibraryOpen(false);
     setInteractionMenuOpen(false);
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-      return;
-    }
-    await document.documentElement.requestFullscreen();
+    setIsSurfaceExpanded((expanded) => {
+      if (!expanded) setExpandedSurfaceHeight(readerFullscreenStageHeight());
+      return !expanded;
+    });
   }
 
   async function addBlock(type: HistoryCanvasBlockType) {
@@ -484,12 +490,12 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             type="button"
             variant="secondary"
             className="history-canvas-fullscreen-toggle"
-            onClick={() => void toggleFullscreen()}
-            aria-pressed={isFullscreen}
-            title={isFullscreen ? "Quitter le plein écran" : "Afficher la surface comme dans le lecteur en plein écran"}
+            onClick={toggleExpandedSurface}
+            aria-pressed={isSurfaceExpanded}
+            title={isSurfaceExpanded ? "Revenir à la hauteur normale" : "Afficher la hauteur du lecteur en plein écran"}
           >
-            {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            {isFullscreen ? "Retour" : "Plein écran"}
+            {isSurfaceExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+            {isSurfaceExpanded ? "Hauteur normale" : "Surface complète"}
           </Button>
           </div>
           {textTarget && (
@@ -503,9 +509,12 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
       <div className="history-canvas-layout">
         <div
-          className="history-canvas-stage history-canvas-surface"
+          className={`history-canvas-stage history-canvas-surface ${isSurfaceExpanded ? "is-expanded" : ""}`}
           ref={surfaceRef}
-          style={{ background: canvas.background || "#fff" }}
+          style={{
+            background: canvas.background || "#fff",
+            "--history-expanded-stage-height": `${expandedSurfaceHeight}px`
+          } as React.CSSProperties}
           onPointerMove={onPointerMove}
           onPointerUp={() => setDrag(null)}
           onPointerCancel={() => setDrag(null)}

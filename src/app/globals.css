@@ -81,6 +81,11 @@
   min-height: 0 !important;
 }
 
+.history-canvas-surface.is-expanded {
+  height: var(--history-expanded-stage-height) !important;
+  max-height: var(--history-expanded-stage-height) !important;
+}
+
 .app-shell.sidebar-hidden .page:has(.history-canvas-editor) {
   width: 100%;
   max-width: none;
