@@ -233,6 +233,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
               setClozeAnswers={setClozeAnswers}
               shortTextAnswer={shortTextAnswer}
               setShortTextAnswer={setShortTextAnswer}
+              onValidate={validate}
               resetValidation={() => setValidation("idle")}
             />
 
@@ -243,9 +244,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
               </div>
             )}
 
-            <div className="history-reader-actions">
-              <Button onClick={validate}>Valider</Button>
-            </div>
+            {question.action !== "cloze_choice" && <div className="history-reader-actions"><Button onClick={validate}>Valider</Button></div>}
           </div>
         </div>
       </Card>
@@ -332,6 +331,7 @@ function HistoryCanvasStage({
           setClozeAnswers={setClozeAnswers}
           shortTextAnswer={shortTextAnswer}
           setShortTextAnswer={setShortTextAnswer}
+          onValidate={onValidate}
           resetValidation={resetValidation}
         />
       );
@@ -344,7 +344,7 @@ function HistoryCanvasStage({
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    if (block.type === "text") return renderBlock(block);
+    if (block.type === "text" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
@@ -363,7 +363,7 @@ function HistoryCanvasStage({
 
   return (
     <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
-      {canvas.blocks.map((block) => {
+      {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
         return (
           <div
           key={block.id}
@@ -400,6 +400,7 @@ function HistoryQuestionInteraction({
   setClozeAnswers,
   shortTextAnswer,
   setShortTextAnswer,
+  onValidate,
   resetValidation
 }: {
   question: HistoryQuestion;
@@ -418,6 +419,7 @@ function HistoryQuestionInteraction({
   setClozeAnswers: (next: Record<string, string>) => void;
   shortTextAnswer: string;
   setShortTextAnswer: (next: string) => void;
+  onValidate?: () => void;
   resetValidation: () => void;
 }) {
   if (question.action === "choice_single" || question.action === "choice_multiple") {
@@ -469,6 +471,6 @@ function HistoryQuestionInteraction({
   }
 
   return (
-    <HistoryClozeInteraction question={question} answers={clozeAnswers} onAnswersChange={setClozeAnswers} onInteraction={resetValidation} />
+    <HistoryClozeInteraction question={question} answers={clozeAnswers} onAnswersChange={setClozeAnswers} onInteraction={resetValidation} onValidate={onValidate} />
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { historyClozeTokens, parseHistoryCloze } from "@/lib/history-cloze";
 import type { HistoryQuestion } from "@/types";
 
@@ -9,11 +10,12 @@ type Props = {
   answers?: Record<string, string>;
   onAnswersChange?: (answers: Record<string, string>) => void;
   onInteraction?: () => void;
+  onValidate?: () => void;
   preview?: boolean;
   onPointerDown?: (event: React.PointerEvent) => void;
 };
 
-export function HistoryClozeInteraction({ question, answers = {}, onAnswersChange, onInteraction, preview = false, onPointerDown }: Props) {
+export function HistoryClozeInteraction({ question, answers = {}, onAnswersChange, onInteraction, onValidate, preview = false, onPointerDown }: Props) {
   const [selectedTokenId, setSelectedTokenId] = useState("");
   const parts = useMemo(() => parseHistoryCloze(question), [question]);
   const tokens = useMemo(() => historyClozeTokens(question), [question]);
@@ -34,6 +36,13 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
     const next = Object.fromEntries(Object.entries(answers).filter(([, value]) => value !== tokenId));
     onInteraction?.();
     onAnswersChange?.(next);
+    setSelectedTokenId("");
+  }
+
+  function reset() {
+    if (preview) return;
+    onInteraction?.();
+    onAnswersChange?.({});
     setSelectedTokenId("");
   }
 
@@ -66,31 +75,37 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
         })}
       </div>
 
-      <div
-        className="history-cloze-bank"
-        aria-label="Banque de mots"
-        onDragOver={(event) => { if (!preview) event.preventDefault(); }}
-        onDrop={(event) => { event.preventDefault(); returnToBank(event.dataTransfer.getData("text/history-cloze-token")); }}
-      >
-        {tokens.map((token) => {
-          const used = usedTokenIds.has(token.id);
-          return (
-            <button
-              key={token.id}
-              type="button"
-              draggable={!preview && !used}
-              disabled={!preview && used}
-              className={`${selectedTokenId === token.id ? "selected" : ""} ${used ? "used" : ""}`}
-              onClick={() => !preview && !used && setSelectedTokenId((current) => current === token.id ? "" : token.id)}
-              onDragStart={(event) => {
-                event.dataTransfer.setData("text/history-cloze-token", token.id);
-                event.dataTransfer.effectAllowed = "move";
-              }}
-            >
-              <span aria-hidden="true" className="history-cloze-grip">⠿</span>{token.text}
-            </button>
-          );
-        })}
+      <div className="history-cloze-footer">
+        <div
+          className="history-cloze-bank"
+          aria-label="Banque de mots"
+          onDragOver={(event) => { if (!preview) event.preventDefault(); }}
+          onDrop={(event) => { event.preventDefault(); returnToBank(event.dataTransfer.getData("text/history-cloze-token")); }}
+        >
+          {tokens.map((token) => {
+            const used = usedTokenIds.has(token.id);
+            return (
+              <button
+                key={token.id}
+                type="button"
+                draggable={!preview && !used}
+                disabled={!preview && used}
+                className={`${selectedTokenId === token.id ? "selected" : ""} ${used ? "used" : ""}`}
+                onClick={() => !preview && !used && setSelectedTokenId((current) => current === token.id ? "" : token.id)}
+                onDragStart={(event) => {
+                  event.dataTransfer.setData("text/history-cloze-token", token.id);
+                  event.dataTransfer.effectAllowed = "move";
+                }}
+              >
+                <span aria-hidden="true" className="history-cloze-grip">⠿</span>{token.text}
+              </button>
+            );
+          })}
+        </div>
+        <div className="history-cloze-actions">
+          <button type="button" className="history-cloze-reset" onClick={reset} disabled={preview} aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>
+          <button type="button" className="history-cloze-validate" onClick={onValidate} disabled={preview}>Valider</button>
+        </div>
       </div>
     </div>
   );

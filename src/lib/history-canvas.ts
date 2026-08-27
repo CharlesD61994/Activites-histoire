@@ -42,6 +42,9 @@ export function blockScales(block: HistoryCanvasBlock, question: HistoryQuestion
 }
 
 function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
+  if (block.type === "interaction" && question.action === "cloze_choice") {
+    return { width: 360, height: 230 };
+  }
   const base = blockContentSize(block, question);
   return {
     width: Math.max(block.type === "document" ? 120 : 80, base.width * 0.25),

@@ -342,19 +342,29 @@
   grid-template-columns: minmax(0, 1fr) minmax(220px, 32%);
   align-items: center; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: #fff;
 }
-.history-cloze-reader { display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 18px; overflow: hidden; }
+.history-cloze-reader { container: history-cloze / inline-size; display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 14px; overflow: hidden; }
 .history-cloze-sentence { min-width: 0; padding: 18px 20px; overflow: auto; border: 1px solid var(--border); border-radius: 12px; background: #fff; color: var(--portal-ink); font-size: clamp(1.15rem, 2vw, 1.65rem); font-weight: 720; line-height: 1.8; }
 .history-cloze-text { white-space: pre-wrap; }
 .history-cloze-blank { display: inline-flex; min-width: 112px; min-height: 42px; margin: 4px 5px; padding: 4px 13px; align-items: center; justify-content: center; vertical-align: middle; border: 2px dashed #8ba6ba; border-radius: 7px; background: #f8fbfd; color: var(--portal-ink); font: inherit; font-weight: 850; line-height: 1.25; }
 .history-cloze-blank.ready { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, #fff); }
 .history-cloze-blank.filled { border-style: solid; border-color: var(--primary); background: color-mix(in srgb, var(--primary) 11%, #fff); }
-.history-cloze-bank { display: flex; min-height: 70px; align-content: center; align-items: center; justify-content: center; gap: 11px; padding: 12px; flex-wrap: wrap; border-top: 1px solid var(--border); }
+.history-cloze-footer { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; align-items: center; border-top: 1px solid var(--border); }
+.history-cloze-bank { display: flex; min-width: 0; min-height: 70px; align-content: center; align-items: center; justify-content: center; gap: 11px; padding: 12px; flex-wrap: wrap; }
 .history-cloze-bank button { display: inline-flex; min-height: 42px; align-items: center; gap: 7px; padding: 7px 14px; border: 1px solid #b9cddd; border-radius: 8px; background: #fff; color: var(--portal-ink); font-size: 1rem; font-weight: 850; cursor: grab; }
 .history-cloze-bank button.selected { border-color: var(--primary); outline: 3px solid color-mix(in srgb, var(--primary) 18%, transparent); }
 .history-cloze-bank button.used { display: none; }
 .history-cloze-grip { color: #6f8799; font-size: 1.15em; }
+.history-cloze-actions { display: flex; align-items: center; gap: 9px; padding: 10px 12px 10px 0; }
+.history-cloze-actions button { min-height: 44px; border-radius: 9px; font-weight: 850; }
+.history-cloze-reset { display: grid; width: 44px; padding: 0; place-items: center; border: 1px solid var(--border); background: #fff; color: var(--portal-ink); }
+.history-cloze-validate { min-width: 116px; padding: 0 20px; border: 1px solid var(--primary); background: var(--primary); color: #fff; }
+.history-cloze-actions button:disabled { opacity: 1; }
 .history-cloze-reader.is-preview { pointer-events: none; }
 .history-canvas-scaled-content .history-cloze-reader { height: 100%; }
+@container history-cloze (max-width: 560px) {
+  .history-cloze-footer { grid-template-columns: 1fr; }
+  .history-cloze-actions { justify-content: flex-end; padding: 0 12px 12px; }
+}
 .history-short-text-reader input {
   min-height: 72px;
   padding: 0 22px;

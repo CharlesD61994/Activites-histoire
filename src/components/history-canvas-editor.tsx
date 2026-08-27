@@ -374,7 +374,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    if (block.type === "text") return renderBlock(block);
+    if (block.type === "text" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
@@ -458,7 +458,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               </div>
             )}
           </div>
-          <Button type="button" variant="secondary" onClick={() => { setResourceMenuOpen(false); setDocumentLibraryOpen(false); setInteractionMenuOpen(false); void addBlock("validation"); }}><PanelTop size={16} /> Valider</Button>
+          {question.action !== "cloze_choice" && <Button type="button" variant="secondary" onClick={() => { setResourceMenuOpen(false); setDocumentLibraryOpen(false); setInteractionMenuOpen(false); void addBlock("validation"); }}><PanelTop size={16} /> Valider</Button>}
           </div>
           {textTarget && (
             <>
@@ -488,7 +488,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             }
           }}
         >
-          {canvas.blocks.map((block) => {
+          {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
             return (
               <div
               key={block.id}
