@@ -11547,3 +11547,148 @@ textarea {
   .worksheet-editor .tree-analysis-delete-table,
   .worksheet-editor .worksheet-table-move-edge { display: none !important; }
 }
+
+/* Full-screen document viewer. Keep this final block after legacy reader rules. */
+.history-document-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: rgb(7 24 42 / 68%);
+  backdrop-filter: blur(11px);
+}
+
+.history-document-modal-viewport {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  padding: 68px 32px 30px;
+}
+
+.history-document-modal-stage {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  height: max-content;
+  min-height: 100%;
+  place-items: center;
+}
+
+.history-document-modal-stage img {
+  display: block;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: transparent;
+  box-shadow: 0 14px 44px rgb(0 0 0 / 30%);
+  cursor: zoom-in;
+}
+
+.history-document-modal-stage img.is-zoom-ready {
+  max-width: none;
+  max-height: none;
+}
+
+.history-document-modal-stage p {
+  width: min(900px, calc(100vw - 80px));
+  margin: 0;
+  padding: 34px 40px;
+  transform-origin: center;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--portal-ink);
+  font-size: clamp(1rem, 1.6vw, 1.4rem);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  box-shadow: 0 14px 44px rgb(0 0 0 / 30%);
+}
+
+.history-document-modal-controls {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  z-index: 3;
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  transform: translateX(-50%);
+}
+
+.history-document-modal-controls button,
+.history-document-modal-close {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--portal-ink);
+}
+
+.history-document-modal-controls button:hover,
+.history-document-modal-close:hover {
+  background: #e8f1f7;
+}
+
+.history-document-modal-controls span {
+  min-width: 62px;
+  color: var(--portal-ink);
+  font-size: .88rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.history-document-modal-close {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgb(255 255 255 / 35%);
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.history-document-modal-header {
+  position: fixed;
+  top: 16px;
+  left: 18px;
+  z-index: 3;
+  min-height: 0;
+  max-width: min(560px, calc(50vw - 120px));
+  padding: 0;
+  color: #fff;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 45%);
+}
+
+.history-document-modal-header h2 {
+  margin: 0 0 2px;
+  color: inherit;
+  font-size: 1rem;
+}
+
+.history-document-modal-header small {
+  display: block;
+  overflow: hidden;
+  color: rgb(255 255 255 / 84%);
+  font-size: .78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .history-document-modal-header { display: none; }
+  .history-document-modal-viewport { padding: 68px 14px 18px; }
+  .history-document-modal-close { right: 10px; }
+}

@@ -1,8 +1,8 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useMemo, useState } from "react";
-import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryDocumentContent } from "@/components/history-document-content";
@@ -39,6 +39,9 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   const activity = sentence.historyActivity;
   const question = activity?.questions[0];
   const [selectedDocument, setSelectedDocument] = useState<HistorySourceDocument | null>(null);
+  const [documentZoom, setDocumentZoom] = useState(1);
+  const [documentNaturalSize, setDocumentNaturalSize] = useState({ width: 0, height: 0 });
+  const [documentViewportSize, setDocumentViewportSize] = useState({ width: 0, height: 0 });
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
   const [classificationAnswers, setClassificationAnswers] = useState<Record<string, string>>({});
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
@@ -62,6 +65,25 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     if (validation === "incorrect") return question?.feedbackIncorrect || "Pas encore. On ajuste ensemble, puis on réessaie.";
     return "";
   }, [question, validation]);
+
+  useEffect(() => {
+    if (!selectedDocument) return;
+    function updateViewportSize() {
+      setDocumentViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedDocument(null);
+      if (event.key === "+" || event.key === "=") setDocumentZoom((current) => Math.min(3, current + 0.25));
+      if (event.key === "-") setDocumentZoom((current) => Math.max(0.5, current - 0.25));
+    }
+    updateViewportSize();
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", updateViewportSize);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", updateViewportSize);
+    };
+  }, [selectedDocument]);
 
   if (!activity || !question) {
     return <Card><h2>Activité d’histoire incomplète</h2><p>Retourne dans l’éditeur pour ajouter une question.</p></Card>;
@@ -120,18 +142,54 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     }
   }
 
+  function openDocument(document: HistorySourceDocument) {
+    setSelectedDocument(document);
+    setDocumentZoom(1);
+    setDocumentNaturalSize({ width: 0, height: 0 });
+    setDocumentViewportSize({ width: window.innerWidth, height: window.innerHeight });
+  }
+
+  function closeDocument() {
+    setSelectedDocument(null);
+    setDocumentZoom(1);
+  }
+
+  const fittedDocumentSize = selectedDocument?.src && documentNaturalSize.width > 0 && documentViewportSize.width > 0
+    ? (() => {
+        const availableWidth = Math.max(320, documentViewportSize.width - 72);
+        const availableHeight = Math.max(240, documentViewportSize.height - 96);
+        const fit = Math.min(availableWidth / documentNaturalSize.width, availableHeight / documentNaturalSize.height);
+        return { width: documentNaturalSize.width * fit * documentZoom, height: documentNaturalSize.height * fit * documentZoom };
+      })()
+    : undefined;
+
   const documentModal = selectedDocument && (
-    <div className="history-document-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && setSelectedDocument(null)}>
-      <div className={`history-document-modal-content ${selectedDocument.showTitle || selectedDocument.showCaption || selectedDocument.showSource ? "has-header" : ""}`}>
-        <button type="button" className="icon-control" onClick={() => setSelectedDocument(null)} aria-label="Fermer"><X size={20} /></button>
-        {(selectedDocument.showTitle || selectedDocument.showCaption || selectedDocument.showSource) && (
-          <div className="history-document-modal-header">
-            {selectedDocument.showTitle && <h2>{selectedDocument.displayTitle?.trim() || selectedDocument.title}</h2>}
-            {(selectedDocument.showCaption || selectedDocument.showSource) && <small>{[selectedDocument.showCaption ? selectedDocument.caption : "", selectedDocument.showSource ? selectedDocument.source : ""].filter(Boolean).join(" · ")}</small>}
-          </div>
-        )}
-        <div className="history-document-modal-body">
-          {selectedDocument.src ? <img src={selectedDocument.src} alt={selectedDocument.title} /> : <p>{selectedDocument.text}</p>}
+    <div className="history-document-modal" role="dialog" aria-modal="true" aria-label={selectedDocument.title} onMouseDown={(event) => event.target === event.currentTarget && closeDocument()}>
+      {(selectedDocument.showTitle || selectedDocument.showCaption || selectedDocument.showSource) && (
+        <div className="history-document-modal-header">
+          {selectedDocument.showTitle && <h2>{selectedDocument.displayTitle?.trim() || selectedDocument.title}</h2>}
+          {(selectedDocument.showCaption || selectedDocument.showSource) && <small>{[selectedDocument.showCaption ? selectedDocument.caption : "", selectedDocument.showSource ? selectedDocument.source : ""].filter(Boolean).join(" · ")}</small>}
+        </div>
+      )}
+      <div className="history-document-modal-controls" role="toolbar" aria-label="Zoom du document">
+        <button type="button" onClick={() => setDocumentZoom((current) => Math.max(0.5, current - 0.25))} aria-label="Réduire" title="Réduire"><ZoomOut size={20} /></button>
+        <span>{Math.round(documentZoom * 100)} %</span>
+        <button type="button" onClick={() => setDocumentZoom((current) => Math.min(3, current + 0.25))} aria-label="Agrandir" title="Agrandir"><ZoomIn size={20} /></button>
+        <button type="button" onClick={() => setDocumentZoom(1)} aria-label="Réinitialiser le zoom" title="Réinitialiser le zoom"><RotateCcw size={19} /></button>
+      </div>
+      <button type="button" className="history-document-modal-close" onClick={closeDocument} aria-label="Fermer"><X size={24} /></button>
+      <div className="history-document-modal-viewport">
+        <div className="history-document-modal-stage">
+          {selectedDocument.src ? (
+            <img
+              src={selectedDocument.src}
+              alt={selectedDocument.title}
+              className={fittedDocumentSize ? "is-zoom-ready" : undefined}
+              style={fittedDocumentSize ?? { maxWidth: "calc(100vw - 72px)", maxHeight: "calc(100dvh - 96px)" }}
+              onLoad={(event) => setDocumentNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })}
+              onDoubleClick={() => setDocumentZoom((current) => current === 1 ? 2 : 1)}
+            />
+          ) : <p style={{ transform: `scale(${documentZoom})` }}>{selectedDocument.text}</p>}
         </div>
       </div>
     </div>
@@ -162,7 +220,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           validation={validation}
           statusText={statusText}
           onValidate={validate}
-          onOpenDocument={setSelectedDocument}
+          onOpenDocument={openDocument}
           resetValidation={() => setValidation("idle")}
         />
         {documentModal}
@@ -192,7 +250,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
               <span className="history-reader-panel-title">Documents</span>
               <div className="history-reader-documents">
                 {linkedDocuments.map((document, index) => (
-                  <button key={document.id} type="button" className="history-reader-document-card" onClick={() => setSelectedDocument(document)}>
+                  <button key={document.id} type="button" className="history-reader-document-card" onClick={() => openDocument(document)}>
                     <span className="history-reader-document-index">{index + 1}</span>
                     <span className="history-reader-document-media">
                       {document.src ? <img src={document.src} alt={document.title} /> : <FileText size={30} />}
@@ -206,7 +264,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           )}
 
           {primaryDocument && (
-            <button type="button" className="history-reader-primary-document" onClick={() => setSelectedDocument(primaryDocument)}>
+            <button type="button" className="history-reader-primary-document" onClick={() => openDocument(primaryDocument)}>
               {primaryDocument.showTitle && <span className="history-reader-panel-title">{primaryDocument.displayTitle?.trim() || primaryDocument.title}</span>}
               <span className="history-reader-primary-document-media">
                 {primaryDocument.src ? <img src={primaryDocument.src} alt={primaryDocument.title} /> : <span>{primaryDocument.text}</span>}
