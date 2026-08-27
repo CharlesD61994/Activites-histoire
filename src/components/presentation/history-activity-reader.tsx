@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,6 +42,10 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   const [documentZoom, setDocumentZoom] = useState(1);
   const [documentNaturalSize, setDocumentNaturalSize] = useState({ width: 0, height: 0 });
   const [documentViewportSize, setDocumentViewportSize] = useState({ width: 0, height: 0 });
+  const [documentControlsPosition, setDocumentControlsPosition] = useState({ left: 0, top: 0 });
+  const documentViewportRef = useRef<HTMLDivElement | null>(null);
+  const documentStageRef = useRef<HTMLDivElement | null>(null);
+  const documentControlsRef = useRef<HTMLElement | null>(null);
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
   const [classificationAnswers, setClassificationAnswers] = useState<Record<string, string>>({});
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
@@ -86,6 +90,49 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
       window.removeEventListener("resize", updateViewportSize);
     };
   }, [selectedDocument]);
+
+  useLayoutEffect(() => {
+    if (!selectedDocument) return;
+    function positionDocumentControls() {
+      const viewport = documentViewportRef.current;
+      const stage = documentStageRef.current;
+      const controls = documentControlsRef.current;
+      if (!viewport || !stage || !controls) return;
+
+      const viewportRect = viewport.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const controlsRect = controls.getBoundingClientRect();
+      const gap = 10;
+      const edge = 14;
+      const viewportRight = viewportRect.left + viewport.clientWidth;
+      const rightLimit = Math.min(viewportRight - edge, window.innerWidth - edge);
+      const leftLimit = Math.max(viewportRect.left + edge, edge);
+      const candidates = [
+        stageRect.right + gap,
+        stageRect.left - controlsRect.width - gap,
+        rightLimit - controlsRect.width
+      ];
+      const left = candidates.find((candidate) => candidate >= leftLimit && candidate + controlsRect.width <= rightLimit)
+        ?? Math.max(leftLimit, rightLimit - controlsRect.width);
+      const top = Math.min(
+        Math.max(edge, stageRect.top + (stageRect.height - controlsRect.height) / 2),
+        Math.max(edge, window.innerHeight - controlsRect.height - edge)
+      );
+      setDocumentControlsPosition({ left, top });
+    }
+
+    positionDocumentControls();
+    const viewport = documentViewportRef.current;
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(positionDocumentControls) : null;
+    if (viewport) viewport.addEventListener("scroll", positionDocumentControls, { passive: true });
+    window.addEventListener("resize", positionDocumentControls);
+    observer?.observe(document.body);
+    return () => {
+      viewport?.removeEventListener("scroll", positionDocumentControls);
+      window.removeEventListener("resize", positionDocumentControls);
+      observer?.disconnect();
+    };
+  }, [documentNaturalSize, documentZoom, selectedDocument]);
 
   if (!activity || !question) {
     return <Card><h2>Activité d’histoire incomplète</h2><p>Retourne dans l’éditeur pour ajouter une question.</p></Card>;
@@ -174,9 +221,9 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
         </div>
       )}
       <div className="history-document-modal-workspace">
-        <div className="history-document-modal-viewport">
-          <div className="history-document-modal-cluster">
-            <div className="history-document-modal-stage">
+        <div className="history-document-modal-viewport" ref={documentViewportRef}>
+          <div className="history-document-modal-scroll-content">
+            <div className="history-document-modal-stage" ref={documentStageRef}>
               {selectedDocument.src ? (
                 <img
                   src={selectedDocument.src}
@@ -188,17 +235,17 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
                 />
               ) : <p style={{ fontSize: `${1.2 * documentZoom}rem` }}>{selectedDocument.text}</p>}
             </div>
-            <aside className="history-document-modal-sidebar" aria-label="Commandes du document">
-              <button type="button" className="history-document-modal-close" onClick={closeDocument} aria-label="Fermer" title="Fermer"><X size={24} /></button>
-              <div className="history-document-modal-controls" role="toolbar" aria-label="Zoom du document">
-                <button type="button" onClick={() => setDocumentZoom((current) => Math.min(3, current + 0.25))} aria-label="Agrandir" title="Agrandir"><ZoomIn size={20} /></button>
-                <span>{Math.round(documentZoom * 100)} %</span>
-                <button type="button" onClick={() => setDocumentZoom((current) => Math.max(0.5, current - 0.25))} aria-label="Réduire" title="Réduire"><ZoomOut size={20} /></button>
-                <button type="button" onClick={() => setDocumentZoom(1)} aria-label="Réinitialiser le zoom" title="Réinitialiser le zoom"><RotateCcw size={19} /></button>
-              </div>
-            </aside>
           </div>
         </div>
+        <aside ref={documentControlsRef} className="history-document-modal-floating-tools" style={{ left: documentControlsPosition.left, top: documentControlsPosition.top }} aria-label="Commandes du document">
+          <button type="button" className="history-document-modal-close" onClick={closeDocument} aria-label="Fermer" title="Fermer"><X size={24} /></button>
+          <div className="history-document-modal-controls" role="toolbar" aria-label="Zoom du document">
+            <button type="button" onClick={() => setDocumentZoom((current) => Math.min(3, current + 0.25))} aria-label="Agrandir" title="Agrandir"><ZoomIn size={20} /></button>
+            <span>{Math.round(documentZoom * 100)} %</span>
+            <button type="button" onClick={() => setDocumentZoom((current) => Math.max(0.5, current - 0.25))} aria-label="Réduire" title="Réduire"><ZoomOut size={20} /></button>
+            <button type="button" onClick={() => setDocumentZoom(1)} aria-label="Réinitialiser le zoom" title="Réinitialiser le zoom"><RotateCcw size={19} /></button>
+          </div>
+        </aside>
       </div>
     </div>
   );

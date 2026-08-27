@@ -11573,7 +11573,11 @@ textarea {
 }
 
 .history-document-modal-viewport {
-  position: relative;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
   min-width: 0;
   min-height: 0;
   overflow-x: auto;
@@ -11581,16 +11585,13 @@ textarea {
   padding: 24px;
 }
 
-.history-document-modal-cluster {
+.history-document-modal-scroll-content {
   display: grid;
   width: max-content;
   min-height: 100%;
-  grid-template-columns: max-content 54px;
-  align-items: center;
-  gap: 10px;
   margin: auto;
-  transform: none !important;
-  zoom: 1;
+  min-width: 100%;
+  place-items: center;
 }
 
 .history-document-modal-stage {
@@ -11625,6 +11626,21 @@ textarea {
   line-height: 1.55;
   white-space: pre-wrap;
   box-shadow: 0 14px 44px rgb(0 0 0 / 30%);
+}
+
+.history-document-modal-floating-tools {
+  position: fixed;
+  z-index: 4;
+  display: flex;
+  width: 54px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.history-document-modal-floating-tools > * {
+  pointer-events: auto;
 }
 
 .history-document-modal-controls {
@@ -11672,18 +11688,6 @@ textarea {
   text-align: center;
 }
 
-.history-document-modal-sidebar {
-  display: flex;
-  width: 54px;
-  align-self: center;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  flex: 0 0 54px;
-  transform: none !important;
-  zoom: 1;
-}
-
 .history-document-modal-close {
   position: static;
   width: 46px;
@@ -11723,7 +11727,6 @@ textarea {
 @media (max-width: 720px) {
   .history-document-modal-header { display: none; }
   .history-document-modal-viewport { padding: 12px; }
-  .history-document-modal-cluster { grid-template-columns: max-content 48px; gap: 6px; }
-  .history-document-modal-sidebar,
+  .history-document-modal-floating-tools,
   .history-document-modal-controls { width: 48px; }
 }
