@@ -200,8 +200,16 @@
 .history-canvas-block.block-text p { width: 100%; height: 100%; outline: 0; }
 .history-canvas-block.block-validation .button { width: 100%; height: 100%; min-height: 0; font-size: clamp(1rem, 1.6vw, 1.35rem); }
 .history-canvas-block.block-validation .button span { outline: 0; }
-.history-canvas-scaled-content { min-width: 0; min-height: 0; place-self: start; transform-origin: top left; }
+.history-canvas-scaled-content { display: grid; min-width: 0; min-height: 0; place-self: start; overflow: hidden; transform-origin: top left; }
 .history-canvas-scaled-content > * { width: 100%; height: 100%; }
+.history-canvas-scaled-content .history-choice-grid { height: 100%; grid-auto-rows: minmax(0, 1fr); }
+.history-canvas-scaled-content .history-choice-grid button { min-height: 0; }
+.history-canvas-scaled-content .history-answer-list,
+.history-canvas-scaled-content .history-order-list { height: 100%; grid-auto-rows: minmax(0, 1fr); overflow: hidden; }
+.history-canvas-scaled-content .history-answer-list label,
+.history-canvas-scaled-content .history-order-list > div { min-height: 0; }
+.history-canvas-scaled-content .history-hotspot-reader,
+.history-canvas-scaled-content .history-hotspot-reader img { width: 100%; height: 100%; max-height: none; }
 .history-canvas-block .history-canvas-scaled-content .history-short-text-reader input,
 .history-canvas-reader-block .history-canvas-scaled-content .history-short-text-reader input {
   min-height: 0;

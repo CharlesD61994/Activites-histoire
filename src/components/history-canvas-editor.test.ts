@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeHistoryCanvasLayout, resizeHistoryCanvasBlock } from "../lib/history-canvas";
+import { blockScales, normalizeHistoryCanvasLayout, resizeHistoryCanvasBlock } from "../lib/history-canvas";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
 const shortTextQuestion: HistoryQuestion = {
@@ -16,10 +16,10 @@ describe("normalizeHistoryCanvasLayout", () => {
     const canvas: HistoryActivityCanvas = {
       width: 1600,
       height: 900,
-      layoutVersion: 5,
+      layoutVersion: 6,
       blocks: [
-        { id: "document", type: "document", x: 50, y: 80, width: 437, height: 612, aspectRatio: 437 / 612 },
-        { id: "interaction", type: "interaction", x: 700, y: 400, width: 610, height: 120 }
+        { id: "document", type: "document", x: 50, y: 80, width: 437, height: 612, contentWidth: 437, contentHeight: 612, aspectRatio: 437 / 612 },
+        { id: "interaction", type: "interaction", x: 700, y: 400, width: 610, height: 120, contentWidth: 520, contentHeight: 103 }
       ]
     };
 
@@ -35,7 +35,7 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(canvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(5);
+    expect(migrated.layoutVersion).toBe(6);
     expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 103 });
   });
 
@@ -50,6 +50,26 @@ describe("normalizeHistoryCanvasLayout", () => {
     const migrated = normalizeHistoryCanvasLayout(canvas, shortTextQuestion);
 
     expect(migrated.blocks[0]).toMatchObject({ width: 390, height: 77.25 });
+  });
+
+  it("freezes current version 5 dimensions as the document composition", () => {
+    const canvas: HistoryActivityCanvas = {
+      width: 1600,
+      height: 900,
+      layoutVersion: 5,
+      blocks: [{ id: "document", type: "document", x: 50, y: 80, width: 437, height: 612 }]
+    };
+
+    const migrated = normalizeHistoryCanvasLayout(canvas, shortTextQuestion);
+
+    expect(migrated.blocks[0]).toMatchObject({
+      x: 50,
+      y: 80,
+      width: 437,
+      height: 612,
+      contentWidth: 437,
+      contentHeight: 612
+    });
   });
 });
 
@@ -93,5 +113,42 @@ describe("resizeHistoryCanvasBlock", () => {
     expect(resized).toMatchObject({ x: 640, y: 210, width: 360, height: 90 });
     expect(resized.x + resized.width).toBe(block.x + block.width);
     expect(resized.y + resized.height).toBe(block.y + block.height);
+  });
+});
+
+describe("blockScales", () => {
+  it("uses both axes of a frozen document composition", () => {
+    const block: HistoryCanvasBlock = {
+      id: "document",
+      type: "document",
+      x: 0,
+      y: 0,
+      width: 400,
+      height: 300,
+      contentWidth: 800,
+      contentHeight: 200
+    };
+
+    expect(blockScales(block, shortTextQuestion)).toEqual({ x: 0.5, y: 1.5 });
+  });
+
+  it("recalculates an interaction composition when its choices change", () => {
+    const block: HistoryCanvasBlock = {
+      id: "interaction",
+      type: "interaction",
+      x: 0,
+      y: 0,
+      width: 680,
+      height: 270,
+      contentWidth: 680,
+      contentHeight: 270
+    };
+    const question = {
+      ...shortTextQuestion,
+      action: "choice_single" as const,
+      choices: Array.from({ length: 5 }, (_, index) => ({ id: String(index), text: String(index), isCorrect: index === 0 }))
+    };
+
+    expect(blockScales(block, question)).toEqual({ x: 1, y: 270 / 405 });
   });
 });

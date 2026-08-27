@@ -175,6 +175,8 @@ export type HistoryCanvasBlock = {
   y: number;
   width: number;
   height: number;
+  contentWidth?: number;
+  contentHeight?: number;
   text?: string;
   documentId?: string;
   aspectRatio?: number;

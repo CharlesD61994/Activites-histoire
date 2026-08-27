@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, Image as ImageIcon, Map as MapIcon, MessageSquareText, MousePointer2, PanelTop, Plus, Trash2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryDocumentContent } from "@/components/history-document-content";
-import { blockScales, historyCanvasLayoutVersion, interactionBlockSize, resizeHistoryCanvasBlock, scalableBlockSize, type HistoryResizeHandle } from "@/lib/history-canvas";
+import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, resizeHistoryCanvasBlock, type HistoryResizeHandle } from "@/lib/history-canvas";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument } from "@/types";
 
@@ -77,14 +77,14 @@ function measureDocument(document: HistorySourceDocument | undefined, canvas: Hi
 
 function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryCanvasBlock {
   const id = crypto.randomUUID();
-  if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, documentId: documents[0]?.id };
+  if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, contentWidth: 720, contentHeight: 610, documentId: documents[0]?.id };
   if (type === "interaction") {
     const size = interactionBlockSize(question);
-    return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size };
+    return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size, contentWidth: size.width, contentHeight: size.height };
   }
-  if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, text: "Valider" };
-  if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, text: "Feedback" };
-  return { id, type, x: 80, y: 60, width: 1440, height: 110, text: question.prompt };
+  if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, contentWidth: 260, contentHeight: 95, text: "Valider" };
+  if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, contentWidth: 520, contentHeight: 110, text: "Feedback" };
+  return { id, type, x: 80, y: 60, width: 1440, height: 110, contentWidth: 1440, contentHeight: 110, text: question.prompt };
 }
 
 export function createDefaultHistoryCanvas(question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryActivityCanvas {
@@ -138,6 +138,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       const size = await measureDocument(documents[0], canvas);
       block.width = size.width;
       block.height = size.height;
+      block.contentWidth = size.width;
+      block.contentHeight = size.height;
       block.aspectRatio = size.aspectRatio;
     }
     patchCanvas({ blocks: [...canvas.blocks, block] });
@@ -153,6 +155,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     block.y = Math.min(180 + documentBlockCount * 36, canvas.height - size.height);
     block.width = size.width;
     block.height = size.height;
+    block.contentWidth = size.width;
+    block.contentHeight = size.height;
     block.aspectRatio = size.aspectRatio;
     patchCanvas({ blocks: [...canvas.blocks, block] });
     setSelectedId(block.id);
@@ -206,7 +210,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       onUpdateDocument(document.id, { src: nextDocument.src });
       patchCanvas({
         blocks: canvas.blocks.map((block) => block.documentId === document.id
-          ? { ...block, width: size.width, height: size.height, aspectRatio: size.aspectRatio }
+          ? { ...block, width: size.width, height: size.height, contentWidth: size.width, contentHeight: size.height, aspectRatio: size.aspectRatio }
           : block)
       });
     };
@@ -237,7 +241,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     const document = documents.find((item) => item.id === documentId);
     fittedDocumentsRef.current.add(`${id}:${documentId}:${document?.src?.length ?? 0}`);
     const size = await measureDocument(document, canvas);
-    updateBlock(id, { documentId, width: size.width, height: size.height, aspectRatio: size.aspectRatio });
+    updateBlock(id, { documentId, width: size.width, height: size.height, contentWidth: size.width, contentHeight: size.height, aspectRatio: size.aspectRatio });
   }
 
   useEffect(() => {
@@ -260,7 +264,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           ...canvas,
           blocks: canvas.blocks.map((block) => {
             const size = sizes.get(block.id);
-            return size ? { ...block, width: size.width, height: size.height, aspectRatio: size.aspectRatio } : block;
+            return size ? { ...block, width: size.width, height: size.height, contentWidth: size.width, contentHeight: size.height, aspectRatio: size.aspectRatio } : block;
           })
         });
       });
@@ -327,11 +331,15 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
     const scale = blockScales(block, question);
-    if (!scalableBlockSize(block, question)) return renderBlock(block);
+    const contentSize = blockContentSize(block, question);
     return (
       <div
         className="history-canvas-scaled-content"
-        style={{ width: `${100 / scale.x}%`, height: `${100 / scale.y}%`, transform: `scale(${scale.x}, ${scale.y})` }}
+        style={{
+          width: `${contentSize.width / block.width * 100}%`,
+          height: `${contentSize.height / block.height * 100}%`,
+          transform: `scale(${scale.x}, ${scale.y})`
+        }}
       >
         {renderBlock(block)}
       </div>

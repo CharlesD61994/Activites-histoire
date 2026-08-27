@@ -6,7 +6,7 @@ import { CheckCircle2, FileText, X, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryDocumentContent } from "@/components/history-document-content";
-import { blockScales, scalableBlockSize } from "@/lib/history-canvas";
+import { blockContentSize, blockScales } from "@/lib/history-canvas";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
@@ -345,11 +345,15 @@ function HistoryCanvasStage({
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
     const scale = blockScales(block, question);
-    if (!scalableBlockSize(block, question)) return renderBlock(block);
+    const contentSize = blockContentSize(block, question);
     return (
       <div
         className="history-canvas-scaled-content"
-        style={{ width: `${100 / scale.x}%`, height: `${100 / scale.y}%`, transform: `scale(${scale.x}, ${scale.y})` }}
+        style={{
+          width: `${contentSize.width / block.width * 100}%`,
+          height: `${contentSize.height / block.height * 100}%`,
+          transform: `scale(${scale.x}, ${scale.y})`
+        }}
       >
         {renderBlock(block)}
       </div>

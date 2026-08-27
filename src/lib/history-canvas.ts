@@ -1,6 +1,6 @@
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
-export const historyCanvasLayoutVersion = 5;
+export const historyCanvasLayoutVersion = 6;
 
 export type HistoryResizeHandle = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 
@@ -24,9 +24,17 @@ export function scalableBlockSize(block: HistoryCanvasBlock, question: HistoryQu
   return null;
 }
 
+export function blockContentSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
+  const scalableSize = scalableBlockSize(block, question);
+  if (scalableSize) return scalableSize;
+  return {
+    width: Math.max(1, block.contentWidth ?? block.width),
+    height: Math.max(1, block.contentHeight ?? block.height)
+  };
+}
+
 export function blockScales(block: HistoryCanvasBlock, question: HistoryQuestion) {
-  const base = scalableBlockSize(block, question);
-  if (!base) return { x: 1, y: 1 };
+  const base = blockContentSize(block, question);
   return {
     x: Math.max(0.001, block.width / base.width),
     y: Math.max(0.001, block.height / base.height)
@@ -34,10 +42,11 @@ export function blockScales(block: HistoryCanvasBlock, question: HistoryQuestion
 }
 
 function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
-  const base = scalableBlockSize(block, question);
-  if (base) return { width: base.width * 0.25, height: base.height * 0.25 };
-  if (block.type === "document") return { width: 120, height: 90 };
-  return { width: 80, height: 55 };
+  const base = blockContentSize(block, question);
+  return {
+    width: Math.max(block.type === "document" ? 120 : 80, base.width * 0.25),
+    height: Math.max(block.type === "document" ? 90 : 55, base.height * 0.25)
+  };
 }
 
 export function resizeHistoryCanvasBlock(
@@ -106,6 +115,8 @@ export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, qu
       ...block,
       width: size.width,
       height: size.height,
+      contentWidth: size.width,
+      contentHeight: size.height,
       x: Math.min(block.x, canvas.width - size.width),
       y: Math.min(block.y, canvas.height - size.height)
     } : block)
@@ -114,6 +125,21 @@ export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, qu
 
 export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, question: HistoryQuestion): HistoryActivityCanvas {
   if ((canvas.layoutVersion ?? 0) >= historyCanvasLayoutVersion) return canvas;
+
+  if ((canvas.layoutVersion ?? 0) >= 5) {
+    return {
+      ...canvas,
+      layoutVersion: historyCanvasLayoutVersion,
+      blocks: canvas.blocks.map((block) => {
+        const base = scalableBlockSize(block, question) ?? { width: block.width, height: block.height };
+        return {
+          ...block,
+          contentWidth: block.contentWidth ?? base.width,
+          contentHeight: block.contentHeight ?? base.height
+        };
+      })
+    };
+  }
 
   return {
     ...canvas,
@@ -130,6 +156,8 @@ export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, ques
         ...block,
         width,
         height,
+        contentWidth: base.width,
+        contentHeight: base.height,
         x: Math.min(block.x, canvas.width - width),
         y: Math.min(block.y, canvas.height - height)
       };
