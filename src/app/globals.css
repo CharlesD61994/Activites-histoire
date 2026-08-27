@@ -11589,6 +11589,8 @@ textarea {
   align-items: center;
   gap: 10px;
   margin: auto;
+  transform: none !important;
+  zoom: 1;
 }
 
 .history-document-modal-stage {
@@ -11638,6 +11640,9 @@ textarea {
   border-radius: 9px;
   background: rgb(255 255 255 / 92%);
   box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+  flex: 0 0 auto;
+  transform: none !important;
+  zoom: 1;
 }
 
 .history-document-modal-controls button,
@@ -11674,6 +11679,9 @@ textarea {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  flex: 0 0 54px;
+  transform: none !important;
+  zoom: 1;
 }
 
 .history-document-modal-close {

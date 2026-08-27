@@ -73,8 +73,10 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     }
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setSelectedDocument(null);
-      if (event.key === "+" || event.key === "=") setDocumentZoom((current) => Math.min(3, current + 0.25));
-      if (event.key === "-") setDocumentZoom((current) => Math.max(0.5, current - 0.25));
+      if (event.key === "+" || event.key === "=" || event.key === "-") {
+        event.preventDefault();
+        setDocumentZoom((current) => event.key === "-" ? Math.max(0.5, current - 0.25) : Math.min(3, current + 0.25));
+      }
     }
     updateViewportSize();
     window.addEventListener("keydown", onKeyDown);
