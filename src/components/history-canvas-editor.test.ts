@@ -10,10 +10,11 @@ const shortTextQuestion: HistoryQuestion = {
   points: 1,
   acceptedTextAnswers: ["réponse"]
 };
+const resizeCanvas = { width: 1600, height: 900 };
 
 describe("normalizeHistoryCanvasLayout", () => {
-  it("preserves saved document and interaction dimensions in the current layout", () => {
-    const canvas: HistoryActivityCanvas = {
+  it("preserves saved document dimensions and protects old interactions from becoming too small", () => {
+    const resizeCanvas: HistoryActivityCanvas = {
       width: 1600,
       height: 900,
       layoutVersion: 6,
@@ -23,44 +24,48 @@ describe("normalizeHistoryCanvasLayout", () => {
       ]
     };
 
-    expect(normalizeHistoryCanvasLayout(canvas, shortTextQuestion)).toBe(canvas);
+    const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
+
+    expect(migrated.layoutVersion).toBe(7);
+    expect(migrated.blocks[0]).toMatchObject({ width: 437, height: 612 });
+    expect(migrated.blocks[1]).toMatchObject({ width: 610, height: 165, contentWidth: 520, contentHeight: 103 });
   });
 
   it("migrates the oversized legacy interaction block once", () => {
-    const canvas: HistoryActivityCanvas = {
+    const resizeCanvas: HistoryActivityCanvas = {
       width: 1600,
       height: 900,
       blocks: [{ id: "interaction", type: "interaction", x: 900, y: 300, width: 520, height: 150 }]
     };
 
-    const migrated = normalizeHistoryCanvasLayout(canvas, shortTextQuestion);
+    const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(6);
-    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 103 });
+    expect(migrated.layoutVersion).toBe(7);
+    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 165 });
   });
 
   it("restores the complete interaction ratio for an already resized block", () => {
-    const canvas: HistoryActivityCanvas = {
+    const resizeCanvas: HistoryActivityCanvas = {
       width: 1600,
       height: 900,
       layoutVersion: 2,
       blocks: [{ id: "interaction", type: "interaction", x: 700, y: 400, width: 390, height: 45 }]
     };
 
-    const migrated = normalizeHistoryCanvasLayout(canvas, shortTextQuestion);
+    const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.blocks[0]).toMatchObject({ width: 390, height: 77.25 });
+    expect(migrated.blocks[0]).toMatchObject({ width: 390, height: 123.75 });
   });
 
   it("freezes current version 5 dimensions as the document composition", () => {
-    const canvas: HistoryActivityCanvas = {
+    const resizeCanvas: HistoryActivityCanvas = {
       width: 1600,
       height: 900,
       layoutVersion: 5,
       blocks: [{ id: "document", type: "document", x: 50, y: 80, width: 437, height: 612 }]
     };
 
-    const migrated = normalizeHistoryCanvasLayout(canvas, shortTextQuestion);
+    const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
     expect(migrated.blocks[0]).toMatchObject({
       x: 50,
@@ -74,13 +79,12 @@ describe("normalizeHistoryCanvasLayout", () => {
 });
 
 describe("resizeHistoryCanvasBlock", () => {
-  const canvas = { width: 1600, height: 900 };
   const block: HistoryCanvasBlock = { id: "text", type: "text", x: 200, y: 100, width: 800, height: 200 };
 
   it("resizes visual elements independently from their edges", () => {
     const visual: HistoryCanvasBlock = { id: "visual", type: "visual", x: 300, y: 200, width: 200, height: 200 };
-    const widened = resizeHistoryCanvasBlock(visual, "e", 160, 0, canvas, shortTextQuestion);
-    const heightened = resizeHistoryCanvasBlock(visual, "s", 0, 120, canvas, shortTextQuestion);
+    const widened = resizeHistoryCanvasBlock(visual, "e", 160, 0, resizeCanvas, shortTextQuestion);
+    const heightened = resizeHistoryCanvasBlock(visual, "s", 0, 120, resizeCanvas, shortTextQuestion);
 
     expect(widened.width).toBe(360);
     expect(widened.height).toBe(200);
@@ -89,31 +93,31 @@ describe("resizeHistoryCanvasBlock", () => {
   });
 
   it("changes only the height from a horizontal edge", () => {
-    const resized = resizeHistoryCanvasBlock(block, "n", 75, 50, canvas, shortTextQuestion);
+    const resized = resizeHistoryCanvasBlock(block, "n", 75, 50, resizeCanvas, shortTextQuestion);
 
     expect(resized).toMatchObject({ x: 200, y: 150, width: 800, height: 150 });
   });
 
   it("changes only the width from a vertical edge", () => {
-    const resized = resizeHistoryCanvasBlock(block, "w", 100, 60, canvas, shortTextQuestion);
+    const resized = resizeHistoryCanvasBlock(block, "w", 100, 60, resizeCanvas, shortTextQuestion);
 
     expect(resized).toMatchObject({ x: 300, y: 100, width: 700, height: 200 });
   });
 
   it("can resize exactly to every canvas edge", () => {
-    const toLeft = resizeHistoryCanvasBlock(block, "w", -canvas.width, 0, canvas, shortTextQuestion);
-    const toTop = resizeHistoryCanvasBlock(block, "n", 0, -canvas.height, canvas, shortTextQuestion);
-    const toRight = resizeHistoryCanvasBlock(block, "e", canvas.width, 0, canvas, shortTextQuestion);
-    const toBottom = resizeHistoryCanvasBlock(block, "s", 0, canvas.height, canvas, shortTextQuestion);
+    const toLeft = resizeHistoryCanvasBlock(block, "w", -resizeCanvas.width, 0, resizeCanvas, shortTextQuestion);
+    const toTop = resizeHistoryCanvasBlock(block, "n", 0, -resizeCanvas.height, resizeCanvas, shortTextQuestion);
+    const toRight = resizeHistoryCanvasBlock(block, "e", resizeCanvas.width, 0, resizeCanvas, shortTextQuestion);
+    const toBottom = resizeHistoryCanvasBlock(block, "s", 0, resizeCanvas.height, resizeCanvas, shortTextQuestion);
 
     expect(toLeft.x).toBe(0);
     expect(toTop.y).toBe(0);
-    expect(toRight.x + toRight.width).toBe(canvas.width);
-    expect(toBottom.y + toBottom.height).toBe(canvas.height);
+    expect(toRight.x + toRight.width).toBe(resizeCanvas.width);
+    expect(toBottom.y + toBottom.height).toBe(resizeCanvas.height);
   });
 
   it("keeps the current proportions from a corner", () => {
-    const resized = resizeHistoryCanvasBlock(block, "se", 200, 50, canvas, shortTextQuestion);
+    const resized = resizeHistoryCanvasBlock(block, "se", 200, 50, resizeCanvas, shortTextQuestion);
 
     expect(resized.width / resized.height).toBeCloseTo(block.width / block.height);
     expect(resized).toMatchObject({ x: 200, y: 100, width: 1000, height: 250 });
@@ -121,7 +125,7 @@ describe("resizeHistoryCanvasBlock", () => {
 
   it("keeps the opposite corner fixed and stays inside the canvas", () => {
     const nearEdge = { ...block, x: 100, y: 100 };
-    const resized = resizeHistoryCanvasBlock(nearEdge, "nw", -500, -500, canvas, shortTextQuestion);
+    const resized = resizeHistoryCanvasBlock(nearEdge, "nw", -500, -500, resizeCanvas, shortTextQuestion);
 
     expect(resized.x).toBe(0);
     expect(resized.y).toBeGreaterThanOrEqual(0);
@@ -131,7 +135,7 @@ describe("resizeHistoryCanvasBlock", () => {
   });
 
   it("enforces a minimum size without moving the anchored edges", () => {
-    const resized = resizeHistoryCanvasBlock(block, "nw", 2000, 2000, canvas, shortTextQuestion);
+    const resized = resizeHistoryCanvasBlock(block, "nw", 2000, 2000, resizeCanvas, shortTextQuestion);
 
     expect(resized).toMatchObject({ x: 640, y: 210, width: 360, height: 90 });
     expect(resized.x + resized.width).toBe(block.x + block.width);
@@ -172,7 +176,14 @@ describe("blockScales", () => {
       choices: Array.from({ length: 5 }, (_, index) => ({ id: String(index), text: String(index), isCorrect: index === 0 }))
     };
 
-    expect(blockScales(block, question)).toEqual({ x: 1, y: 270 / 405 });
+    expect(blockScales(block, question)).toEqual({ x: 1, y: 270 / 480 });
+  });
+
+  it("keeps short-text interactions tall enough for the answer field and action buttons", () => {
+    const interaction: HistoryCanvasBlock = { id: "interaction", type: "interaction", x: 100, y: 100, width: 520, height: 165 };
+    const resized = resizeHistoryCanvasBlock(interaction, "s", 0, -120, resizeCanvas, shortTextQuestion);
+
+    expect(resized.height).toBe(165);
   });
 });
 

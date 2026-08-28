@@ -1,6 +1,6 @@
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
-export const historyCanvasLayoutVersion = 6;
+export const historyCanvasLayoutVersion = 7;
 
 export type HistoryResizeHandle = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 export type HistoryLayerAction = "send_back" | "move_back" | "move_front" | "bring_front";
@@ -29,14 +29,14 @@ export function reorderHistoryCanvasBlock(
 }
 
 export function interactionBlockSize(question: HistoryQuestion) {
-  if (question.action === "short_text") return { width: 520, height: 103 };
-  if (question.action === "document_hotspot") return { width: 760, height: 500 };
+  if (question.action === "short_text") return { width: 520, height: 165 };
+  if (question.action === "document_hotspot") return { width: 760, height: 575 };
   if (question.action === "choice_single" || question.action === "choice_multiple") {
-    return { width: 680, height: Math.max(150, Math.ceil((question.choices?.length ?? 2) / 2) * 135) };
+    return { width: 680, height: Math.max(225, Math.ceil((question.choices?.length ?? 2) / 2) * 135 + 75) };
   }
-  if (question.action === "classification") return { width: 720, height: Math.max(180, (question.classificationItems?.length ?? 1) * 120) };
-  if (question.action === "matching") return { width: 720, height: Math.max(180, (question.matchingPrompts?.length ?? 1) * 120) };
-  if (question.action === "chronological_order" || question.action === "timeline") return { width: 760, height: Math.max(200, (question.timelineEvents?.length ?? 2) * 105) };
+  if (question.action === "classification") return { width: 720, height: Math.max(255, (question.classificationItems?.length ?? 1) * 120 + 75) };
+  if (question.action === "matching") return { width: 720, height: Math.max(255, (question.matchingPrompts?.length ?? 1) * 120 + 75) };
+  if (question.action === "chronological_order" || question.action === "timeline") return { width: 760, height: Math.max(275, (question.timelineEvents?.length ?? 2) * 105 + 75) };
   return { width: 920, height: Math.max(300, 190 + Math.ceil(((question.clozeBlanks?.length ?? 1) + (question.clozeDistractors?.length ?? 0)) / 4) * 62) };
 }
 
@@ -66,8 +66,13 @@ export function blockScales(block: HistoryCanvasBlock, question: HistoryQuestion
 }
 
 function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
-  if (block.type === "interaction" && question.action === "cloze_choice") {
-    return { width: 360, height: 230 };
+  if (block.type === "interaction") {
+    if (question.action === "short_text") return { width: 360, height: 165 };
+    if (question.action === "document_hotspot") return { width: 360, height: 260 };
+    if (question.action === "choice_single" || question.action === "choice_multiple") return { width: 360, height: 190 };
+    if (question.action === "classification" || question.action === "matching") return { width: 380, height: 210 };
+    if (question.action === "chronological_order" || question.action === "timeline") return { width: 400, height: 225 };
+    return { width: 420, height: 260 };
   }
   if (block.type === "shape") {
     return block.shapeKind === "line" ? { width: 50, height: 18 } : { width: 40, height: 40 };
@@ -178,8 +183,15 @@ export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, ques
       layoutVersion: historyCanvasLayoutVersion,
       blocks: canvas.blocks.map((block) => {
         const base = scalableBlockSize(block, question) ?? { width: block.width, height: block.height };
+        const minimum = minimumBlockSize(block, question);
+        const width = Math.max(block.width, minimum.width);
+        const height = Math.max(block.height, minimum.height);
         return {
           ...block,
+          width,
+          height,
+          x: Math.min(block.x, canvas.width - width),
+          y: Math.min(block.y, canvas.height - height),
           contentWidth: block.contentWidth ?? base.width,
           contentHeight: block.contentHeight ?? base.height
         };
