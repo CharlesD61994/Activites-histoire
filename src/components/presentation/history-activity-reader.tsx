@@ -6,6 +6,7 @@ import { CheckCircle2, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
+import { HistoryCanvasVisual } from "@/components/history-canvas-visual";
 import { historyBoxShadow } from "@/lib/history-shadow";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
@@ -420,6 +421,7 @@ function HistoryCanvasStage({
 }) {
   function renderBlock(block: HistoryCanvasBlock) {
     if (block.type === "shape") return <HistoryCanvasShape {...block} />;
+    if (block.type === "visual") return <HistoryCanvasVisual {...block} />;
     if (block.type === "document") {
       const document = documents.find((item) => item.id === block.documentId);
       return (
@@ -470,7 +472,7 @@ function HistoryCanvasStage({
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    if (block.type === "text" || block.type === "shape" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
+    if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
@@ -489,6 +491,7 @@ function HistoryCanvasStage({
 
   return (
     <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
+      {canvas.backgroundImage && <div className="history-canvas-stage-background" style={{ backgroundImage: `url(${canvas.backgroundImage})`, backgroundSize: canvas.backgroundImageFit === "stretch" ? "100% 100%" : canvas.backgroundImageFit ?? "cover", opacity: canvas.backgroundImageOpacity ?? 1 }} />}
       {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
         return (
           <div

@@ -175,6 +175,7 @@ export type HistoryCanvasBlockType =
   | "text"
   | "document"
   | "shape"
+  | "visual"
   | "interaction"
   | "validation"
   | "feedback";
@@ -188,6 +189,9 @@ export type HistoryCanvasShapeKind =
   | "arrow";
 
 export type HistoryCanvasShapeFillMode = "filled" | "outline";
+
+export type HistoryCanvasVisualKind = "icon" | "emoji" | "image";
+export type HistoryCanvasVisualBackgroundShape = "square" | "rounded" | "circle";
 
 export type HistoryCanvasBlock = {
   id: string;
@@ -216,12 +220,27 @@ export type HistoryCanvasBlock = {
   documentShadowColor?: string;
   documentShadowDistance?: number;
   documentShadowOpacity?: number;
+  visualKind?: HistoryCanvasVisualKind;
+  visualId?: string;
+  visualSrc?: string;
+  visualLabel?: string;
+  visualColor?: string;
+  visualOpacity?: number;
+  visualBackgroundEnabled?: boolean;
+  visualBackgroundColor?: string;
+  visualBackgroundOpacity?: number;
+  visualBackgroundShape?: HistoryCanvasVisualBackgroundShape;
+  visualBorderColor?: string;
+  visualBorderWidth?: number;
 };
 
 export type HistoryActivityCanvas = {
   width: number;
   height: number;
   background?: string;
+  backgroundImage?: string;
+  backgroundImageFit?: "contain" | "cover" | "stretch";
+  backgroundImageOpacity?: number;
   layoutVersion?: number;
   blocks: HistoryCanvasBlock[];
 };

@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight, ArrowRight, Bold, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Circle, Copy, FileText, Image as ImageIcon, Italic, Layers3, Map as MapIcon, Maximize2, MessageSquareText, Minus, Minimize2, MousePointer2, PanelTop, Plus, RectangleHorizontal, Shapes, Square, Trash2, Triangle, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
+import { HistoryCanvasVisual, type HistoryVisualLibraryItem } from "@/components/history-canvas-visual";
+import { HistoryResourceLibrary } from "@/components/history-resource-library";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
@@ -51,6 +53,7 @@ const blockLabels: Record<HistoryCanvasBlockType, string> = {
   text: "Texte",
   document: "Document",
   shape: "Forme",
+  visual: "Élément visuel",
   interaction: "Interaction",
   validation: "Validation",
   feedback: "Feedback"
@@ -137,6 +140,32 @@ function defaultShapeBlock(kind: HistoryCanvasShapeKind, canvas: HistoryActivity
     shapeShadowColor: "#123f59",
     shapeShadowDistance: 8,
     shapeShadowOpacity: 0.8
+  };
+}
+
+function defaultVisualBlock(item: HistoryVisualLibraryItem, canvas: HistoryActivityCanvas): HistoryCanvasBlock {
+  const size = item.kind === "emoji" ? 210 : 190;
+  return {
+    id: crypto.randomUUID(),
+    type: "visual",
+    x: Math.max(0, (canvas.width - size) / 2),
+    y: Math.max(0, (canvas.height - size) / 2),
+    width: size,
+    height: size,
+    contentWidth: size,
+    contentHeight: size,
+    visualKind: item.kind,
+    visualId: item.kind === "icon" ? item.value : undefined,
+    visualSrc: item.kind === "emoji" ? item.value : undefined,
+    visualLabel: item.label,
+    visualColor: "#0b4a6f",
+    visualOpacity: 1,
+    visualBackgroundEnabled: false,
+    visualBackgroundColor: "#ffffff",
+    visualBackgroundOpacity: 1,
+    visualBackgroundShape: "rounded",
+    visualBorderColor: "#0b4a6f",
+    visualBorderWidth: 0
   };
 }
 
@@ -263,6 +292,42 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     setInspectedId("");
     setTextTarget(null);
     setResourceMenuOpen(false);
+  }
+
+  function addVisual(item: HistoryVisualLibraryItem) {
+    const block = defaultVisualBlock(item, canvas);
+    patchCanvas({ blocks: [...canvas.blocks, block] });
+    setSelectedId(block.id);
+    setInspectedId("");
+    setTextTarget(null);
+    setResourceMenuOpen(false);
+  }
+
+  function importVisual(file?: File) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSize = 360;
+        const ratio = image.naturalWidth > 0 && image.naturalHeight > 0 ? image.naturalWidth / image.naturalHeight : 1;
+        const width = ratio >= 1 ? maxSize : maxSize * ratio;
+        const height = ratio >= 1 ? maxSize / ratio : maxSize;
+        const block: HistoryCanvasBlock = {
+          id: crypto.randomUUID(), type: "visual",
+          x: Math.max(0, (canvas.width - width) / 2), y: Math.max(0, (canvas.height - height) / 2),
+          width, height, contentWidth: width, contentHeight: height,
+          visualKind: "image", visualSrc: String(reader.result), visualLabel: file.name.replace(/\.[^.]+$/, ""),
+          visualOpacity: 1, visualBackgroundEnabled: false
+        };
+        patchCanvas({ blocks: [...canvas.blocks, block] });
+        setSelectedId(block.id);
+        setInspectedId("");
+        setResourceMenuOpen(false);
+      };
+      image.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
   }
 
   async function addDocumentBlock(document: HistorySourceDocument) {
@@ -461,6 +526,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   function renderBlock(block: HistoryCanvasBlock) {
     const document = documents.find((item) => item.id === block.documentId);
     if (block.type === "shape") return <HistoryCanvasShape {...block} />;
+    if (block.type === "visual") return <HistoryCanvasVisual {...block} />;
     if (block.type === "document") {
       return (
         <button
@@ -483,7 +549,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    if (block.type === "text" || block.type === "shape" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
+    if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
@@ -509,19 +575,14 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           <div className="history-canvas-tool-menu">
             <Button type="button" variant="secondary" aria-expanded={resourceMenuOpen} onClick={() => { setDocumentLibraryOpen(false); setInteractionMenuOpen(false); setResourceMenuOpen((open) => !open); }}><Shapes size={16} /> Ressources</Button>
             {resourceMenuOpen && (
-              <div className="history-canvas-tool-popover history-resource-menu" role="menu" aria-label="Ressources">
-                <div className="history-resource-menu-heading"><Shapes size={18} /><strong>Formes</strong></div>
-                <div className="history-shape-palette">
-                  {shapeOptions.map(({ kind, label, icon: Icon }) => (
-                    <button type="button" role="menuitem" key={kind} onClick={() => addShape(kind)} title={`Ajouter : ${label}`}>
-                      <Icon size={25} strokeWidth={1.8} />
-                      <strong>{label}</strong>
-                    </button>
-                  ))}
-                </div>
-                <div className="history-resource-menu-divider" />
-                <button type="button" role="menuitem" className="history-resource-images-placeholder" disabled><ImageIcon size={19} /><strong>Images</strong></button>
-              </div>
+              <HistoryResourceLibrary
+                canvas={canvas}
+                onCanvasChange={patchCanvas}
+                onAddShape={addShape}
+                onAddVisual={addVisual}
+                onImportVisual={importVisual}
+                onClose={() => setResourceMenuOpen(false)}
+              />
             )}
           </div>
           <div className="history-canvas-tool-menu">
@@ -620,6 +681,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             }
           }}
         >
+          {canvas.backgroundImage && <div className="history-canvas-stage-background" style={{ backgroundImage: `url(${canvas.backgroundImage})`, backgroundSize: canvas.backgroundImageFit === "stretch" ? "100% 100%" : canvas.backgroundImageFit ?? "cover", opacity: canvas.backgroundImageOpacity ?? 1 }} />}
           {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
             return (
               <div
@@ -680,12 +742,13 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             <div className="history-canvas-inspector-heading">
               <strong>{blockLabels[inspectedBlock.type]}</strong>
               <div className="history-canvas-inspector-actions">
-                {inspectedBlock.type === "shape" && <button type="button" onClick={() => duplicateBlock(inspectedBlock.id)} aria-label="Dupliquer la forme" title="Dupliquer"><Copy size={16} /></button>}
+                {(inspectedBlock.type === "shape" || inspectedBlock.type === "visual") && <button type="button" onClick={() => duplicateBlock(inspectedBlock.id)} aria-label="Dupliquer l’objet" title="Dupliquer"><Copy size={16} /></button>}
                 <button type="button" className="danger" onClick={() => removeBlock(inspectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
                 <button type="button" onClick={() => setInspectedId("")} aria-label="Fermer les propriétés"><X size={16} /></button>
               </div>
             </div>
             {inspectedBlock.type === "shape" && <ShapeInspector block={inspectedBlock} onUpdate={(patch) => updateBlock(inspectedBlock.id, patch)} />}
+            {inspectedBlock.type === "visual" && <VisualInspector block={inspectedBlock} onUpdate={(patch) => updateBlock(inspectedBlock.id, patch)} />}
             {inspectedBlock.type === "document" && (
               <DocumentInspector
                 block={inspectedBlock}
@@ -707,6 +770,53 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           </aside>
         )}
       </div>
+    </section>
+  );
+}
+
+function VisualInspector({ block, onUpdate }: { block: HistoryCanvasBlock; onUpdate: (patch: Partial<HistoryCanvasBlock>) => void }) {
+  const opacity = Math.round((block.visualOpacity ?? 1) * 100);
+  const backgroundOpacity = Math.round((block.visualBackgroundOpacity ?? 1) * 100);
+  return (
+    <section className="history-visual-inspector" aria-label="Apparence de l’élément visuel">
+      <label className="history-inspector-field">
+        <span>Description</span>
+        <input value={block.visualLabel ?? ""} onChange={(event) => onUpdate({ visualLabel: event.target.value })} placeholder="Décrire l’élément" />
+      </label>
+      {block.visualKind === "icon" && (
+        <label className="history-inspector-color-field">
+          <span>Couleur de l’icône</span>
+          <input type="color" value={block.visualColor ?? "#0b4a6f"} onChange={(event) => onUpdate({ visualColor: event.target.value })} />
+        </label>
+      )}
+      <label className="history-inspector-range-field">
+        <span>Opacité <strong>{opacity} %</strong></span>
+        <input type="range" min="10" max="100" step="5" value={opacity} onChange={(event) => onUpdate({ visualOpacity: Number(event.target.value) / 100 })} />
+      </label>
+      <label className="history-visual-background-toggle">
+        <input type="checkbox" checked={block.visualBackgroundEnabled ?? false} onChange={(event) => onUpdate({ visualBackgroundEnabled: event.target.checked })} />
+        <span>Ajouter un fond</span>
+      </label>
+      {block.visualBackgroundEnabled && (
+        <div className="history-visual-background-settings">
+          <label className="history-inspector-field">
+            <span>Forme du fond</span>
+            <select value={block.visualBackgroundShape ?? "rounded"} onChange={(event) => onUpdate({ visualBackgroundShape: event.target.value as NonNullable<HistoryCanvasBlock["visualBackgroundShape"]> })}>
+              <option value="square">Carré</option>
+              <option value="rounded">Coins arrondis</option>
+              <option value="circle">Cercle</option>
+            </select>
+          </label>
+          <div className="history-shape-setting-grid">
+            <label className="history-inspector-color-field"><span>Couleur du fond</span><input type="color" value={block.visualBackgroundColor ?? "#ffffff"} onChange={(event) => onUpdate({ visualBackgroundColor: event.target.value })} /></label>
+            <label className="history-inspector-range-field"><span>Opacité <strong>{backgroundOpacity} %</strong></span><input type="range" min="10" max="100" step="5" value={backgroundOpacity} onChange={(event) => onUpdate({ visualBackgroundOpacity: Number(event.target.value) / 100 })} /></label>
+          </div>
+          <div className="history-shape-setting-grid">
+            <label className="history-inspector-color-field"><span>Contour</span><input type="color" value={block.visualBorderColor ?? "#0b4a6f"} onChange={(event) => onUpdate({ visualBorderColor: event.target.value })} /></label>
+            <label className="history-inspector-range-field"><span>Épaisseur <strong>{block.visualBorderWidth ?? 0}px</strong></span><input type="range" min="0" max="12" step="1" value={block.visualBorderWidth ?? 0} onChange={(event) => onUpdate({ visualBorderWidth: Number(event.target.value) })} /></label>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

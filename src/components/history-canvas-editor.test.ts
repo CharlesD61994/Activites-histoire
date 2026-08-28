@@ -77,6 +77,17 @@ describe("resizeHistoryCanvasBlock", () => {
   const canvas = { width: 1600, height: 900 };
   const block: HistoryCanvasBlock = { id: "text", type: "text", x: 200, y: 100, width: 800, height: 200 };
 
+  it("resizes visual elements independently from their edges", () => {
+    const visual: HistoryCanvasBlock = { id: "visual", type: "visual", x: 300, y: 200, width: 200, height: 200 };
+    const widened = resizeHistoryCanvasBlock(visual, "e", 160, 0, canvas, shortTextQuestion);
+    const heightened = resizeHistoryCanvasBlock(visual, "s", 0, 120, canvas, shortTextQuestion);
+
+    expect(widened.width).toBe(360);
+    expect(widened.height).toBe(200);
+    expect(heightened.width).toBe(200);
+    expect(heightened.height).toBe(320);
+  });
+
   it("changes only the height from a horizontal edge", () => {
     const resized = resizeHistoryCanvasBlock(block, "n", 75, 50, canvas, shortTextQuestion);
 

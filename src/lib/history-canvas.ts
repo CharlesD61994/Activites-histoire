@@ -72,6 +72,7 @@ function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) 
   if (block.type === "shape") {
     return block.shapeKind === "line" ? { width: 50, height: 18 } : { width: 40, height: 40 };
   }
+  if (block.type === "visual") return { width: 40, height: 40 };
   const base = blockContentSize(block, question);
   return {
     width: Math.max(block.type === "document" ? 120 : 80, base.width * 0.25),
