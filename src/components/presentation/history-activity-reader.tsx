@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CheckCircle2, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -195,6 +195,18 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     }
   }
 
+  function resetAnswers() {
+    if (!question) return;
+    setSelectedChoices([]);
+    setClassificationAnswers({});
+    setMatchingAnswers({});
+    setEventOrder(question.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
+    setHotspotAnswer(null);
+    setClozeAnswers({});
+    setShortTextAnswer("");
+    setValidation("idle");
+  }
+
   function openDocument(document: HistorySourceDocument) {
     setSelectedDocument(document);
     setDocumentZoom(1);
@@ -279,6 +291,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           validation={validation}
           statusText={statusText}
           onValidate={validate}
+          onReset={resetAnswers}
           onOpenDocument={openDocument}
           resetValidation={() => setValidation("idle")}
         />
@@ -351,6 +364,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
               shortTextAnswer={shortTextAnswer}
               setShortTextAnswer={setShortTextAnswer}
               onValidate={validate}
+              onReset={resetAnswers}
               resetValidation={() => setValidation("idle")}
             />
 
@@ -360,8 +374,6 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
                 <strong>{statusText}</strong>
               </div>
             )}
-
-            {question.action !== "cloze_choice" && <div className="history-reader-actions"><Button onClick={validate}>Valider</Button></div>}
           </div>
         </div>
       </Card>
@@ -393,6 +405,7 @@ function HistoryCanvasStage({
   validation,
   statusText,
   onValidate,
+  onReset,
   onOpenDocument,
   resetValidation
 }: {
@@ -409,7 +422,7 @@ function HistoryCanvasStage({
   moveEvent: (id: string, direction: -1 | 1) => void;
   hotspotDocument?: HistorySourceDocument;
   hotspotAnswer: { x: number; y: number } | null;
-  setHotspotAnswer: (answer: { x: number; y: number }) => void;
+  setHotspotAnswer: (answer: { x: number; y: number } | null) => void;
   clozeAnswers: Record<string, string>;
   setClozeAnswers: (next: Record<string, string>) => void;
   shortTextAnswer: string;
@@ -417,6 +430,7 @@ function HistoryCanvasStage({
   validation: Validation;
   statusText: string;
   onValidate: () => void;
+  onReset: () => void;
   onOpenDocument: (document: HistorySourceDocument) => void;
   resetValidation: () => void;
 }) {
@@ -461,6 +475,7 @@ function HistoryCanvasStage({
           shortTextAnswer={shortTextAnswer}
           setShortTextAnswer={setShortTextAnswer}
           onValidate={onValidate}
+          onReset={onReset}
           resetValidation={resetValidation}
         />
       );
@@ -530,6 +545,7 @@ function HistoryQuestionInteraction({
   shortTextAnswer,
   setShortTextAnswer,
   onValidate,
+  onReset,
   resetValidation
 }: {
   question: HistoryQuestion;
@@ -543,33 +559,46 @@ function HistoryQuestionInteraction({
   moveEvent: (id: string, direction: -1 | 1) => void;
   hotspotDocument?: HistorySourceDocument;
   hotspotAnswer: { x: number; y: number } | null;
-  setHotspotAnswer: (answer: { x: number; y: number }) => void;
+  setHotspotAnswer: (answer: { x: number; y: number } | null) => void;
   clozeAnswers: Record<string, string>;
   setClozeAnswers: (next: Record<string, string>) => void;
   shortTextAnswer: string;
   setShortTextAnswer: (next: string) => void;
   onValidate?: () => void;
+  onReset?: () => void;
   resetValidation: () => void;
 }) {
+  function withReaderActions(content: ReactNode) {
+    return (
+      <div className="history-reader-interaction-stack">
+        <div className="history-reader-interaction-body">{content}</div>
+        <div className="history-reader-actions">
+          <button type="button" className="history-reader-reset" onClick={onReset} aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>
+          <Button type="button" onClick={onValidate}>Valider</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (question.action === "choice_single" || question.action === "choice_multiple") {
-    return <div className="history-choice-grid">{(question.choices ?? []).map((choice) => <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={selectedChoices.includes(choice.id) ? "selected" : ""} onClick={() => toggleChoice(choice.id)}>{choice.text}</button>)}</div>;
+    return withReaderActions(<div className="history-choice-grid">{(question.choices ?? []).map((choice) => <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={selectedChoices.includes(choice.id) ? "selected" : ""} onClick={() => toggleChoice(choice.id)}>{choice.text}</button>)}</div>);
   }
 
   if (question.action === "classification") {
-    return <div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value={classificationAnswers[item.id] ?? ""} onChange={(event) => { resetValidation(); setClassificationAnswers({ ...classificationAnswers, [item.id]: event.target.value }); }}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>;
+    return withReaderActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value={classificationAnswers[item.id] ?? ""} onChange={(event) => { resetValidation(); setClassificationAnswers({ ...classificationAnswers, [item.id]: event.target.value }); }}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>);
   }
 
   if (question.action === "matching") {
-    return <div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}>{prompt.prompt}<select value={matchingAnswers[prompt.id] ?? ""} onChange={(event) => { resetValidation(); setMatchingAnswers({ ...matchingAnswers, [prompt.id]: event.target.value }); }}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>;
+    return withReaderActions(<div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}>{prompt.prompt}<select value={matchingAnswers[prompt.id] ?? ""} onChange={(event) => { resetValidation(); setMatchingAnswers({ ...matchingAnswers, [prompt.id]: event.target.value }); }}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>);
   }
 
   if (question.action === "chronological_order" || question.action === "timeline") {
     const eventsById = new Map((question.timelineEvents ?? []).map((event) => [event.id, event]));
-    return <div className="history-order-list">{eventOrder.map((id) => { const event = eventsById.get(id); if (!event) return null; return <div key={id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onClick={() => moveEvent(id, -1)}>Monter</button><button type="button" onClick={() => moveEvent(id, 1)}>Descendre</button></div>; })}</div>;
+    return withReaderActions(<div className="history-order-list">{eventOrder.map((id) => { const event = eventsById.get(id); if (!event) return null; return <div key={id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onClick={() => moveEvent(id, -1)}>Monter</button><button type="button" onClick={() => moveEvent(id, 1)}>Descendre</button></div>; })}</div>);
   }
 
   if (question.action === "document_hotspot") {
-    return hotspotDocument?.src ? (
+    return withReaderActions(hotspotDocument?.src ? (
       <button type="button" className="history-hotspot-reader" onClick={(event) => {
         resetValidation();
         const rect = event.currentTarget.getBoundingClientRect();
@@ -578,11 +607,11 @@ function HistoryQuestionInteraction({
         <img src={hotspotDocument.src} alt={hotspotDocument.title} />
         {hotspotAnswer && <span style={{ left: `${hotspotAnswer.x}%`, top: `${hotspotAnswer.y}%` }} />}
       </button>
-    ) : <p>Cette action demande un document image ou une carte.</p>;
+    ) : <p>Cette action demande un document image ou une carte.</p>);
   }
 
   if (question.action === "short_text") {
-    return (
+    return withReaderActions(
       <div className="history-short-text-reader">
         <input
           value={shortTextAnswer}

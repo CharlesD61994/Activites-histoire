@@ -226,48 +226,202 @@ const baseHistoryVisualLibrary: HistoryVisualLibraryItem[] = [
   { id: "emoji-ship", label: "Navire", kind: "emoji", value: "⛵", category: "illustrations", keywords: "navire voyage exploration" }
 ];
 
-const expandedIconPool = [
-  "flame", "bone", "footprints", "tent", "gem", "axe", "hammer", "pickaxe", "anvil", "wheat",
-  "sprout", "house", "tractor", "amphora", "landmark", "scroll", "coins", "castle", "shield", "swords",
-  "church", "ship", "compass", "telescope", "crown", "factory", "train", "radio", "vote", "map",
-  "globe", "mountain", "wheel", "users", "scale", "palette", "graduation", "school", "library", "notebook",
-  "pencil", "calendar", "languages", "atom", "microscope", "zap", "droplets", "wind", "earth", "briefcase",
-  "building", "basket", "chart", "circleDollar", "handshake", "bus", "plane", "sailboat", "anchor", "route",
-  "tower", "trees", "land", "waves", "fish", "bird", "dog", "sun", "moon", "cloud", "star", "help",
-  "lightbulb", "check", "x", "heart", "book", "arrowRight", "arrowLeft", "arrowUp", "arrowDown"
-];
+type HistoryVisualCategoryId = typeof historyVisualCategories[number]["id"];
 
-const expandedEmojiPool = [
-  "🪨", "🔥", "🏕️", "🛖", "🌾", "🌱", "🏠", "🏘️", "🐄", "🐑", "🐎", "🐕", "🏺", "⚒️", "🛡️",
-  "⚔️", "🏰", "⛪", "👑", "📜", "📖", "🗺️", "🌍", "🧭", "⛵", "🚂", "🏭", "📻", "🗳️", "⚜️",
-  "🍁", "❄️", "🌲", "🏔️", "💧", "🌊", "☀️", "🌙", "☁️", "🌈", "🔬", "⚛️", "💡", "📚", "✏️",
-  "🎓", "🏫", "💰", "🪙", "🛒", "🤝", "📈", "💼", "🏛️", "🏢", "🚌", "✈️", "🚢", "⚓", "🛣️",
-  "📍", "🚩", "👥", "🧑‍🌾", "👩‍🏫", "🧑‍🔬", "🎨", "🎭", "🎵", "⭐", "✅", "❌", "❓", "❤️", "🔔"
-];
+const curatedVisualThemes = {
+  prehistoire: {
+    icons: ["flame", "bone", "footprints", "tent", "gem", "axe", "hammer", "wheat", "sprout", "house", "fish", "trees", "mountain", "sun", "moon"],
+    emojis: ["🪨", "🔥", "🏕️", "🛖", "🌾", "🌱", "🏺", "🦴", "🦬", "🦣", "🐟", "🫐", "🌰", "🪵", "☀️", "🌙", "🏞️", "👣", "🧺", "⚒️"],
+    terms: ["Foyer", "Silex", "Campement", "Abri", "Cueillette", "Chasse", "Pêche", "Peinture rupestre", "Nomadisme", "Hutte", "Outil poli", "Première récolte", "Foyer commun", "Trace", "Pierre taillée"]
+  },
+  antiquite: {
+    icons: ["amphora", "landmark", "scroll", "coins", "crown", "globe", "scale", "book", "shield", "swords", "ship", "map", "sun", "users", "vote"],
+    emojis: ["🏛️", "🏺", "📜", "👑", "⚖️", "🪙", "🛡️", "⚔️", "🗺️", "🌍", "⛵", "📖", "🧱", "🏟️", "🕯️", "🦅", "🏹", "🧭", "⭐", "🔥"],
+    terms: ["Temple", "Cité", "Empire", "Droit", "Écriture", "Monnaie", "Commerce", "Armée", "Pharaon", "Sénat", "Forum", "Mythologie", "Aqueduc", "Colonies", "Route antique"]
+  },
+  "moyen-age": {
+    icons: ["castle", "shield", "swords", "church", "anvil", "coins", "scroll", "house", "crown", "wheat", "hammer", "flag", "book", "land", "users"],
+    emojis: ["🏰", "🛡️", "⚔️", "⛪", "👑", "📜", "🌾", "🏘️", "🔨", "🕯️", "🧵", "🐎", "🧱", "🪙", "🗝️", "🍞", "🏹", "📖", "🛖", "🚩"],
+    terms: ["Seigneurie", "Château", "Chevalerie", "Église", "Bourg", "Fief", "Impôt", "Forge", "Charte", "Moulin", "Rempart", "Marché", "Vassal", "Moine", "Terre"]
+  },
+  moderne: {
+    icons: ["ship", "compass", "telescope", "crown", "feather", "globe", "anchor", "map", "landmark", "scroll", "book", "scale", "palette", "sailboat", "route"],
+    emojis: ["⛵", "🧭", "🔭", "👑", "🪶", "🌍", "⚓", "🗺️", "📜", "📖", "🏛️", "🎨", "🖋️", "🪙", "🚢", "🌊", "⭐", "🏰", "💡", "🕯️"],
+    terms: ["Exploration", "Cartographie", "Navigation", "Monarchie", "Humanisme", "Imprimerie", "Colonie", "Port", "Commerce maritime", "Découverte", "Traité", "Savants", "Renaissance", "Empire colonial", "Traversée"]
+  },
+  contemporaine: {
+    icons: ["factory", "train", "radio", "vote", "building", "briefcase", "megaphone", "chart", "bus", "plane", "zap", "globe", "users", "school", "camera"],
+    emojis: ["🏭", "🚂", "📻", "🗳️", "🏢", "💼", "📣", "📈", "🚌", "✈️", "⚡", "🌐", "👥", "🏫", "📷", "📰", "🏙️", "🚧", "📺", "💡"],
+    terms: ["Industrialisation", "Usine", "Ville", "Démocratie", "Média", "Travail", "Syndicat", "Transport", "Électricité", "Guerre mondiale", "Urbanisation", "Manifestation", "Innovation", "Statistique", "Actualité"]
+  },
+  sedentarisation: {
+    icons: ["wheat", "sprout", "house", "tractor", "land", "waves", "basket", "hammer", "anvil", "fish", "dog", "sun", "droplets", "trees", "utensils"],
+    emojis: ["🌾", "🌱", "🏘️", "🏠", "🐄", "🐑", "🐐", "🏺", "🧺", "🌽", "🍞", "💧", "🪵", "🛖", "🥣", "🐟", "🧑‍🌾", "🌻", "⚒️", "☀️"],
+    terms: ["Agriculture", "Élevage", "Village", "Récolte", "Céréales", "Poterie", "Grenier", "Irrigation", "Domestication", "Champ", "Moisson", "Stockage", "Habitat fixe", "Artisanat", "Four"]
+  },
+  quebec: {
+    icons: ["map", "pin", "waves", "tree", "snowflake", "languages", "anchor", "landmark", "house", "ship", "flag", "users", "school", "book", "building"],
+    emojis: ["⚜️", "🍁", "❄️", "🌲", "🌊", "🗺️", "📍", "⛪", "🏠", "🚢", "🛶", "🦫", "🏒", "📚", "🏛️", "🧣", "🌉", "🪵", "🎼", "🏫"],
+    terms: ["Fleur de lys", "Saint-Laurent", "Forêt", "Hiver", "Nouvelle-France", "Seigneurie", "Ville de Québec", "Montréal", "Territoire", "Francophonie", "Autochtones", "Fourrures", "Patrimoine", "Institutions", "Fleuve"]
+  },
+  outils: {
+    icons: ["axe", "hammer", "pickaxe", "anvil", "pencil", "key", "compass", "lightbulb", "scale", "camera", "microscope", "telescope", "notebook", "calendar", "book"],
+    emojis: ["🛠️", "🔨", "🪓", "⛏️", "⚒️", "✏️", "🖊️", "🧭", "🔑", "💡", "🔬", "🔭", "📏", "⚖️", "📷", "🧰", "🪛", "🧱", "📓", "🪚"],
+    terms: ["Hache", "Marteau", "Pioche", "Enclume", "Crayon", "Compas", "Instrument", "Invention", "Mesure", "Écriture", "Observation", "Construction", "Technique", "Atelier", "Réparation"]
+  },
+  territoire: {
+    icons: ["map", "globe", "mountain", "wheel", "route", "pin", "flag", "waves", "compass", "ship", "anchor", "land", "trees", "building", "house"],
+    emojis: ["🗺️", "🌍", "🏔️", "📍", "🚩", "🧭", "🛣️", "🌊", "⛰️", "🏞️", "🏝️", "🏜️", "🏙️", "🌲", "🚢", "⚓", "🏠", "🌉", "🧱", "☀️"],
+    terms: ["Carte", "Frontière", "Relief", "Région", "Route", "Itinéraire", "Fleuve", "Village", "Ville", "Port", "Paysage", "Climat", "Ressource", "Lieu", "Distance"]
+  },
+  societe: {
+    icons: ["users", "scale", "palette", "graduation", "handshake", "briefcase", "megaphone", "circleDollar", "heartHandshake", "school", "vote", "house", "building", "church", "music"],
+    emojis: ["👥", "🤝", "⚖️", "🎨", "🎓", "💼", "📣", "💰", "🏠", "🏢", "🗳️", "⛪", "🎭", "🎵", "📚", "👩‍🏫", "🧑‍🌾", "👨‍👩‍👧‍👦", "❤️", "⭐"],
+    terms: ["Population", "Famille", "Culture", "Éducation", "Justice", "Pouvoir", "Métier", "Échange", "Religion", "Opinion", "Droits", "Communauté", "Inégalités", "Tradition", "Vie quotidienne"]
+  },
+  symboles: {
+    icons: ["check", "x", "star", "help", "book", "lightbulb", "heart", "clock", "circleDollar", "bell", "flag", "key", "shield", "circleArrowRight", "circleArrowLeft"],
+    emojis: ["✅", "❌", "⭐", "❓", "💡", "❤️", "🔔", "⏰", "📌", "📍", "🚩", "🔑", "🛡️", "⚠️", "➕", "➖", "🔎", "📖", "🧩", "🎯"],
+    terms: ["Correct", "Erreur", "Important", "Question", "Idée", "Alerte", "Temps", "Repère", "Indice", "Objectif", "À retenir", "Attention", "Ajouter", "Comparer", "Valider"]
+  },
+  fleches: {
+    icons: ["arrowRight", "arrowLeft", "arrowUp", "arrowDown", "circleArrowRight", "circleArrowLeft", "circleArrowUp", "circleArrowDown", "route", "compass", "corner", "map", "pin", "flag", "chevron"],
+    emojis: ["➡️", "⬅️", "⬆️", "⬇️", "↗️", "↘️", "↙️", "↖️", "🔁", "🔄", "⤴️", "⤵️", "↪️", "↩️", "🔀", "⏩", "⏪", "⏫", "⏬", "🔼", "🔽", "📍", "🚩", "🧭", "🛣️", "🎯"],
+    terms: ["Droite", "Gauche", "Haut", "Bas", "Lien", "Retour", "Étape suivante", "Déplacement", "Cause", "Conséquence", "Parcours", "Comparer", "Repère", "Direction", "Connexion"]
+  },
+  education: {
+    icons: ["school", "library", "notebook", "pencil", "calendar", "languages", "book", "lightbulb", "graduation", "users", "clipboard", "clock", "help", "check", "palette"],
+    emojis: ["🎓", "🏫", "📚", "📖", "📓", "✏️", "🖊️", "🗓️", "💡", "🧠", "🔎", "✅", "❓", "🧑‍🏫", "👩‍🏫", "📌", "📝", "🧩", "🎯", "🏛️", "📐", "📎", "🖍️", "🧮"],
+    terms: ["École", "Livre", "Cahier", "Recherche", "Apprendre", "Consigne", "Calendrier", "Langue", "Lecture", "Idée", "Classe", "Exercice", "Savoir", "Bibliothèque", "Objectif"]
+  },
+  sciences: {
+    icons: ["atom", "microscope", "zap", "droplets", "wind", "earth", "sun", "moon", "cloud", "waves", "telescope", "lightbulb", "scale", "chart", "factory"],
+    emojis: ["🔬", "⚛️", "⚡", "💧", "🌬️", "🌍", "☀️", "🌙", "☁️", "🌊", "🔭", "💡", "🧪", "🌡️", "🧲", "🧬", "📈", "🌋", "🪐", "⭐"],
+    terms: ["Observation", "Expérience", "Énergie", "Eau", "Vent", "Planète", "Soleil", "Lune", "Climat", "Ondes", "Astronomie", "Mesure", "Découverte", "Données", "Technologie"]
+  },
+  economie: {
+    icons: ["briefcase", "building", "basket", "chart", "circleDollar", "handshake", "coins", "factory", "tractor", "ship", "train", "landmark", "users", "scale", "shopping"],
+    emojis: ["💰", "🪙", "💼", "🏢", "🛒", "📈", "🤝", "🏭", "🌾", "🚢", "🚂", "⚖️", "📊", "🏦", "🧺", "🍞", "🧑‍🌾", "🔨", "📦", "🧾"],
+    terms: ["Commerce", "Marché", "Travail", "Production", "Richesse", "Échange", "Monnaie", "Usine", "Agriculture", "Transport", "Impôt", "Prix", "Ressource", "Entreprise", "Métier"]
+  },
+  transport: {
+    icons: ["bus", "plane", "sailboat", "anchor", "route", "tower", "ship", "train", "compass", "map", "wheel", "waves", "flag", "globe", "arrowRight"],
+    emojis: ["🚌", "✈️", "⛵", "⚓", "🛣️", "🚢", "🚂", "🚗", "🚲", "🛶", "🧭", "🗺️", "🌊", "🚩", "🌍", "🚧", "🏁", "↗️", "📍", "🛤️"],
+    terms: ["Route", "Train", "Bateau", "Port", "Navigation", "Avion", "Autobus", "Voyage", "Trajet", "Exploration", "Déplacement", "Rail", "Fleuve", "Aéroport", "Frontière"]
+  },
+  nature: {
+    icons: ["trees", "land", "waves", "fish", "bird", "dog", "sun", "cloud", "mountain", "sprout", "wheat", "droplets", "wind", "flame", "moon"],
+    emojis: ["🌲", "🌳", "🌾", "🌱", "🌊", "🐟", "🦌", "🐄", "☀️", "☁️", "🏔️", "💧", "🌬️", "🔥", "🌙", "🍂", "🌻", "🏞️", "🪵", "🍃"],
+    terms: ["Forêt", "Champ", "Rivière", "Pêche", "Faune", "Climat", "Montagne", "Végétation", "Récolte", "Ressource", "Saison", "Sol", "Eau", "Milieu", "Paysage"]
+  },
+  illustrations: {
+    icons: ["star", "smile", "palette", "camera", "book", "heart", "bell", "lightbulb", "check", "help", "flag", "map", "sun", "cloud", "music"],
+    emojis: ["🎨", "🖼️", "⭐", "✅", "❌", "❓", "💡", "❤️", "🔔", "📌", "📍", "🧩", "🎯", "📣", "📚", "🏛️", "🗺️", "🌈", "✨", "🖊️", "💬", "🗨️", "🏷️", "🪄", "🟦", "🟩", "🟨", "🟧", "🟥", "🔷", "🔶", "🔸", "🔹"],
+    terms: ["Illustration", "Accent", "Repère", "Badge", "Étiquette", "Indice", "Décoration", "Mise en valeur", "Signal", "Annotation", "Marqueur", "Support visuel", "Icône colorée", "Bulle", "Point clé"]
+  }
+} satisfies Record<HistoryVisualCategoryId, { icons: string[]; emojis: string[]; terms: string[] }>;
 
-const categoryById = new Map(historyVisualCategories.map((category) => [category.id, category]));
+const validIconIds = new Set(Object.keys(visualIcons));
 const usedVisualIds = new Set(baseHistoryVisualLibrary.map((item) => item.id));
+
+const iconLabels: Record<string, string> = {
+  amphora: "Amphore", anchor: "Ancre", anvil: "Enclume", arrowDown: "Flèche bas",
+  arrowLeft: "Flèche gauche", arrowRight: "Flèche droite", arrowUp: "Flèche haut",
+  atom: "Atome", axe: "Hache", basket: "Marché", bell: "Cloche", bird: "Oiseau",
+  bone: "Os", book: "Livre", briefcase: "Travail", building: "Bâtiment",
+  bus: "Autobus", calendar: "Calendrier", camera: "Image", castle: "Château",
+  chart: "Graphique", check: "Validation", church: "Église", circleArrowDown: "Direction bas",
+  circleArrowLeft: "Direction gauche", circleArrowRight: "Direction droite", circleArrowUp: "Direction haut",
+  circleDollar: "Argent", cloud: "Nuage", coins: "Monnaie", compass: "Boussole",
+  crown: "Couronne", dog: "Animal domestique", droplets: "Eau", earth: "Terre",
+  factory: "Usine", feather: "Plume", fish: "Poisson", flag: "Drapeau",
+  flame: "Foyer", footprints: "Empreintes", gem: "Pierre", globe: "Globe",
+  graduation: "Diplôme", hammer: "Marteau", handshake: "Échange", heart: "Coeur",
+  heartHandshake: "Solidarité", house: "Maison", key: "Clé", landmark: "Monument",
+  land: "Terre", languages: "Langues", library: "Bibliothèque", lightbulb: "Idée",
+  map: "Carte", microscope: "Microscope", moon: "Lune", mountain: "Montagne",
+  music: "Musique", notebook: "Cahier", palette: "Culture", pencil: "Crayon",
+  pickaxe: "Pioche", plane: "Avion", radio: "Radio", route: "Route",
+  sailboat: "Voilier", scale: "Justice", school: "École", scroll: "Parchemin",
+  shield: "Bouclier", ship: "Navire", smile: "Sourire", snowflake: "Hiver",
+  sprout: "Pousse", star: "Étoile", sun: "Soleil", swords: "Épées",
+  telescope: "Télescope", tent: "Campement", tower: "Aéroport", tractor: "Agriculture",
+  train: "Train", tree: "Forêt", trees: "Boisé", users: "Population",
+  utensils: "Alimentation", vote: "Vote", waves: "Cours d’eau", wheat: "Céréales",
+  wind: "Vent", wheel: "Navigation", x: "Erreur", zap: "Énergie"
+};
+
+const emojiLabels: Record<string, string> = {
+  "✅": "Validation", "❌": "Erreur", "❓": "Question", "❤️": "À retenir", "⭐": "Étoile",
+  "🔥": "Feu", "🪨": "Pierre", "🏕️": "Campement", "🛖": "Habitation", "🌾": "Céréales",
+  "🌱": "Culture", "🏺": "Poterie", "🦴": "Os", "🦬": "Chasse", "🦣": "Préhistoire",
+  "🐟": "Pêche", "🫐": "Cueillette", "🌰": "Ressource", "🪵": "Bois", "☀️": "Soleil",
+  "🌙": "Lune", "🏞️": "Paysage", "👣": "Trace", "🧺": "Panier", "⚒️": "Outils",
+  "🏛️": "Monument", "📜": "Texte ancien", "👑": "Pouvoir", "⚖️": "Justice", "🪙": "Monnaie",
+  "🛡️": "Bouclier", "⚔️": "Conflit", "🗺️": "Carte", "🌍": "Monde", "⛵": "Navigation",
+  "📖": "Livre", "🧱": "Construction", "🏟️": "Lieu public", "🕯️": "Époque ancienne", "🏰": "Château",
+  "⛪": "Église", "🔨": "Marteau", "🧵": "Textile", "🐎": "Cheval", "🍞": "Pain",
+  "🏹": "Arc", "🚩": "Repère", "🧭": "Boussole", "🔭": "Observation", "🪶": "Plume",
+  "⚓": "Port", "🎨": "Art", "🖋️": "Écriture", "🚢": "Navire", "🌊": "Eau",
+  "💡": "Idée", "🏭": "Usine", "🚂": "Train", "📻": "Radio", "🗳️": "Vote",
+  "🏢": "Ville", "💼": "Travail", "📣": "Annonce", "📈": "Croissance", "🚌": "Transport",
+  "✈️": "Avion", "⚡": "Électricité", "🌐": "Monde connecté", "👥": "Groupe", "🏫": "École",
+  "📷": "Image", "📰": "Journal", "🏙️": "Ville", "🚧": "Chantier", "📺": "Média",
+  "🐄": "Élevage", "🐑": "Troupeau", "🐐": "Élevage", "🌽": "Culture", "💧": "Eau",
+  "🥣": "Alimentation", "🧑‍🌾": "Agriculture", "🌻": "Plante", "⚜️": "Fleur de lys",
+  "🍁": "Québec", "❄️": "Hiver", "🌲": "Forêt", "📍": "Lieu", "🛶": "Canot",
+  "🦫": "Fourrures", "🏒": "Culture québécoise", "📚": "Livres", "🌉": "Pont", "🎼": "Musique",
+  "🛠️": "Outils", "🪓": "Hache", "⛏️": "Pioche", "✏️": "Crayon", "🖊️": "Écriture",
+  "🔑": "Clé", "🔬": "Microscope", "📏": "Mesure", "🧰": "Atelier", "🪛": "Tournevis",
+  "📓": "Cahier", "🪚": "Scie", "🏔️": "Montagne", "⛰️": "Relief", "🏝️": "Île",
+  "🏜️": "Désert", "🏠": "Habitation", "🤝": "Échange", "🎓": "Éducation", "🎭": "Culture",
+  "🎵": "Musique", "👩‍🏫": "Enseignement", "👨‍👩‍👧‍👦": "Famille", "⏰": "Temps", "📌": "Repère",
+  "⚠️": "Attention", "➕": "Ajouter", "➖": "Retirer", "🔎": "Observer", "🧩": "Lien",
+  "🎯": "Objectif", "➡️": "Droite", "⬅️": "Gauche", "⬆️": "Haut", "⬇️": "Bas",
+  "↗️": "Diagonale haut", "↘️": "Diagonale bas", "↙️": "Diagonale retour", "↖️": "Diagonale haut gauche",
+  "🔁": "Répéter", "🔄": "Recommencer", "⤴️": "Monter", "⤵️": "Descendre", "↪️": "Étape suivante",
+  "↩️": "Retour", "🔀": "Mélanger", "🛣️": "Route", "📝": "Notes", "🧠": "Comprendre",
+  "⏩": "Avancer vite", "⏪": "Reculer vite", "⏫": "Monter vite", "⏬": "Descendre vite",
+  "🔼": "Monter", "🔽": "Descendre", "📐": "Équerre", "📎": "Attache", "🖍️": "Crayon couleur",
+  "🧮": "Calcul", "💬": "Bulle", "🗨️": "Dialogue", "🏷️": "Étiquette", "🪄": "Accent magique",
+  "🟦": "Carré bleu", "🟩": "Carré vert", "🟨": "Carré jaune", "🟧": "Carré orange", "🟥": "Carré rouge",
+  "🔷": "Losange bleu", "🔶": "Losange orange", "🔸": "Petit losange", "🔹": "Petit repère",
+  "🧑‍🏫": "Enseignement", "🌬️": "Vent", "🧪": "Expérience", "🌡️": "Température",
+  "🧲": "Aimant", "🧬": "Science", "🌋": "Relief", "🪐": "Espace", "📊": "Données",
+  "🏦": "Banque", "📦": "Produit", "🧾": "Reçu", "🚗": "Voiture", "🚲": "Vélo",
+  "🏁": "Arrivée", "🛤️": "Rail", "🌳": "Arbre", "🦌": "Faune", "🍂": "Automne",
+  "🍃": "Feuille", "🖼️": "Illustration", "🌈": "Couleur", "✨": "Accent"
+};
 
 function expandedVisualItems() {
   const items: HistoryVisualLibraryItem[] = [];
-  historyVisualCategories.forEach((category, categoryIndex) => {
-    for (let index = 0; index < 35; index += 1) {
-      const isEmoji = category.id === "illustrations" || index % 6 === 0;
+  historyVisualCategories.forEach((category) => {
+    const theme = curatedVisualThemes[category.id];
+    const usedKeys = new Set(baseHistoryVisualLibrary.filter((item) => item.category === category.id).map((item) => `${item.kind}:${item.value}`));
+    let added = 0;
+    for (let index = 0; added < 35 && index < 80; index += 1) {
+      const isEmoji = category.id === "illustrations" || index % 2 === 0;
       const kind = isEmoji ? "emoji" : "icon";
-      const pool = isEmoji ? expandedEmojiPool : expandedIconPool;
-      const poolIndex = isEmoji ? Math.floor(index / 6) + categoryIndex * 7 : index + categoryIndex * 7;
+      const pool = isEmoji ? theme.emojis : theme.icons.filter((icon) => validIconIds.has(icon));
+      const poolIndex = isEmoji ? Math.floor(index / 2) : Math.floor(index / 2);
       const value = pool[poolIndex % pool.length];
-      const id = `expanded-${category.id}-${index + 1}`;
+      const key = `${kind}:${value}`;
+      if (usedKeys.has(key)) continue;
+      usedKeys.add(key);
+      const id = `expanded-${category.id}-${added + 1}`;
       if (usedVisualIds.has(id)) continue;
-      const categoryLabel = categoryById.get(category.id)?.label ?? category.label;
+      const term = isEmoji
+        ? emojiLabels[value] ?? `${category.label} coloré`
+        : iconLabels[value] ?? theme.terms[poolIndex % theme.terms.length];
       items.push({
         id,
-        label: isEmoji ? `${categoryLabel} coloré ${Math.floor(index / 6) + 1}` : `${categoryLabel} ${index + 1}`,
+        label: term,
         kind,
         value,
         category: category.id,
-        keywords: `${category.label} histoire élément visuel ${value}`
+        keywords: `${category.label} ${term} histoire élément visuel ${value}`
       });
+      added += 1;
     }
   });
   return items;

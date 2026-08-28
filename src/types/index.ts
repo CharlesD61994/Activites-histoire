@@ -244,7 +244,7 @@ export type HistoryActivityCanvas = {
   backgroundImage?: string;
   backgroundImageFit?: "contain" | "cover" | "stretch";
   backgroundImageOpacity?: number;
-  backgroundPattern?: "none" | "grid" | "dots" | "lines" | "blueprint" | "chalkboard";
+  backgroundPattern?: "none" | "grid" | "dots" | "lines" | "blueprint" | "chalkboard" | "parchment" | "timeline" | "map" | "notebook" | "crosshatch" | "soft-waves";
   layoutVersion?: number;
   blocks: HistoryCanvasBlock[];
 };
