@@ -203,8 +203,21 @@
 .history-canvas-block.block-validation { place-items: center; }
 .history-canvas-block.block-validation button { width: 100%; height: 100%; border: 0; border-radius: 12px; background: var(--primary); color: #fff; font-weight: 950; }
 .history-canvas-block.block-shape,
-.history-canvas-reader-block.block-shape { overflow: visible; }
-.history-canvas-shape { display: block; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.history-canvas-reader-block.block-shape { display: block; overflow: visible; }
+.history-canvas-block.block-shape.selected { outline: 0; }
+.history-canvas-shape {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  overflow: visible;
+  pointer-events: none;
+}
 .history-canvas-resize-handle { position: absolute !important; z-index: 4; display: none; padding: 0 !important; touch-action: none; user-select: none; background: transparent !important; box-shadow: none !important; }
 .history-canvas-block.selected .history-canvas-resize-handle { display: block; }
 .history-canvas-resize-handle.resize-n, .history-canvas-resize-handle.resize-s { left: 14px; right: 14px; width: auto !important; height: 10px !important; cursor: ns-resize; }

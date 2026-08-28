@@ -40,6 +40,11 @@ type TextTarget =
   | { kind: "choice"; id: string; blockId: string };
 
 const resizeHandles: HistoryResizeHandle[] = ["n", "e", "s", "w", "ne", "se", "sw", "nw"];
+const proportionalResizeHandles: HistoryResizeHandle[] = ["ne", "se", "sw", "nw"];
+
+function resizeHandlesForBlock(block: HistoryCanvasBlock) {
+  return block.type === "shape" && block.shapeKind === "triangle" ? proportionalResizeHandles : resizeHandles;
+}
 
 const blockLabels: Record<HistoryCanvasBlockType, string> = {
   text: "Texte",
@@ -634,7 +639,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               }}
             >
               {renderScaledBlock(block)}
-              {resizeHandles.map((handle) => (
+              {resizeHandlesForBlock(block).map((handle) => (
                 <span
                   key={handle}
                   className={`history-canvas-resize-handle resize-${handle}`}
