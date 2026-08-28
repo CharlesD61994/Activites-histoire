@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
 import { HistoryCanvasVisual, type HistoryVisualLibraryItem } from "@/components/history-canvas-visual";
 import { HistoryResourceLibrary } from "@/components/history-resource-library";
-import { HistoryCanvasBackground } from "@/components/history-canvas-background";
+import { historyCanvasBackgroundStyle } from "@/components/history-canvas-background";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
@@ -666,6 +666,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           ref={surfaceRef}
           style={{
             background: canvas.background || "#fff",
+            ...historyCanvasBackgroundStyle(canvas),
+            ...(canvas.backgroundImage ? { backgroundBlendMode: "normal" } : {}),
             "--history-expanded-stage-height": `${expandedSurfaceHeight}px`
           } as React.CSSProperties}
           onPointerMove={onPointerMove}
@@ -682,7 +684,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             }
           }}
         >
-          <HistoryCanvasBackground canvas={canvas} />
           {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
             return (
               <div

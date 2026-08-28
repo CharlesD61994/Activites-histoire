@@ -107,7 +107,7 @@ export function HistoryResourceLibrary({ canvas, onCanvasChange, onAddShape, onA
                 {historyVisualCategories.map((item) => (
                   <button type="button" key={item.id} onClick={() => setCategory(item.id)}>
                     <span aria-hidden="true">{item.symbol}</span>
-                    <div><strong>{item.label}</strong><small>{item.description}</small></div>
+                    <div><strong>{item.label}</strong><small>{item.description}</small><small>{historyVisualLibrary.filter((visual) => visual.category === item.id).length} choix</small></div>
                   </button>
                 ))}
               </div>

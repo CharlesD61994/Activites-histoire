@@ -37,10 +37,21 @@ function patternStyle(pattern: HistoryActivityCanvas["backgroundPattern"]): CSSP
   return {};
 }
 
-export function HistoryCanvasBackground({ canvas }: { canvas: HistoryActivityCanvas }) {
+export function historyCanvasBackgroundStyle(canvas: HistoryActivityCanvas): CSSProperties {
   if (canvas.backgroundImage) {
-    return <div className="history-canvas-stage-background" style={{ backgroundImage: `url(${canvas.backgroundImage})`, backgroundSize: canvas.backgroundImageFit === "stretch" ? "100% 100%" : canvas.backgroundImageFit ?? "cover", opacity: canvas.backgroundImageOpacity ?? 1 }} />;
+    const opacity = Math.max(0, Math.min(1, canvas.backgroundImageOpacity ?? 1));
+    const veil = opacity < 1 ? `linear-gradient(rgb(255 255 255 / ${1 - opacity}), rgb(255 255 255 / ${1 - opacity})), ` : "";
+    return {
+      backgroundImage: `${veil}url(${canvas.backgroundImage})`,
+      backgroundSize: canvas.backgroundImageFit === "stretch" ? "100% 100%" : canvas.backgroundImageFit ?? "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat"
+    };
   }
-  if (!canvas.backgroundPattern || canvas.backgroundPattern === "none") return null;
-  return <div className="history-canvas-stage-background" style={patternStyle(canvas.backgroundPattern)} />;
+  return patternStyle(canvas.backgroundPattern);
+}
+
+export function HistoryCanvasBackground({ canvas }: { canvas: HistoryActivityCanvas }) {
+  if (!canvas.backgroundImage && (!canvas.backgroundPattern || canvas.backgroundPattern === "none")) return null;
+  return <div className="history-canvas-stage-background" style={{ ...historyCanvasBackgroundStyle(canvas), opacity: canvas.backgroundImage ? canvas.backgroundImageOpacity ?? 1 : 1 }} />;
 }

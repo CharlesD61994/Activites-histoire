@@ -6,7 +6,7 @@ import {
   CircleHelp, Clock3, Cloud, Coins, Compass, Crown, Dog, Drama, Droplets, Earth,
   Factory, Feather, Fish, Flag, Flame, Footprints, Gem, Globe2, GraduationCap,
   Hammer, Handshake, Heart, HeartHandshake, House, KeyRound, Landmark, LandPlot,
-  Languages, LibraryBig, Lightbulb, Map, MapPin, Megaphone, Microscope, Moon,
+  Languages, LibraryBig, Lightbulb, Map as MapIcon, MapPin, Megaphone, Microscope, Moon,
   Mountain, Music, NotebookPen, Palette, Pencil, Pickaxe, Plane, Radio, Rabbit,
   Route, Sailboat, Scale, School, ScrollText, Shield, Ship, ShipWheel, ShoppingBasket,
   Smile, Snowflake, Sprout, Star, Sun, Swords, Telescope, TentTree, TowerControl,
@@ -35,7 +35,7 @@ const visualIcons: Record<string, LucideIcon> = {
   compass: Compass, crown: Crown, factory: Factory, feather: Feather, flame: Flame,
   footprints: Footprints, gem: Gem,
   globe: Globe2, graduation: GraduationCap, hammer: Hammer, heart: Heart, house: House,
-  key: KeyRound, landmark: Landmark, lightbulb: Lightbulb, map: Map, pin: MapPin,
+  key: KeyRound, landmark: Landmark, lightbulb: Lightbulb, map: MapIcon, pin: MapPin,
   microscope: Microscope, moon: Moon, mountain: Mountain, music: Music,
   notebook: NotebookPen, palette: Palette, pencil: Pencil, pickaxe: Pickaxe,
   radio: Radio, scale: Scale, scroll: ScrollText, shield: Shield, ship: Ship,
@@ -74,7 +74,7 @@ export const historyVisualCategories = [
   { id: "illustrations", label: "Illustrations", symbol: "🎨", description: "Éléments colorés et emojis" }
 ] as const;
 
-export const historyVisualLibrary: HistoryVisualLibraryItem[] = [
+const baseHistoryVisualLibrary: HistoryVisualLibraryItem[] = [
   { id: "bone", label: "Os", kind: "icon", value: "bone", category: "prehistoire", keywords: "os fossile préhistoire" },
   { id: "footprints", label: "Empreintes", kind: "icon", value: "footprints", category: "prehistoire", keywords: "empreintes déplacement nomade" },
   { id: "flame", label: "Feu", kind: "icon", value: "flame", category: "prehistoire", keywords: "feu foyer découverte" },
@@ -224,6 +224,58 @@ export const historyVisualLibrary: HistoryVisualLibraryItem[] = [
   { id: "emoji-tools", label: "Outils", kind: "emoji", value: "🛠️", category: "illustrations", keywords: "outils technique" },
   { id: "emoji-factory", label: "Usine", kind: "emoji", value: "🏭", category: "illustrations", keywords: "usine industrie" },
   { id: "emoji-ship", label: "Navire", kind: "emoji", value: "⛵", category: "illustrations", keywords: "navire voyage exploration" }
+];
+
+const expandedIconPool = [
+  "flame", "bone", "footprints", "tent", "gem", "axe", "hammer", "pickaxe", "anvil", "wheat",
+  "sprout", "house", "tractor", "amphora", "landmark", "scroll", "coins", "castle", "shield", "swords",
+  "church", "ship", "compass", "telescope", "crown", "factory", "train", "radio", "vote", "map",
+  "globe", "mountain", "wheel", "users", "scale", "palette", "graduation", "school", "library", "notebook",
+  "pencil", "calendar", "languages", "atom", "microscope", "zap", "droplets", "wind", "earth", "briefcase",
+  "building", "basket", "chart", "circleDollar", "handshake", "bus", "plane", "sailboat", "anchor", "route",
+  "tower", "trees", "land", "waves", "fish", "bird", "dog", "sun", "moon", "cloud", "star", "help",
+  "lightbulb", "check", "x", "heart", "book", "arrowRight", "arrowLeft", "arrowUp", "arrowDown"
+];
+
+const expandedEmojiPool = [
+  "🪨", "🔥", "🏕️", "🛖", "🌾", "🌱", "🏠", "🏘️", "🐄", "🐑", "🐎", "🐕", "🏺", "⚒️", "🛡️",
+  "⚔️", "🏰", "⛪", "👑", "📜", "📖", "🗺️", "🌍", "🧭", "⛵", "🚂", "🏭", "📻", "🗳️", "⚜️",
+  "🍁", "❄️", "🌲", "🏔️", "💧", "🌊", "☀️", "🌙", "☁️", "🌈", "🔬", "⚛️", "💡", "📚", "✏️",
+  "🎓", "🏫", "💰", "🪙", "🛒", "🤝", "📈", "💼", "🏛️", "🏢", "🚌", "✈️", "🚢", "⚓", "🛣️",
+  "📍", "🚩", "👥", "🧑‍🌾", "👩‍🏫", "🧑‍🔬", "🎨", "🎭", "🎵", "⭐", "✅", "❌", "❓", "❤️", "🔔"
+];
+
+const categoryById = new Map(historyVisualCategories.map((category) => [category.id, category]));
+const usedVisualIds = new Set(baseHistoryVisualLibrary.map((item) => item.id));
+
+function expandedVisualItems() {
+  const items: HistoryVisualLibraryItem[] = [];
+  historyVisualCategories.forEach((category, categoryIndex) => {
+    for (let index = 0; index < 35; index += 1) {
+      const isEmoji = category.id === "illustrations" || index % 6 === 0;
+      const kind = isEmoji ? "emoji" : "icon";
+      const pool = isEmoji ? expandedEmojiPool : expandedIconPool;
+      const poolIndex = isEmoji ? Math.floor(index / 6) + categoryIndex * 7 : index + categoryIndex * 7;
+      const value = pool[poolIndex % pool.length];
+      const id = `expanded-${category.id}-${index + 1}`;
+      if (usedVisualIds.has(id)) continue;
+      const categoryLabel = categoryById.get(category.id)?.label ?? category.label;
+      items.push({
+        id,
+        label: isEmoji ? `${categoryLabel} coloré ${Math.floor(index / 6) + 1}` : `${categoryLabel} ${index + 1}`,
+        kind,
+        value,
+        category: category.id,
+        keywords: `${category.label} histoire élément visuel ${value}`
+      });
+    }
+  });
+  return items;
+}
+
+export const historyVisualLibrary: HistoryVisualLibraryItem[] = [
+  ...baseHistoryVisualLibrary,
+  ...expandedVisualItems()
 ];
 
 function alphaHex(color: string, opacity: number) {
