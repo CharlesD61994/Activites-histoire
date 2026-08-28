@@ -506,8 +506,8 @@ function HistoryCanvasStage({
   }
 
   return (
-    <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff", ...historyCanvasBackgroundStyle(canvas) }}>
-      {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
+    <div className="history-canvas-stage history-canvas-reader-stage" style={{ backgroundColor: canvas.background || "#fff", ...historyCanvasBackgroundStyle(canvas) }}>
+      {canvas.blocks.filter((block) => block.type !== "validation").map((block) => {
         return (
           <div
           key={block.id}

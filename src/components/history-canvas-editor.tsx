@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, ArrowRight, Bold, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Circle, Copy, FileText, FlipHorizontal2, FlipVertical2, Image as ImageIcon, Italic, Layers3, Map as MapIcon, Maximize2, MessageSquareText, Minus, Minimize2, MousePointer2, PanelTop, Plus, RectangleHorizontal, RotateCcw, RotateCw, Shapes, Square, Trash2, Triangle, Underline, Upload, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowRight, Bold, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Circle, Copy, FileText, FlipHorizontal2, FlipVertical2, Image as ImageIcon, Italic, Layers3, Map as MapIcon, Maximize2, MessageSquareText, Minus, Minimize2, MousePointer2, Plus, RectangleHorizontal, RotateCcw, RotateCw, Shapes, Square, Trash2, Triangle, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
 import { HistoryCanvasVisual, type HistoryVisualLibraryItem } from "@/components/history-canvas-visual";
@@ -179,8 +179,7 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
     blocks: [
       defaultBlock("text", question, documents),
       ...(documents[0] ? [defaultBlock("document", question, documents)] : []),
-      defaultBlock("interaction", question, documents),
-      defaultBlock("validation", question, documents)
+      defaultBlock("interaction", question, documents)
     ]
   };
 }
@@ -638,7 +637,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               </div>
             )}
           </div>
-          {question.action !== "cloze_choice" && <Button type="button" variant="secondary" onClick={() => { setResourceMenuOpen(false); setDocumentLibraryOpen(false); setInteractionMenuOpen(false); void addBlock("validation"); }}><PanelTop size={16} /> Valider</Button>}
           <Button
             type="button"
             variant="secondary"
@@ -665,7 +663,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           className={`history-canvas-stage history-canvas-surface ${isSurfaceExpanded ? "is-expanded" : ""}`}
           ref={surfaceRef}
           style={{
-            background: canvas.background || "#fff",
+            backgroundColor: canvas.background || "#fff",
             ...historyCanvasBackgroundStyle(canvas),
             ...(canvas.backgroundImage ? { backgroundBlendMode: "normal" } : {}),
             "--history-expanded-stage-height": `${expandedSurfaceHeight}px`
@@ -684,7 +682,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             }
           }}
         >
-          {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
+          {canvas.blocks.filter((block) => block.type !== "validation").map((block) => {
             return (
               <div
               key={block.id}
@@ -1083,8 +1081,20 @@ function HistoryInteractionEditor({
   activateTextEditing: (event: React.PointerEvent | React.FocusEvent, target: TextTarget) => void;
   stopEditingPointer: (event: React.PointerEvent) => void;
 }) {
-  if (question.action === "choice_single" || question.action === "choice_multiple") {
+  function withCanvasActions(content: React.ReactNode) {
     return (
+      <div className="history-reader-interaction-stack history-canvas-interaction-preview">
+        <div className="history-reader-interaction-body">{content}</div>
+        <div className="history-reader-actions">
+          <button type="button" className="history-reader-reset" aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>
+          <Button type="button">Valider</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (question.action === "choice_single" || question.action === "choice_multiple") {
+    return withCanvasActions(
       <div className="history-choice-grid history-canvas-choice-editor">
         {(question.choices ?? []).map((choice) => (
           <button type="button" key={choice.id}>
@@ -1096,24 +1106,24 @@ function HistoryInteractionEditor({
   }
 
   if (question.action === "classification") {
-    return <div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>;
+    return withCanvasActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>);
   }
 
   if (question.action === "matching") {
-    return <div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}>{prompt.prompt}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>;
+    return withCanvasActions(<div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}>{prompt.prompt}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>);
   }
 
   if (question.action === "chronological_order" || question.action === "timeline") {
-    return <div className="history-order-list">{[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => <div key={event.id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onPointerDown={stopEditingPointer}>Monter</button><button type="button" onPointerDown={stopEditingPointer}>Descendre</button></div>)}</div>;
+    return withCanvasActions(<div className="history-order-list">{[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => <div key={event.id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onPointerDown={stopEditingPointer}>Monter</button><button type="button" onPointerDown={stopEditingPointer}>Descendre</button></div>)}</div>);
   }
 
   if (question.action === "document_hotspot") {
     const document = documents.find((item) => question.documentIds.includes(item.id) && item.src);
-    return document?.src ? <button type="button" className="history-hotspot-reader"><img src={document.src} alt={document.title} /></button> : <p>Cette action demande un document image ou une carte.</p>;
+    return withCanvasActions(document?.src ? <button type="button" className="history-hotspot-reader"><img src={document.src} alt={document.title} /></button> : <p>Cette action demande un document image ou une carte.</p>);
   }
 
   if (question.action === "short_text") {
-    return (
+    return withCanvasActions(
       <div className="history-short-text-reader">
         <input readOnly value="" placeholder="Écrire un mot ou une courte phrase" onPointerDown={stopEditingPointer} />
       </div>
