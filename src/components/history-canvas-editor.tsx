@@ -105,7 +105,7 @@ function measureDocument(document: HistorySourceDocument | undefined, canvas: Hi
 function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryCanvasBlock {
   const id = crypto.randomUUID();
   if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, contentWidth: 720, contentHeight: 610, documentId: documents[0]?.id };
-  if (type === "shape") return { id, type, x: 620, y: 340, width: 360, height: 220, contentWidth: 360, contentHeight: 220, shapeKind: "rectangle", shapeFillMode: "filled", shapeFillColor: "#d9eef8", shapeFillOpacity: 1, shapeStrokeColor: "#0b4a6f", shapeStrokeWidth: 3 };
+  if (type === "shape") return { id, type, x: 620, y: 340, width: 360, height: 220, contentWidth: 360, contentHeight: 220, shapeKind: "rectangle", shapeFillMode: "filled", shapeFillColor: "#d9eef8", shapeFillOpacity: 1, shapeStrokeColor: "#0b4a6f", shapeStrokeWidth: 3, shapeShadowEnabled: false, shapeShadowColor: "#123f59", shapeShadowDistance: 8, shapeShadowOpacity: 0.8 };
   if (type === "interaction") {
     const size = interactionBlockSize(question);
     return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size, contentWidth: size.width, contentHeight: size.height };
@@ -131,7 +131,11 @@ function defaultShapeBlock(kind: HistoryCanvasShapeKind, canvas: HistoryActivity
     shapeFillColor: "#d9eef8",
     shapeFillOpacity: 1,
     shapeStrokeColor: "#0b4a6f",
-    shapeStrokeWidth: 3
+    shapeStrokeWidth: 3,
+    shapeShadowEnabled: false,
+    shapeShadowColor: "#123f59",
+    shapeShadowDistance: 8,
+    shapeShadowOpacity: 0.8
   };
 }
 
@@ -419,11 +423,14 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function eventToCanvas(event: React.PointerEvent) {
-    const rect = surfaceRef.current?.getBoundingClientRect();
-    if (!rect) return { x: 0, y: 0 };
+    const surface = surfaceRef.current;
+    const rect = surface?.getBoundingClientRect();
+    if (!surface || !rect) return { x: 0, y: 0 };
+    const contentLeft = rect.left + surface.clientLeft;
+    const contentTop = rect.top + surface.clientTop;
     return {
-      x: ((event.clientX - rect.left) / rect.width) * canvas.width,
-      y: ((event.clientY - rect.top) / rect.height) * canvas.height
+      x: ((event.clientX - contentLeft) / surface.clientWidth) * canvas.width,
+      y: ((event.clientY - contentTop) / surface.clientHeight) * canvas.height
     };
   }
 
@@ -698,6 +705,9 @@ function ShapeInspector({ block, onUpdate }: { block: HistoryCanvasBlock; onUpda
   const fillMode = block.shapeFillMode ?? "filled";
   const supportsFill = kind !== "line";
   const fillOpacity = Math.round((block.shapeFillOpacity ?? 1) * 100);
+  const shadowEnabled = block.shapeShadowEnabled ?? false;
+  const shadowDistance = block.shapeShadowDistance ?? 8;
+  const shadowOpacity = Math.round((block.shapeShadowOpacity ?? 0.8) * 100);
 
   function setFillMode(mode: HistoryCanvasShapeFillMode) {
     onUpdate({ shapeFillMode: mode });
@@ -745,6 +755,28 @@ function ShapeInspector({ block, onUpdate }: { block: HistoryCanvasBlock; onUpda
           <span>Épaisseur <strong>{block.shapeStrokeWidth ?? 3}px</strong></span>
           <input type="range" min="1" max="12" step="1" value={block.shapeStrokeWidth ?? 3} onChange={(event) => onUpdate({ shapeStrokeWidth: Number(event.target.value) })} />
         </label>
+      </div>
+      <div className="history-shape-shadow-settings">
+        <label className="history-shape-shadow-toggle">
+          <input type="checkbox" checked={shadowEnabled} onChange={(event) => onUpdate({ shapeShadowEnabled: event.target.checked })} />
+          <span>Ombre</span>
+        </label>
+        {shadowEnabled && (
+          <div className="history-shape-setting-grid">
+            <label className="history-inspector-color-field">
+              <span>Couleur</span>
+              <input type="color" value={block.shapeShadowColor ?? "#123f59"} onChange={(event) => onUpdate({ shapeShadowColor: event.target.value })} />
+            </label>
+            <label className="history-inspector-range-field">
+              <span>Distance <strong>{shadowDistance}px</strong></span>
+              <input type="range" min="1" max="30" step="1" value={shadowDistance} onChange={(event) => onUpdate({ shapeShadowDistance: Number(event.target.value) })} />
+            </label>
+            <label className="history-inspector-range-field">
+              <span>Opacité <strong>{shadowOpacity} %</strong></span>
+              <input type="range" min="10" max="100" step="5" value={shadowOpacity} onChange={(event) => onUpdate({ shapeShadowOpacity: Number(event.target.value) / 100 })} />
+            </label>
+          </div>
+        )}
       </div>
     </section>
   );

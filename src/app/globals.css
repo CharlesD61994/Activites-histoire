@@ -218,6 +218,9 @@
   overflow: visible;
   pointer-events: none;
 }
+.history-shape-shadow-settings { display: grid; gap: 11px; padding-top: 13px; border-top: 1px solid #e2edf5; }
+.history-shape-shadow-toggle { display: inline-flex; min-height: 40px; align-items: center; gap: 9px; font-weight: 850; color: var(--portal-ink); }
+.history-shape-shadow-toggle input { width: 20px; height: 20px; margin: 0; accent-color: var(--primary); }
 .history-canvas-resize-handle { position: absolute !important; z-index: 4; display: none; padding: 0 !important; touch-action: none; user-select: none; background: transparent !important; box-shadow: none !important; }
 .history-canvas-block.selected .history-canvas-resize-handle { display: block; }
 .history-canvas-resize-handle.resize-n, .history-canvas-resize-handle.resize-s { left: 14px; right: 14px; width: auto !important; height: 10px !important; cursor: ns-resize; }

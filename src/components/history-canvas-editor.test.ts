@@ -89,6 +89,18 @@ describe("resizeHistoryCanvasBlock", () => {
     expect(resized).toMatchObject({ x: 300, y: 100, width: 700, height: 200 });
   });
 
+  it("can resize exactly to every canvas edge", () => {
+    const toLeft = resizeHistoryCanvasBlock(block, "w", -canvas.width, 0, canvas, shortTextQuestion);
+    const toTop = resizeHistoryCanvasBlock(block, "n", 0, -canvas.height, canvas, shortTextQuestion);
+    const toRight = resizeHistoryCanvasBlock(block, "e", canvas.width, 0, canvas, shortTextQuestion);
+    const toBottom = resizeHistoryCanvasBlock(block, "s", 0, canvas.height, canvas, shortTextQuestion);
+
+    expect(toLeft.x).toBe(0);
+    expect(toTop.y).toBe(0);
+    expect(toRight.x + toRight.width).toBe(canvas.width);
+    expect(toBottom.y + toBottom.height).toBe(canvas.height);
+  });
+
   it("keeps the current proportions from a corner", () => {
     const resized = resizeHistoryCanvasBlock(block, "se", 200, 50, canvas, shortTextQuestion);
 
