@@ -2,14 +2,15 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, Bold, FileText, Image as ImageIcon, Italic, Map as MapIcon, Maximize2, MessageSquareText, Minimize2, MousePointer2, PanelTop, Plus, Shapes, Trash2, Underline, Upload, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowRight, Bold, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Circle, Copy, FileText, Image as ImageIcon, Italic, Layers3, Map as MapIcon, Maximize2, MessageSquareText, Minus, Minimize2, MousePointer2, PanelTop, Plus, RectangleHorizontal, Shapes, Square, Trash2, Triangle, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HistoryCanvasShape } from "@/components/history-canvas-shape";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
-import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, resizeHistoryCanvasBlock, type HistoryResizeHandle } from "@/lib/history-canvas";
+import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import { defaultHistoryTextStyle, historyTextStyleToCss } from "@/lib/history-text-style";
-import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument, HistoryTextStyle } from "@/types";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryCanvasShapeFillMode, HistoryCanvasShapeKind, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument, HistoryTextStyle } from "@/types";
 
 type Props = {
   canvas: HistoryActivityCanvas;
@@ -43,10 +44,20 @@ const resizeHandles: HistoryResizeHandle[] = ["n", "e", "s", "w", "ne", "se", "s
 const blockLabels: Record<HistoryCanvasBlockType, string> = {
   text: "Texte",
   document: "Document",
+  shape: "Forme",
   interaction: "Interaction",
   validation: "Validation",
   feedback: "Feedback"
 };
+
+const shapeOptions = [
+  { kind: "rectangle", label: "Rectangle", icon: Square, width: 360, height: 220 },
+  { kind: "rounded_rectangle", label: "Rectangle arrondi", icon: RectangleHorizontal, width: 360, height: 220 },
+  { kind: "circle", label: "Cercle", icon: Circle, width: 240, height: 240 },
+  { kind: "triangle", label: "Triangle", icon: Triangle, width: 280, height: 240 },
+  { kind: "line", label: "Ligne", icon: Minus, width: 360, height: 36 },
+  { kind: "arrow", label: "Flèche", icon: ArrowRight, width: 360, height: 110 }
+] satisfies Array<{ kind: HistoryCanvasShapeKind; label: string; icon: typeof Square; width: number; height: number }>;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -89,6 +100,7 @@ function measureDocument(document: HistorySourceDocument | undefined, canvas: Hi
 function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryCanvasBlock {
   const id = crypto.randomUUID();
   if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, contentWidth: 720, contentHeight: 610, documentId: documents[0]?.id };
+  if (type === "shape") return { id, type, x: 620, y: 340, width: 360, height: 220, contentWidth: 360, contentHeight: 220, shapeKind: "rectangle", shapeFillMode: "filled", shapeFillColor: "#d9eef8", shapeFillOpacity: 1, shapeStrokeColor: "#0b4a6f", shapeStrokeWidth: 3 };
   if (type === "interaction") {
     const size = interactionBlockSize(question);
     return { id, type, x: Math.min(900, 1600 - size.width), y: 300, ...size, contentWidth: size.width, contentHeight: size.height };
@@ -96,6 +108,26 @@ function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, d
   if (type === "validation") return { id, type, x: 1140, y: 500, width: 260, height: 95, contentWidth: 260, contentHeight: 95, text: "Valider" };
   if (type === "feedback") return { id, type, x: 900, y: 650, width: 520, height: 110, contentWidth: 520, contentHeight: 110, text: "Feedback" };
   return { id, type, x: 80, y: 60, width: 1440, height: 110, contentWidth: 1440, contentHeight: 110, text: question.prompt };
+}
+
+function defaultShapeBlock(kind: HistoryCanvasShapeKind, canvas: HistoryActivityCanvas): HistoryCanvasBlock {
+  const option = shapeOptions.find((item) => item.kind === kind) ?? shapeOptions[0];
+  return {
+    id: crypto.randomUUID(),
+    type: "shape",
+    x: Math.max(0, (canvas.width - option.width) / 2),
+    y: Math.max(0, (canvas.height - option.height) / 2),
+    width: option.width,
+    height: option.height,
+    contentWidth: option.width,
+    contentHeight: option.height,
+    shapeKind: kind,
+    shapeFillMode: kind === "line" ? "outline" : "filled",
+    shapeFillColor: "#d9eef8",
+    shapeFillOpacity: 1,
+    shapeStrokeColor: "#0b4a6f",
+    shapeStrokeWidth: 3
+  };
 }
 
 export function createDefaultHistoryCanvas(question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryActivityCanvas {
@@ -212,6 +244,15 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     setSelectedId(block.id);
     setInspectedId("");
     setTextTarget(null);
+  }
+
+  function addShape(kind: HistoryCanvasShapeKind) {
+    const block = defaultShapeBlock(kind, canvas);
+    patchCanvas({ blocks: [...canvas.blocks, block] });
+    setSelectedId(block.id);
+    setInspectedId("");
+    setTextTarget(null);
+    setResourceMenuOpen(false);
   }
 
   async function addDocumentBlock(document: HistorySourceDocument) {
@@ -353,6 +394,25 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     setTextTarget(null);
   }
 
+  function duplicateBlock(id: string) {
+    const source = canvas.blocks.find((block) => block.id === id);
+    if (!source) return;
+    const copy = {
+      ...source,
+      id: crypto.randomUUID(),
+      x: clamp(source.x + 28, 0, canvas.width - source.width),
+      y: clamp(source.y + 28, 0, canvas.height - source.height)
+    };
+    patchCanvas({ blocks: [...canvas.blocks, copy] });
+    setSelectedId(copy.id);
+    setInspectedId(copy.id);
+    setTextTarget(null);
+  }
+
+  function changeBlockLayer(id: string, action: HistoryLayerAction) {
+    patchCanvas({ blocks: reorderHistoryCanvasBlock(canvas.blocks, id, action) });
+  }
+
   function eventToCanvas(event: React.PointerEvent) {
     const rect = surfaceRef.current?.getBoundingClientRect();
     if (!rect) return { x: 0, y: 0 };
@@ -387,6 +447,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
   function renderBlock(block: HistoryCanvasBlock) {
     const document = documents.find((item) => item.id === block.documentId);
+    if (block.type === "shape") return <HistoryCanvasShape {...block} />;
     if (block.type === "document") {
       return (
         <button type="button" className="history-canvas-reader-document">
@@ -401,7 +462,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    if (block.type === "text" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
+    if (block.type === "text" || block.type === "shape" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
@@ -428,8 +489,17 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             <Button type="button" variant="secondary" aria-expanded={resourceMenuOpen} onClick={() => { setDocumentLibraryOpen(false); setInteractionMenuOpen(false); setResourceMenuOpen((open) => !open); }}><Shapes size={16} /> Ressources</Button>
             {resourceMenuOpen && (
               <div className="history-canvas-tool-popover history-resource-menu" role="menu" aria-label="Ressources">
-                <button type="button" role="menuitem" disabled><Shapes size={19} /><strong>Formes</strong></button>
-                <button type="button" role="menuitem" disabled><ImageIcon size={19} /><strong>Images</strong></button>
+                <div className="history-resource-menu-heading"><Shapes size={18} /><strong>Formes</strong></div>
+                <div className="history-shape-palette">
+                  {shapeOptions.map(({ kind, label, icon: Icon }) => (
+                    <button type="button" role="menuitem" key={kind} onClick={() => addShape(kind)} title={`Ajouter : ${label}`}>
+                      <Icon size={25} strokeWidth={1.8} />
+                      <strong>{label}</strong>
+                    </button>
+                  ))}
+                </div>
+                <div className="history-resource-menu-divider" />
+                <button type="button" role="menuitem" className="history-resource-images-placeholder" disabled><ImageIcon size={19} /><strong>Images</strong></button>
               </div>
             )}
           </div>
@@ -558,7 +628,6 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               }}
               onClick={() => setSelectedId(block.id)}
               onDoubleClick={(event) => {
-                if ((event.target as HTMLElement).closest("[contenteditable='true']")) return;
                 event.stopPropagation();
                 setSelectedId(block.id);
                 setInspectedId(block.id);
@@ -590,10 +659,12 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             <div className="history-canvas-inspector-heading">
               <strong>{blockLabels[inspectedBlock.type]}</strong>
               <div className="history-canvas-inspector-actions">
-                <button type="button" onClick={() => removeBlock(inspectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
+                {inspectedBlock.type === "shape" && <button type="button" onClick={() => duplicateBlock(inspectedBlock.id)} aria-label="Dupliquer la forme" title="Dupliquer"><Copy size={16} /></button>}
+                <button type="button" className="danger" onClick={() => removeBlock(inspectedBlock.id)} aria-label="Supprimer le bloc"><Trash2 size={16} /></button>
                 <button type="button" onClick={() => setInspectedId("")} aria-label="Fermer les propriétés"><X size={16} /></button>
               </div>
             </div>
+            {inspectedBlock.type === "shape" && <ShapeInspector block={inspectedBlock} onUpdate={(patch) => updateBlock(inspectedBlock.id, patch)} />}
             {inspectedBlock.type === "document" && (
               <DocumentInspector
                 document={documents.find((item) => item.id === inspectedBlock.documentId)}
@@ -605,8 +676,90 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               />
             )}
             {inspectedBlock.type === "interaction" && contextPanel}
+            <LayerInspector
+              index={canvas.blocks.findIndex((block) => block.id === inspectedBlock.id)}
+              count={canvas.blocks.length}
+              onChange={(action) => changeBlockLayer(inspectedBlock.id, action)}
+            />
           </aside>
         )}
+      </div>
+    </section>
+  );
+}
+
+function ShapeInspector({ block, onUpdate }: { block: HistoryCanvasBlock; onUpdate: (patch: Partial<HistoryCanvasBlock>) => void }) {
+  const kind = block.shapeKind ?? "rectangle";
+  const fillMode = block.shapeFillMode ?? "filled";
+  const supportsFill = kind !== "line";
+  const fillOpacity = Math.round((block.shapeFillOpacity ?? 1) * 100);
+
+  function setFillMode(mode: HistoryCanvasShapeFillMode) {
+    onUpdate({ shapeFillMode: mode });
+  }
+
+  return (
+    <section className="history-shape-inspector" aria-label="Apparence de la forme">
+      <div className="history-inspector-section-heading"><Shapes size={18} /><strong>Apparence</strong></div>
+      <label className="history-inspector-field">
+        <span>Forme</span>
+        <select
+          value={kind}
+          onChange={(event) => {
+            const shapeKind = event.target.value as HistoryCanvasShapeKind;
+            onUpdate({ shapeKind, shapeFillMode: shapeKind === "line" ? "outline" : fillMode });
+          }}
+        >
+          {shapeOptions.map((option) => <option key={option.kind} value={option.kind}>{option.label}</option>)}
+        </select>
+      </label>
+      {supportsFill && (
+        <div className="history-shape-fill-mode" role="group" aria-label="Style de la forme">
+          <button type="button" className={fillMode === "filled" ? "active" : ""} aria-pressed={fillMode === "filled"} onClick={() => setFillMode("filled")}>Remplie</button>
+          <button type="button" className={fillMode === "outline" ? "active" : ""} aria-pressed={fillMode === "outline"} onClick={() => setFillMode("outline")}>Contour seulement</button>
+        </div>
+      )}
+      {supportsFill && fillMode === "filled" && (
+        <div className="history-shape-setting-grid">
+          <label className="history-inspector-color-field">
+            <span>Remplissage</span>
+            <input type="color" value={block.shapeFillColor ?? "#d9eef8"} onChange={(event) => onUpdate({ shapeFillColor: event.target.value })} />
+          </label>
+          <label className="history-inspector-range-field">
+            <span>Opacité <strong>{fillOpacity} %</strong></span>
+            <input type="range" min="10" max="100" step="5" value={fillOpacity} onChange={(event) => onUpdate({ shapeFillOpacity: Number(event.target.value) / 100 })} />
+          </label>
+        </div>
+      )}
+      <div className="history-shape-setting-grid">
+        <label className="history-inspector-color-field">
+          <span>Contour</span>
+          <input type="color" value={block.shapeStrokeColor ?? "#0b4a6f"} onChange={(event) => onUpdate({ shapeStrokeColor: event.target.value })} />
+        </label>
+        <label className="history-inspector-range-field">
+          <span>Épaisseur <strong>{block.shapeStrokeWidth ?? 3}px</strong></span>
+          <input type="range" min="1" max="12" step="1" value={block.shapeStrokeWidth ?? 3} onChange={(event) => onUpdate({ shapeStrokeWidth: Number(event.target.value) })} />
+        </label>
+      </div>
+    </section>
+  );
+}
+
+function LayerInspector({ index, count, onChange }: { index: number; count: number; onChange: (action: HistoryLayerAction) => void }) {
+  const atBack = index <= 0;
+  const atFront = index >= count - 1;
+  return (
+    <section className="history-layer-inspector" aria-label="Disposition de l’objet">
+      <div className="history-inspector-section-heading">
+        <Layers3 size={18} />
+        <strong>Disposition</strong>
+        <span>Plan {index + 1} sur {count}</span>
+      </div>
+      <div className="history-layer-actions">
+        <button type="button" disabled={atBack} onClick={() => onChange("send_back")} title="Mettre complètement derrière"><ChevronsDown size={18} /><span>Tout derrière</span></button>
+        <button type="button" disabled={atBack} onClick={() => onChange("move_back")} title="Reculer d’un plan"><ChevronDown size={18} /><span>Reculer</span></button>
+        <button type="button" disabled={atFront} onClick={() => onChange("move_front")} title="Avancer d’un plan"><ChevronUp size={18} /><span>Avancer</span></button>
+        <button type="button" disabled={atFront} onClick={() => onChange("bring_front")} title="Mettre complètement devant"><ChevronsUp size={18} /><span>Tout devant</span></button>
       </div>
     </section>
   );

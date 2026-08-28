@@ -3,6 +3,30 @@ import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from 
 export const historyCanvasLayoutVersion = 6;
 
 export type HistoryResizeHandle = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
+export type HistoryLayerAction = "send_back" | "move_back" | "move_front" | "bring_front";
+
+export function reorderHistoryCanvasBlock(
+  blocks: HistoryCanvasBlock[],
+  blockId: string,
+  action: HistoryLayerAction
+) {
+  const currentIndex = blocks.findIndex((block) => block.id === blockId);
+  if (currentIndex < 0) return blocks;
+
+  const targetIndex = action === "send_back"
+    ? 0
+    : action === "move_back"
+      ? Math.max(0, currentIndex - 1)
+      : action === "move_front"
+        ? Math.min(blocks.length - 1, currentIndex + 1)
+        : blocks.length - 1;
+  if (targetIndex === currentIndex) return blocks;
+
+  const reordered = [...blocks];
+  const [block] = reordered.splice(currentIndex, 1);
+  reordered.splice(targetIndex, 0, block);
+  return reordered;
+}
 
 export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 103 };
@@ -44,6 +68,9 @@ export function blockScales(block: HistoryCanvasBlock, question: HistoryQuestion
 function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
   if (block.type === "interaction" && question.action === "cloze_choice") {
     return { width: 360, height: 230 };
+  }
+  if (block.type === "shape") {
+    return block.shapeKind === "line" ? { width: 50, height: 18 } : { width: 40, height: 40 };
   }
   const base = blockContentSize(block, question);
   return {

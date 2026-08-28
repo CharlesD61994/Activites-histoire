@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blockScales, normalizeHistoryCanvasLayout, resizeHistoryCanvasBlock } from "../lib/history-canvas";
+import { blockScales, normalizeHistoryCanvasLayout, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock } from "../lib/history-canvas";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
 const shortTextQuestion: HistoryQuestion = {
@@ -150,5 +150,27 @@ describe("blockScales", () => {
     };
 
     expect(blockScales(block, question)).toEqual({ x: 1, y: 270 / 405 });
+  });
+});
+
+describe("reorderHistoryCanvasBlock", () => {
+  const blocks: HistoryCanvasBlock[] = [
+    { id: "back", type: "shape", x: 0, y: 0, width: 100, height: 100 },
+    { id: "middle", type: "text", x: 0, y: 0, width: 100, height: 100 },
+    { id: "front", type: "document", x: 0, y: 0, width: 100, height: 100 }
+  ];
+
+  it("moves an object one plan forward", () => {
+    expect(reorderHistoryCanvasBlock(blocks, "middle", "move_front").map((block) => block.id))
+      .toEqual(["back", "front", "middle"]);
+  });
+
+  it("sends an object completely behind", () => {
+    expect(reorderHistoryCanvasBlock(blocks, "front", "send_back").map((block) => block.id))
+      .toEqual(["front", "back", "middle"]);
+  });
+
+  it("preserves the array when the object is already at the requested edge", () => {
+    expect(reorderHistoryCanvasBlock(blocks, "back", "move_back")).toBe(blocks);
   });
 });

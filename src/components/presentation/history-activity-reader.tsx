@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { HistoryCanvasShape } from "@/components/history-canvas-shape";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales } from "@/lib/history-canvas";
@@ -417,6 +418,7 @@ function HistoryCanvasStage({
   resetValidation: () => void;
 }) {
   function renderBlock(block: HistoryCanvasBlock) {
+    if (block.type === "shape") return <HistoryCanvasShape {...block} />;
     if (block.type === "document") {
       const document = documents.find((item) => item.id === block.documentId);
       return (
@@ -457,7 +459,7 @@ function HistoryCanvasStage({
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    if (block.type === "text" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
+    if (block.type === "text" || block.type === "shape" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (

@@ -174,9 +174,20 @@ export type HistoryClozeBlank = {
 export type HistoryCanvasBlockType =
   | "text"
   | "document"
+  | "shape"
   | "interaction"
   | "validation"
   | "feedback";
+
+export type HistoryCanvasShapeKind =
+  | "rectangle"
+  | "rounded_rectangle"
+  | "circle"
+  | "triangle"
+  | "line"
+  | "arrow";
+
+export type HistoryCanvasShapeFillMode = "filled" | "outline";
 
 export type HistoryCanvasBlock = {
   id: string;
@@ -191,6 +202,12 @@ export type HistoryCanvasBlock = {
   documentId?: string;
   aspectRatio?: number;
   textStyle?: HistoryTextStyle;
+  shapeKind?: HistoryCanvasShapeKind;
+  shapeFillMode?: HistoryCanvasShapeFillMode;
+  shapeFillColor?: string;
+  shapeFillOpacity?: number;
+  shapeStrokeColor?: string;
+  shapeStrokeWidth?: number;
 };
 
 export type HistoryActivityCanvas = {
