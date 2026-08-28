@@ -212,6 +212,10 @@ export type HistoryCanvasBlock = {
   shapeShadowColor?: string;
   shapeShadowDistance?: number;
   shapeShadowOpacity?: number;
+  documentShadowEnabled?: boolean;
+  documentShadowColor?: string;
+  documentShadowDistance?: number;
+  documentShadowOpacity?: number;
 };
 
 export type HistoryActivityCanvas = {

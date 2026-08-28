@@ -6,6 +6,7 @@ import { CheckCircle2, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
+import { historyBoxShadow } from "@/lib/history-shadow";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales } from "@/lib/history-canvas";
@@ -422,7 +423,17 @@ function HistoryCanvasStage({
     if (block.type === "document") {
       const document = documents.find((item) => item.id === block.documentId);
       return (
-        <button type="button" className="history-canvas-reader-document" disabled={!document} onClick={() => document && onOpenDocument(document)}>
+        <button
+          type="button"
+          className="history-canvas-reader-document"
+          disabled={!document}
+          onClick={() => document && onOpenDocument(document)}
+          style={{
+            boxShadow: block.documentShadowEnabled
+              ? historyBoxShadow(block.documentShadowColor ?? "#123f59", block.documentShadowDistance ?? 8, block.documentShadowOpacity ?? 0.8)
+              : undefined
+          }}
+        >
           <HistoryDocumentContent document={document} />
         </button>
       );

@@ -1,4 +1,5 @@
 import type { HistoryCanvasBlock } from "@/types";
+import { historyDropShadow } from "@/lib/history-shadow";
 
 type Props = Pick<HistoryCanvasBlock,
   | "shapeKind"
@@ -12,13 +13,6 @@ type Props = Pick<HistoryCanvasBlock,
   | "shapeShadowDistance"
   | "shapeShadowOpacity"
 >;
-
-function colorWithOpacity(color: string, opacity: number) {
-  const normalized = color.replace("#", "");
-  if (!/^[\da-f]{6}$/i.test(normalized)) return color;
-  const alpha = Math.round(Math.max(0, Math.min(1, opacity)) * 255).toString(16).padStart(2, "0");
-  return `#${normalized}${alpha}`;
-}
 
 export function HistoryCanvasShape({
   shapeKind = "rectangle",
@@ -49,7 +43,7 @@ export function HistoryCanvasShape({
       aria-hidden="true"
       style={{
         filter: shapeShadowEnabled
-          ? `drop-shadow(${shapeShadowDistance}px ${shapeShadowDistance}px 0 ${colorWithOpacity(shapeShadowColor, shapeShadowOpacity)})`
+          ? historyDropShadow(shapeShadowColor, shapeShadowDistance, shapeShadowOpacity)
           : undefined
       }}
     >

@@ -8,6 +8,7 @@ import { HistoryCanvasShape } from "@/components/history-canvas-shape";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
+import { historyBoxShadow } from "@/lib/history-shadow";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import { defaultHistoryTextStyle, historyTextStyleToCss } from "@/lib/history-text-style";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryCanvasBlockType, HistoryCanvasShapeFillMode, HistoryCanvasShapeKind, HistoryChoiceOption, HistoryInteractiveAction, HistoryQuestion, HistorySourceDocument, HistoryTextStyle } from "@/types";
@@ -104,7 +105,7 @@ function measureDocument(document: HistorySourceDocument | undefined, canvas: Hi
 
 function defaultBlock(type: HistoryCanvasBlockType, question: HistoryQuestion, documents: HistorySourceDocument[]): HistoryCanvasBlock {
   const id = crypto.randomUUID();
-  if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, contentWidth: 720, contentHeight: 610, documentId: documents[0]?.id };
+  if (type === "document") return { id, type, x: 80, y: 190, width: 720, height: 610, contentWidth: 720, contentHeight: 610, documentId: documents[0]?.id, documentShadowEnabled: false, documentShadowColor: "#123f59", documentShadowDistance: 8, documentShadowOpacity: 0.8 };
   if (type === "shape") return { id, type, x: 620, y: 340, width: 360, height: 220, contentWidth: 360, contentHeight: 220, shapeKind: "rectangle", shapeFillMode: "filled", shapeFillColor: "#d9eef8", shapeFillOpacity: 1, shapeStrokeColor: "#0b4a6f", shapeStrokeWidth: 3, shapeShadowEnabled: false, shapeShadowColor: "#123f59", shapeShadowDistance: 8, shapeShadowOpacity: 0.8 };
   if (type === "interaction") {
     const size = interactionBlockSize(question);
@@ -462,7 +463,15 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     if (block.type === "shape") return <HistoryCanvasShape {...block} />;
     if (block.type === "document") {
       return (
-        <button type="button" className="history-canvas-reader-document">
+        <button
+          type="button"
+          className="history-canvas-reader-document"
+          style={{
+            boxShadow: block.documentShadowEnabled
+              ? historyBoxShadow(block.documentShadowColor ?? "#123f59", block.documentShadowDistance ?? 8, block.documentShadowOpacity ?? 0.8)
+              : undefined
+          }}
+        >
           <HistoryDocumentContent document={document} />
         </button>
       );
@@ -679,12 +688,14 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             {inspectedBlock.type === "shape" && <ShapeInspector block={inspectedBlock} onUpdate={(patch) => updateBlock(inspectedBlock.id, patch)} />}
             {inspectedBlock.type === "document" && (
               <DocumentInspector
+                block={inspectedBlock}
                 document={documents.find((item) => item.id === inspectedBlock.documentId)}
                 documents={documents}
                 documentId={inspectedBlock.documentId ?? ""}
                 onSelect={(documentId) => void selectDocument(inspectedBlock.id, documentId)}
                 onUpdate={onUpdateDocument}
                 onReplace={replaceDocumentImage}
+                onBlockUpdate={(patch) => updateBlock(inspectedBlock.id, patch)}
               />
             )}
             {inspectedBlock.type === "interaction" && contextPanel}
@@ -756,29 +767,58 @@ function ShapeInspector({ block, onUpdate }: { block: HistoryCanvasBlock; onUpda
           <input type="range" min="1" max="12" step="1" value={block.shapeStrokeWidth ?? 3} onChange={(event) => onUpdate({ shapeStrokeWidth: Number(event.target.value) })} />
         </label>
       </div>
-      <div className="history-shape-shadow-settings">
-        <label className="history-shape-shadow-toggle">
-          <input type="checkbox" checked={shadowEnabled} onChange={(event) => onUpdate({ shapeShadowEnabled: event.target.checked })} />
-          <span>Ombre</span>
-        </label>
-        {shadowEnabled && (
-          <div className="history-shape-setting-grid">
-            <label className="history-inspector-color-field">
-              <span>Couleur</span>
-              <input type="color" value={block.shapeShadowColor ?? "#123f59"} onChange={(event) => onUpdate({ shapeShadowColor: event.target.value })} />
-            </label>
-            <label className="history-inspector-range-field">
-              <span>Distance <strong>{shadowDistance}px</strong></span>
-              <input type="range" min="1" max="30" step="1" value={shadowDistance} onChange={(event) => onUpdate({ shapeShadowDistance: Number(event.target.value) })} />
-            </label>
-            <label className="history-inspector-range-field">
-              <span>Opacité <strong>{shadowOpacity} %</strong></span>
-              <input type="range" min="10" max="100" step="5" value={shadowOpacity} onChange={(event) => onUpdate({ shapeShadowOpacity: Number(event.target.value) / 100 })} />
-            </label>
-          </div>
-        )}
-      </div>
+      <ShadowControls
+        enabled={shadowEnabled}
+        color={block.shapeShadowColor ?? "#123f59"}
+        distance={shadowDistance}
+        opacity={shadowOpacity}
+        onChange={(patch) => onUpdate({
+          ...(patch.enabled !== undefined ? { shapeShadowEnabled: patch.enabled } : {}),
+          ...(patch.color !== undefined ? { shapeShadowColor: patch.color } : {}),
+          ...(patch.distance !== undefined ? { shapeShadowDistance: patch.distance } : {}),
+          ...(patch.opacity !== undefined ? { shapeShadowOpacity: patch.opacity / 100 } : {})
+        })}
+      />
     </section>
+  );
+}
+
+function ShadowControls({
+  enabled,
+  color,
+  distance,
+  opacity,
+  onChange
+}: {
+  enabled: boolean;
+  color: string;
+  distance: number;
+  opacity: number;
+  onChange: (patch: { enabled?: boolean; color?: string; distance?: number; opacity?: number }) => void;
+}) {
+  return (
+    <div className="history-shape-shadow-settings">
+      <label className="history-shape-shadow-toggle">
+        <input type="checkbox" checked={enabled} onChange={(event) => onChange({ enabled: event.target.checked })} />
+        <span>Ombre</span>
+      </label>
+      {enabled && (
+        <div className="history-shape-setting-grid">
+          <label className="history-inspector-color-field">
+            <span>Couleur</span>
+            <input type="color" value={color} onChange={(event) => onChange({ color: event.target.value })} />
+          </label>
+          <label className="history-inspector-range-field">
+            <span>Distance <strong>{distance}px</strong></span>
+            <input type="range" min="1" max="30" step="1" value={distance} onChange={(event) => onChange({ distance: Number(event.target.value) })} />
+          </label>
+          <label className="history-inspector-range-field">
+            <span>Opacité <strong>{opacity} %</strong></span>
+            <input type="range" min="10" max="100" step="5" value={opacity} onChange={(event) => onChange({ opacity: Number(event.target.value) })} />
+          </label>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -833,20 +873,25 @@ function TextFormattingToolbar({
 }
 
 function DocumentInspector({
+  block,
   document,
   documents,
   documentId,
   onSelect,
   onUpdate,
-  onReplace
+  onReplace,
+  onBlockUpdate
 }: {
+  block: HistoryCanvasBlock;
   document?: HistorySourceDocument;
   documents: HistorySourceDocument[];
   documentId: string;
   onSelect: (documentId: string) => void;
   onUpdate: (id: string, patch: Partial<HistorySourceDocument>) => void;
   onReplace: (document: HistorySourceDocument, file?: File) => void;
+  onBlockUpdate: (patch: Partial<HistoryCanvasBlock>) => void;
 }) {
+  const shadowEnabled = block.documentShadowEnabled ?? false;
   return (
     <div className="history-document-inspector">
       <label>
@@ -884,6 +929,18 @@ function DocumentInspector({
             <label className="history-check"><input type="checkbox" checked={Boolean(document.showSource)} onChange={(event) => onUpdate(document.id, { showSource: event.target.checked })} /> Afficher la source</label>
             {document.showSource && <textarea rows={2} value={document.source ?? ""} onChange={(event) => onUpdate(document.id, { source: event.target.value })} placeholder="Source affichée" />}
           </div>
+          <ShadowControls
+            enabled={shadowEnabled}
+            color={block.documentShadowColor ?? "#123f59"}
+            distance={block.documentShadowDistance ?? 8}
+            opacity={Math.round((block.documentShadowOpacity ?? 0.8) * 100)}
+            onChange={(patch) => onBlockUpdate({
+              ...(patch.enabled !== undefined ? { documentShadowEnabled: patch.enabled } : {}),
+              ...(patch.color !== undefined ? { documentShadowColor: patch.color } : {}),
+              ...(patch.distance !== undefined ? { documentShadowDistance: patch.distance } : {}),
+              ...(patch.opacity !== undefined ? { documentShadowOpacity: patch.opacity / 100 } : {})
+            })}
+          />
         </>
       )}
     </div>
