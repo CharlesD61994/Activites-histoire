@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store/app-store";
 import { buildCompetitionStandings } from "@/lib/competition";
+import { exitReaderFullscreen } from "@/lib/reader-preferences";
 import type { CompetitionResult, ScoreEvent, SentenceCorrection, WordClassTarget, WordGroupTarget } from "@/types";
 
 type PendingPoint = {
@@ -603,11 +604,10 @@ export default function PresentationPage({
       return;
     }
 
-    router.push(
-      launchedFromClasse
-        ? `/classe/groupes/${groupId}`
-        : `/groupes/${groupId}`
-    );
+    const destination = launchedFromClasse
+      ? `/classe/groupes/${groupId}`
+      : `/groupes/${groupId}`;
+    void exitReaderFullscreen().finally(() => router.push(destination));
   }
 
   const standings = buildStandings();
@@ -617,7 +617,8 @@ export default function PresentationPage({
       ? `/portail/groupes/${groupId}`
       : `/groupes/${groupId}`;
 
-  function leaveSentence() {
+  async function leaveSentence() {
+    await exitReaderFullscreen();
     if (readerComplete) {
       finishSentence();
       return;
@@ -670,7 +671,7 @@ export default function PresentationPage({
           ))}
         </div>
 
-        <Button onClick={() => router.push(`/classe/groupes/${groupId}`)}>
+        <Button onClick={() => void exitReaderFullscreen().finally(() => router.push(`/classe/groupes/${groupId}`))}>
           Retour au groupe
         </Button>
       </div>

@@ -165,8 +165,8 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
   const [resourceMenuOpen, setResourceMenuOpen] = useState(false);
   const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
-  const [isSurfaceExpanded, setIsSurfaceExpanded] = useState(false);
-  const [expandedSurfaceHeight, setExpandedSurfaceHeight] = useState(0);
+  const [isSurfaceExpanded, setIsSurfaceExpanded] = useState(true);
+  const [expandedSurfaceHeight, setExpandedSurfaceHeight] = useState(canvas.height);
   const inspectedBlock = canvas.blocks.find((block) => block.id === inspectedId);
   const activeTextStyle = textTarget?.kind === "block"
     ? canvas.blocks.find((block) => block.id === textTarget.id)?.textStyle

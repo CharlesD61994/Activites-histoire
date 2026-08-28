@@ -3,10 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { BarChart3, BookOpenCheck, CalendarDays, Home, MonitorPlay, PanelLeftClose, PanelLeftOpen, Tags } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SyncStatus } from "@/components/sync-status";
 import { useAppStore } from "@/store/app-store";
+import { requestReaderFullscreen } from "@/lib/reader-preferences";
 
 const items = [
   { href: "/", label: "Accueil", icon: Home },
@@ -19,12 +20,32 @@ const items = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { hydrated } = useAppStore();
   const [sidebarHidden, setSidebarHidden] = useState(false);
 
   useEffect(() => {
     setSidebarHidden(window.localStorage.getItem("alinea-history-sidebar-hidden") === "true");
   }, []);
+
+  useEffect(() => {
+    function handlePresentationLaunch(event: MouseEvent) {
+      if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const link = target.closest<HTMLAnchorElement>("a[href]");
+      if (!link) return;
+      const destination = new URL(link.href, window.location.href);
+      if (destination.origin !== window.location.origin || !destination.pathname.startsWith("/presentation/")) return;
+      event.preventDefault();
+      void requestReaderFullscreen().finally(() => {
+        router.push(`${destination.pathname}${destination.search}${destination.hash}`);
+      });
+    }
+
+    document.addEventListener("click", handlePresentationLaunch, true);
+    return () => document.removeEventListener("click", handlePresentationLaunch, true);
+  }, [router]);
 
   function toggleSidebar() {
     setSidebarHidden((hidden) => {

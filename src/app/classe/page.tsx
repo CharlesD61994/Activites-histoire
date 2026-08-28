@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   BookOpenCheck,
   CalendarDays,
+  Maximize2,
   Sparkles,
   Star,
   UsersRound
@@ -17,9 +19,20 @@ import {
   ClassroomPointsMedal
 } from "@/components/classroom-portal-ornaments";
 import { groupAccentColor, groupShieldLabel } from "@/lib/group-colors";
+import { getReaderAutoFullscreen, setReaderAutoFullscreen } from "@/lib/reader-preferences";
 
 export default function ClassePage() {
   const { data } = useAppStore();
+  const [autoFullscreen, setAutoFullscreen] = useState(true);
+
+  useEffect(() => {
+    setAutoFullscreen(getReaderAutoFullscreen());
+  }, []);
+
+  function updateAutoFullscreen(enabled: boolean) {
+    setAutoFullscreen(enabled);
+    setReaderAutoFullscreen(enabled);
+  }
 
   const groups = data.groups
     .slice()
@@ -53,12 +66,23 @@ export default function ClassePage() {
           </p>
         </div>
 
-        <div className="classroom-portal-overview">
-          <Star size={28} />
-          <div>
-            <strong>{groups.length} groupes</strong>
-            <span>{totalActiveActivities} activités disponibles</span>
+        <div className="classroom-portal-hero-controls">
+          <div className="classroom-portal-overview">
+            <Star size={28} />
+            <div>
+              <strong>{groups.length} groupes</strong>
+              <span>{totalActiveActivities} activités disponibles</span>
+            </div>
           </div>
+
+          <label className="classroom-reader-fullscreen-setting">
+            <Maximize2 size={20} />
+            <span>
+              <strong>Plein écran automatique</strong>
+              <small>À l’ouverture d’une activité</small>
+            </span>
+            <input type="checkbox" checked={autoFullscreen} onChange={(event) => updateAutoFullscreen(event.target.checked)} />
+          </label>
         </div>
       </section>
 
