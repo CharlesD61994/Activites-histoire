@@ -232,6 +232,9 @@ export type HistoryCanvasBlock = {
   visualBackgroundShape?: HistoryCanvasVisualBackgroundShape;
   visualBorderColor?: string;
   visualBorderWidth?: number;
+  visualRotation?: 0 | 90 | 180 | 270;
+  visualFlipX?: boolean;
+  visualFlipY?: boolean;
 };
 
 export type HistoryActivityCanvas = {
@@ -241,6 +244,7 @@ export type HistoryActivityCanvas = {
   backgroundImage?: string;
   backgroundImageFit?: "contain" | "cover" | "stretch";
   backgroundImageOpacity?: number;
+  backgroundPattern?: "none" | "grid" | "dots" | "lines" | "blueprint" | "chalkboard";
   layoutVersion?: number;
   blocks: HistoryCanvasBlock[];
 };

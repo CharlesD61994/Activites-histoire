@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
 import { HistoryCanvasVisual } from "@/components/history-canvas-visual";
+import { HistoryCanvasBackground } from "@/components/history-canvas-background";
 import { historyBoxShadow } from "@/lib/history-shadow";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
@@ -491,7 +492,7 @@ function HistoryCanvasStage({
 
   return (
     <div className="history-canvas-stage history-canvas-reader-stage" style={{ background: canvas.background || "#fff" }}>
-      {canvas.backgroundImage && <div className="history-canvas-stage-background" style={{ backgroundImage: `url(${canvas.backgroundImage})`, backgroundSize: canvas.backgroundImageFit === "stretch" ? "100% 100%" : canvas.backgroundImageFit ?? "cover", opacity: canvas.backgroundImageOpacity ?? 1 }} />}
+      <HistoryCanvasBackground canvas={canvas} />
       {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
         return (
           <div

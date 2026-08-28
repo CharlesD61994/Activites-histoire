@@ -8,6 +8,7 @@ import {
   RectangleHorizontal, Search, Shapes, Square, Triangle, Upload, X
 } from "lucide-react";
 import { HistoryCanvasVisual, historyVisualCategories, historyVisualLibrary, type HistoryVisualLibraryItem } from "@/components/history-canvas-visual";
+import { historyBackgroundPresets } from "@/components/history-canvas-background";
 import type { HistoryActivityCanvas, HistoryCanvasShapeKind } from "@/types";
 
 type Section = "home" | "shapes" | "visuals" | "background";
@@ -128,7 +129,16 @@ export function HistoryResourceLibrary({ canvas, onCanvasChange, onAddShape, onA
 
       {section === "background" && (
         <div className="history-background-controls">
-          <label className="history-inspector-color-field"><span>Couleur de la surface</span><input type="color" value={canvas.background || "#ffffff"} onChange={(event) => onCanvasChange({ background: event.target.value })} /></label>
+          <div className="history-resource-category-heading"><strong>Fonds prêts à utiliser</strong><span>{historyBackgroundPresets.length} choix</span></div>
+          <div className="history-background-preset-grid">
+            {historyBackgroundPresets.map((preset) => (
+              <button type="button" key={preset.id} className={canvas.background === preset.color && (canvas.backgroundPattern ?? "none") === preset.pattern && !canvas.backgroundImage ? "active" : ""} onClick={() => onCanvasChange({ background: preset.color, backgroundPattern: preset.pattern, backgroundImage: undefined, backgroundImageOpacity: undefined })}>
+                <span className={`history-background-swatch preset-${preset.pattern}`} style={{ backgroundColor: preset.color }} />
+                <strong>{preset.label}</strong>
+              </button>
+            ))}
+          </div>
+          <label className="history-inspector-color-field"><span>Couleur personnalisée</span><input type="color" value={canvas.background || "#ffffff"} onChange={(event) => onCanvasChange({ background: event.target.value })} /></label>
           <label className="history-resource-upload">
             <ImageIcon size={22} />
             <span><strong>Image d’arrière-plan</strong><small>Importer une image depuis l’appareil</small></span>

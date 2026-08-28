@@ -212,6 +212,17 @@
 .history-resource-visual-preview .history-canvas-visual { width: 100%; height: 100%; }
 .history-resource-empty { grid-column: 1 / -1; display: grid; min-height: 120px; place-items: center; margin: 0; color: var(--text-muted); }
 .history-background-controls { display: grid; gap: 13px; }
+.history-background-preset-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.history-background-preset-grid > button { display: grid; min-width: 0; gap: 7px; padding: 7px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--portal-ink); text-align: left; }
+.history-background-preset-grid > button:hover,
+.history-background-preset-grid > button.active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, #fff); }
+.history-background-preset-grid > button strong { padding: 0 3px 2px; overflow: hidden; font-size: .74rem; text-overflow: ellipsis; white-space: nowrap; }
+.history-background-swatch { display: block; width: 100%; aspect-ratio: 16 / 7; border: 1px solid rgb(8 47 85 / 10%); border-radius: 5px; }
+.history-background-swatch.preset-grid { background-image: linear-gradient(rgb(31 111 159 / 18%) 1px, transparent 1px), linear-gradient(90deg, rgb(31 111 159 / 18%) 1px, transparent 1px); background-size: 12px 12px; }
+.history-background-swatch.preset-dots { background-image: radial-gradient(circle, rgb(31 111 159 / 30%) 1.2px, transparent 1.7px); background-size: 10px 10px; }
+.history-background-swatch.preset-lines { background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 10px, rgb(57 124 166 / 22%) 11px, transparent 12px); }
+.history-background-swatch.preset-blueprint { background-image: linear-gradient(rgb(255 255 255 / 23%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 23%) 1px, transparent 1px); background-size: 12px 12px; }
+.history-background-swatch.preset-chalkboard { background-image: radial-gradient(circle at 20% 30%, rgb(255 255 255 / 12%) 0 1px, transparent 1.5px), radial-gradient(circle at 75% 60%, rgb(255 255 255 / 10%) 0 1px, transparent 1.5px); background-size: 14px 14px, 18px 18px; }
 .history-background-preview { display: grid; width: 100%; height: 170px; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; }
 .history-background-preview img { width: 100%; height: 100%; }
 .history-background-remove { display: inline-flex; min-height: 42px; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--danger); font-weight: 800; }
@@ -275,9 +286,10 @@
 .history-canvas-visual { container-type: size; display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; place-items: center; overflow: hidden; padding: 10%; border: var(--visual-border); border-radius: 0; background: var(--visual-background); color: var(--visual-color); opacity: var(--visual-opacity); pointer-events: none; }
 .history-canvas-visual.background-rounded { border-radius: 16%; }
 .history-canvas-visual.background-circle { border-radius: 50%; }
-.history-canvas-visual > svg { width: 100%; height: 100%; color: currentColor; }
-.history-canvas-visual > span { display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; font-size: min(72cqw, 72cqh); line-height: 1; }
-.history-canvas-visual > img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.history-canvas-visual-content { display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; place-items: center; transform-origin: center; }
+.history-canvas-visual-content > svg { width: 100%; height: 100%; color: currentColor; }
+.history-canvas-visual-content > span { display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; font-size: min(72cqw, 72cqh); line-height: 1; }
+.history-canvas-visual-content > img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .history-shape-shadow-settings { display: grid; gap: 11px; padding-top: 13px; border-top: 1px solid #e2edf5; }
 .history-shape-shadow-toggle { display: inline-flex; min-height: 40px; align-items: center; gap: 9px; font-weight: 850; color: var(--portal-ink); }
 .history-shape-shadow-toggle input { width: 20px; height: 20px; margin: 0; accent-color: var(--primary); }
@@ -317,6 +329,12 @@
 .history-visual-background-toggle { display: inline-flex; min-height: 40px; align-items: center; gap: 9px; padding-top: 10px; border-top: 1px solid #e2edf5; color: var(--portal-ink); font-weight: 850; }
 .history-visual-background-toggle input { width: 20px; height: 20px; margin: 0; accent-color: var(--primary); }
 .history-visual-background-settings { display: grid; gap: 12px; }
+.history-visual-orientation { display: grid; gap: 8px; padding-top: 10px; border-top: 1px solid #e2edf5; }
+.history-visual-orientation-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+.history-visual-orientation-actions button { display: grid; min-width: 0; min-height: 58px; place-items: center; align-content: center; gap: 4px; padding: 6px 3px; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--portal-ink); }
+.history-visual-orientation-actions button:hover,
+.history-visual-orientation-actions button.active { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, #fff); color: var(--primary); }
+.history-visual-orientation-actions button span { font-size: .66rem; font-weight: 850; white-space: nowrap; }
 .history-layer-inspector { padding-top: 15px; border-top: 1px solid #e2edf5; }
 .history-inspector-section-heading { display: flex; align-items: center; gap: 8px; color: var(--portal-ink); }
 .history-inspector-section-heading > span { margin-left: auto; color: var(--text-muted); font-size: .78rem; font-weight: 800; }
@@ -404,6 +422,7 @@
   .history-resource-home-grid,
   .history-resource-category-grid { grid-template-columns: 1fr; }
   .history-resource-item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .history-background-preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .history-shape-palette { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .history-shape-setting-grid,
   .history-layer-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }

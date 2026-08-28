@@ -1,21 +1,39 @@
 import {
-  Amphora, Anvil, Atom, Axe, Bell, Bone, BookOpen, Camera, Castle, Check, Church,
-  CircleHelp, Cloud, Coins, Compass, Crown, Factory, Feather, Flame, Footprints,
-  Gem, Globe2, GraduationCap, Hammer, Heart, House, KeyRound, Landmark, Lightbulb,
-  Map, MapPin, Microscope, Moon, Mountain, Music, NotebookPen, Palette, Pencil,
-  Pickaxe, Radio, Scale, ScrollText, Shield, Ship, ShipWheel, Smile, Snowflake,
-  Sprout, Star, Sun, Swords, Telescope, TentTree, Tractor, Train, TreePine, Users,
-  Vote, Wheat, X, type LucideIcon
+  Amphora, Anchor, Anvil, ArrowBigDown, ArrowBigLeft, ArrowBigRight, ArrowBigUp,
+  Atom, Axe, BadgeDollarSign, Bell, Bird, Bone, BookOpen, BriefcaseBusiness, Building2,
+  Bus, CalendarDays, Camera, Castle, ChartNoAxesColumnIncreasing, Check, Church,
+  CircleArrowDown, CircleArrowLeft, CircleArrowRight, CircleArrowUp, CircleDollarSign,
+  CircleHelp, Clock3, Cloud, Coins, Compass, Crown, Dog, Drama, Droplets, Earth,
+  Factory, Feather, Fish, Flag, Flame, Footprints, Gem, Globe2, GraduationCap,
+  Hammer, Handshake, Heart, HeartHandshake, House, KeyRound, Landmark, LandPlot,
+  Languages, LibraryBig, Lightbulb, Map, MapPin, Megaphone, Microscope, Moon,
+  Mountain, Music, NotebookPen, Palette, Pencil, Pickaxe, Plane, Radio, Rabbit,
+  Route, Sailboat, Scale, School, ScrollText, Shield, Ship, ShipWheel, ShoppingBasket,
+  Smile, Snowflake, Sprout, Star, Sun, Swords, Telescope, TentTree, TowerControl,
+  Tractor, Train, TreePine, Trees, Users, Utensils, Vote, Waves, Wheat, Wind, X, Zap,
+  type LucideIcon
 } from "lucide-react";
 /* eslint-disable @next/next/no-img-element */
 import type { CSSProperties } from "react";
 import type { HistoryCanvasBlock } from "@/types";
 
 const visualIcons: Record<string, LucideIcon> = {
-  amphora: Amphora, anvil: Anvil, atom: Atom, axe: Axe, bell: Bell, bone: Bone,
+  amphora: Amphora, anchor: Anchor, anvil: Anvil, arrowDown: ArrowBigDown,
+  arrowLeft: ArrowBigLeft, arrowRight: ArrowBigRight, arrowUp: ArrowBigUp,
+  circleArrowDown: CircleArrowDown, circleArrowLeft: CircleArrowLeft,
+  circleArrowRight: CircleArrowRight, circleArrowUp: CircleArrowUp,
+  atom: Atom, axe: Axe, badgeDollar: BadgeDollarSign, bell: Bell, bird: Bird, bone: Bone,
   book: BookOpen, camera: Camera, castle: Castle, check: Check, church: Church,
-  help: CircleHelp, cloud: Cloud, coins: Coins, compass: Compass, crown: Crown,
-  factory: Factory, feather: Feather, flame: Flame, footprints: Footprints, gem: Gem,
+  briefcase: BriefcaseBusiness, building: Building2, bus: Bus, calendar: CalendarDays,
+  chart: ChartNoAxesColumnIncreasing, circleDollar: CircleDollarSign, clock: Clock3,
+  dog: Dog, drama: Drama, droplets: Droplets, earth: Earth, fish: Fish, flag: Flag,
+  handshake: Handshake, heartHandshake: HeartHandshake, land: LandPlot,
+  languages: Languages, library: LibraryBig, megaphone: Megaphone, plane: Plane,
+  rabbit: Rabbit, route: Route, sailboat: Sailboat, school: School,
+  basket: ShoppingBasket, trees: Trees, utensils: Utensils, waves: Waves, wind: Wind,
+  tower: TowerControl, zap: Zap, help: CircleHelp, cloud: Cloud, coins: Coins,
+  compass: Compass, crown: Crown, factory: Factory, feather: Feather, flame: Flame,
+  footprints: Footprints, gem: Gem,
   globe: Globe2, graduation: GraduationCap, hammer: Hammer, heart: Heart, house: House,
   key: KeyRound, landmark: Landmark, lightbulb: Lightbulb, map: Map, pin: MapPin,
   microscope: Microscope, moon: Moon, mountain: Mountain, music: Music,
@@ -47,6 +65,12 @@ export const historyVisualCategories = [
   { id: "territoire", label: "Territoire", symbol: "🗺️", description: "Cartes, lieux et déplacements" },
   { id: "societe", label: "Société", symbol: "👥", description: "Population, économie et pouvoir" },
   { id: "symboles", label: "Symboles", symbol: "⭐", description: "Repères visuels et annotations" },
+  { id: "fleches", label: "Flèches", symbol: "➡️", description: "Directions, liens et déplacements" },
+  { id: "education", label: "Éducation", symbol: "🎓", description: "École, lecture et apprentissage" },
+  { id: "sciences", label: "Sciences", symbol: "🔬", description: "Découvertes, nature et technologie" },
+  { id: "economie", label: "Économie", symbol: "💰", description: "Commerce, travail et production" },
+  { id: "transport", label: "Transports", symbol: "🚂", description: "Routes, navigation et voyages" },
+  { id: "nature", label: "Nature", symbol: "🌲", description: "Milieux, ressources et agriculture" },
   { id: "illustrations", label: "Illustrations", symbol: "🎨", description: "Éléments colorés et emojis" }
 ] as const;
 
@@ -97,6 +121,44 @@ export const historyVisualLibrary: HistoryVisualLibraryItem[] = [
   { id: "help", label: "Question", kind: "icon", value: "help", category: "symboles", keywords: "question aide" },
   { id: "book", label: "Livre", kind: "icon", value: "book", category: "symboles", keywords: "livre document lecture" },
   { id: "lightbulb", label: "Idée", kind: "icon", value: "lightbulb", category: "symboles", keywords: "idée comprendre" },
+  { id: "arrow-right", label: "Flèche droite", kind: "icon", value: "arrowRight", category: "fleches", keywords: "flèche droite direction suivant" },
+  { id: "arrow-left", label: "Flèche gauche", kind: "icon", value: "arrowLeft", category: "fleches", keywords: "flèche gauche direction retour" },
+  { id: "arrow-up", label: "Flèche haut", kind: "icon", value: "arrowUp", category: "fleches", keywords: "flèche haut direction" },
+  { id: "arrow-down", label: "Flèche bas", kind: "icon", value: "arrowDown", category: "fleches", keywords: "flèche bas direction" },
+  { id: "circle-arrow-right", label: "Direction droite", kind: "icon", value: "circleArrowRight", category: "fleches", keywords: "flèche cercle droite" },
+  { id: "circle-arrow-left", label: "Direction gauche", kind: "icon", value: "circleArrowLeft", category: "fleches", keywords: "flèche cercle gauche" },
+  { id: "circle-arrow-up", label: "Direction haut", kind: "icon", value: "circleArrowUp", category: "fleches", keywords: "flèche cercle haut" },
+  { id: "circle-arrow-down", label: "Direction bas", kind: "icon", value: "circleArrowDown", category: "fleches", keywords: "flèche cercle bas" },
+  { id: "school", label: "École", kind: "icon", value: "school", category: "education", keywords: "école éducation classe" },
+  { id: "library", label: "Bibliothèque", kind: "icon", value: "library", category: "education", keywords: "bibliothèque livre recherche" },
+  { id: "notebook", label: "Cahier", kind: "icon", value: "notebook", category: "education", keywords: "cahier écrire notes" },
+  { id: "pencil", label: "Crayon", kind: "icon", value: "pencil", category: "education", keywords: "crayon écrire" },
+  { id: "calendar", label: "Calendrier", kind: "icon", value: "calendar", category: "education", keywords: "calendrier date temps" },
+  { id: "languages", label: "Langues", kind: "icon", value: "languages", category: "education", keywords: "langue communication français" },
+  { id: "atom", label: "Atome", kind: "icon", value: "atom", category: "sciences", keywords: "atome science" },
+  { id: "microscope", label: "Microscope", kind: "icon", value: "microscope", category: "sciences", keywords: "microscope recherche science" },
+  { id: "zap", label: "Énergie", kind: "icon", value: "zap", category: "sciences", keywords: "énergie électricité" },
+  { id: "droplets", label: "Eau", kind: "icon", value: "droplets", category: "sciences", keywords: "eau ressources" },
+  { id: "wind", label: "Vent", kind: "icon", value: "wind", category: "sciences", keywords: "vent climat" },
+  { id: "earth", label: "Terre", kind: "icon", value: "earth", category: "sciences", keywords: "terre planète environnement" },
+  { id: "briefcase", label: "Travail", kind: "icon", value: "briefcase", category: "economie", keywords: "travail métier emploi" },
+  { id: "building", label: "Entreprise", kind: "icon", value: "building", category: "economie", keywords: "entreprise ville économie" },
+  { id: "basket", label: "Marché", kind: "icon", value: "basket", category: "economie", keywords: "marché commerce aliments" },
+  { id: "chart", label: "Croissance", kind: "icon", value: "chart", category: "economie", keywords: "graphique économie croissance" },
+  { id: "circle-dollar", label: "Argent", kind: "icon", value: "circleDollar", category: "economie", keywords: "argent monnaie économie" },
+  { id: "handshake", label: "Échange", kind: "icon", value: "handshake", category: "economie", keywords: "échange commerce entente" },
+  { id: "bus", label: "Autobus", kind: "icon", value: "bus", category: "transport", keywords: "autobus transport route" },
+  { id: "plane", label: "Avion", kind: "icon", value: "plane", category: "transport", keywords: "avion transport voyage" },
+  { id: "sailboat", label: "Voilier", kind: "icon", value: "sailboat", category: "transport", keywords: "voilier navigation exploration" },
+  { id: "anchor", label: "Ancre", kind: "icon", value: "anchor", category: "transport", keywords: "ancre bateau port" },
+  { id: "route", label: "Route", kind: "icon", value: "route", category: "transport", keywords: "route trajet déplacement" },
+  { id: "tower", label: "Aéroport", kind: "icon", value: "tower", category: "transport", keywords: "aéroport transport" },
+  { id: "trees", label: "Boisé", kind: "icon", value: "trees", category: "nature", keywords: "arbres forêt nature" },
+  { id: "land", label: "Terre agricole", kind: "icon", value: "land", category: "nature", keywords: "terre agriculture territoire" },
+  { id: "waves", label: "Cours d’eau", kind: "icon", value: "waves", category: "nature", keywords: "eau fleuve rivière" },
+  { id: "fish", label: "Poisson", kind: "icon", value: "fish", category: "nature", keywords: "poisson pêche alimentation" },
+  { id: "bird", label: "Oiseau", kind: "icon", value: "bird", category: "nature", keywords: "oiseau nature" },
+  { id: "dog", label: "Animal domestique", kind: "icon", value: "dog", category: "nature", keywords: "animal domestication" },
   { id: "emoji-people", label: "Personnes", kind: "emoji", value: "👥", category: "illustrations", keywords: "personnes groupe population" },
   { id: "emoji-farmer", label: "Agriculteur", kind: "emoji", value: "🧑‍🌾", category: "illustrations", keywords: "agriculteur paysan ferme" },
   { id: "emoji-house", label: "Maison", kind: "emoji", value: "🏠", category: "illustrations", keywords: "maison habitation village" },
@@ -125,12 +187,17 @@ export function HistoryCanvasVisual(block: HistoryCanvasBlock) {
       ? `${block.visualBorderWidth}px solid ${block.visualBorderColor ?? "#0b4a6f"}`
       : "0 solid transparent"
   } as CSSProperties;
+  const contentStyle = {
+    transform: `rotate(${block.visualRotation ?? 0}deg) scaleX(${block.visualFlipX ? -1 : 1}) scaleY(${block.visualFlipY ? -1 : 1})`
+  } as CSSProperties;
 
   return (
     <div className={`history-canvas-visual background-${backgroundShape}`} style={style} aria-label={block.visualLabel}>
-      {Icon ? <Icon strokeWidth={1.8} /> : block.visualKind === "image" && block.visualSrc
-        ? <img src={block.visualSrc} alt={block.visualLabel ?? ""} />
-        : <span aria-hidden="true">{block.visualSrc || block.visualId || "⭐"}</span>}
+      <div className="history-canvas-visual-content" style={contentStyle}>
+        {Icon ? <Icon strokeWidth={1.8} /> : block.visualKind === "image" && block.visualSrc
+          ? <img src={block.visualSrc} alt={block.visualLabel ?? ""} />
+          : <span aria-hidden="true">{block.visualSrc || block.visualId || "⭐"}</span>}
+      </div>
     </div>
   );
 }

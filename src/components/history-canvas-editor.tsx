@@ -2,11 +2,12 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
-import { AlignCenter, AlignLeft, AlignRight, ArrowRight, Bold, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Circle, Copy, FileText, Image as ImageIcon, Italic, Layers3, Map as MapIcon, Maximize2, MessageSquareText, Minus, Minimize2, MousePointer2, PanelTop, Plus, RectangleHorizontal, Shapes, Square, Trash2, Triangle, Underline, Upload, X } from "lucide-react";
+import { AlignCenter, AlignLeft, AlignRight, ArrowRight, Bold, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Circle, Copy, FileText, FlipHorizontal2, FlipVertical2, Image as ImageIcon, Italic, Layers3, Map as MapIcon, Maximize2, MessageSquareText, Minus, Minimize2, MousePointer2, PanelTop, Plus, RectangleHorizontal, RotateCcw, RotateCw, Shapes, Square, Trash2, Triangle, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
 import { HistoryCanvasVisual, type HistoryVisualLibraryItem } from "@/components/history-canvas-visual";
 import { HistoryResourceLibrary } from "@/components/history-resource-library";
+import { HistoryCanvasBackground } from "@/components/history-canvas-background";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
@@ -681,7 +682,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             }
           }}
         >
-          {canvas.backgroundImage && <div className="history-canvas-stage-background" style={{ backgroundImage: `url(${canvas.backgroundImage})`, backgroundSize: canvas.backgroundImageFit === "stretch" ? "100% 100%" : canvas.backgroundImageFit ?? "cover", opacity: canvas.backgroundImageOpacity ?? 1 }} />}
+          <HistoryCanvasBackground canvas={canvas} />
           {canvas.blocks.filter((block) => question.action !== "cloze_choice" || block.type !== "validation").map((block) => {
             return (
               <div
@@ -793,6 +794,15 @@ function VisualInspector({ block, onUpdate }: { block: HistoryCanvasBlock; onUpd
         <span>Opacité <strong>{opacity} %</strong></span>
         <input type="range" min="10" max="100" step="5" value={opacity} onChange={(event) => onUpdate({ visualOpacity: Number(event.target.value) / 100 })} />
       </label>
+      <div className="history-visual-orientation">
+        <div className="history-inspector-section-heading"><strong>Orientation</strong><span>{block.visualRotation ?? 0}°</span></div>
+        <div className="history-visual-orientation-actions">
+          <button type="button" onClick={() => onUpdate({ visualRotation: (((block.visualRotation ?? 0) + 270) % 360) as 0 | 90 | 180 | 270 })} title="Tourner vers la gauche"><RotateCcw size={18} /><span>Gauche</span></button>
+          <button type="button" onClick={() => onUpdate({ visualRotation: (((block.visualRotation ?? 0) + 90) % 360) as 0 | 90 | 180 | 270 })} title="Tourner vers la droite"><RotateCw size={18} /><span>Droite</span></button>
+          <button type="button" className={block.visualFlipX ? "active" : ""} onClick={() => onUpdate({ visualFlipX: !block.visualFlipX })} title="Miroir horizontal"><FlipHorizontal2 size={18} /><span>Miroir H</span></button>
+          <button type="button" className={block.visualFlipY ? "active" : ""} onClick={() => onUpdate({ visualFlipY: !block.visualFlipY })} title="Miroir vertical"><FlipVertical2 size={18} /><span>Miroir V</span></button>
+        </div>
+      </div>
       <label className="history-visual-background-toggle">
         <input type="checkbox" checked={block.visualBackgroundEnabled ?? false} onChange={(event) => onUpdate({ visualBackgroundEnabled: event.target.checked })} />
         <span>Ajouter un fond</span>
