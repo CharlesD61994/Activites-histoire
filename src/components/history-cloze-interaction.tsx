@@ -13,21 +13,26 @@ type Props = {
   onInteraction?: () => void;
   onValidate?: () => void;
   lockedBlankIds?: string[];
+  checkedCorrectBlankIds?: string[];
+  checkedWrongBlankIds?: string[];
+  awaitingRetry?: boolean;
   revealAnswers?: boolean;
   preview?: boolean;
   onPointerDown?: (event: React.PointerEvent) => void;
 };
 
-export function HistoryClozeInteraction({ question, answers = {}, onAnswersChange, onInteraction, onValidate, lockedBlankIds = [], revealAnswers = false, preview = false, onPointerDown }: Props) {
+export function HistoryClozeInteraction({ question, answers = {}, onAnswersChange, onInteraction, onValidate, lockedBlankIds = [], checkedCorrectBlankIds = [], checkedWrongBlankIds = [], awaitingRetry = false, revealAnswers = false, preview = false, onPointerDown }: Props) {
   const [selectedTokenId, setSelectedTokenId] = useState("");
   const parts = useMemo(() => parseHistoryCloze(question), [question]);
   const tokens = useMemo(() => historyClozeTokens(question), [question]);
   const tokenById = useMemo(() => new Map(tokens.map((token) => [token.id, token])), [tokens]);
   const usedTokenIds = new Set(Object.values(answers));
   const lockedBlanks = new Set(lockedBlankIds);
+  const checkedCorrectBlanks = new Set(checkedCorrectBlankIds);
+  const checkedWrongBlanks = new Set(checkedWrongBlankIds);
 
   function assignToken(blankId: string, tokenId: string) {
-    if (preview || revealAnswers || lockedBlanks.has(blankId) || !tokenById.has(tokenId)) return;
+    if (preview || awaitingRetry || revealAnswers || lockedBlanks.has(blankId) || !tokenById.has(tokenId)) return;
     const next = Object.fromEntries(Object.entries(answers).filter(([id, value]) => id === blankId || value !== tokenId));
     next[blankId] = tokenId;
     onInteraction?.();
@@ -36,7 +41,7 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
   }
 
   function returnToBank(tokenId: string) {
-    if (preview) return;
+    if (preview || awaitingRetry || revealAnswers) return;
     const next = Object.fromEntries(Object.entries(answers).filter(([, value]) => value !== tokenId));
     onInteraction?.();
     onAnswersChange?.(next);
@@ -63,12 +68,12 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
             <button
               key={`blank-${part.blank.id}-${index}`}
               type="button"
-              draggable={!preview && !locked && !revealAnswers && Boolean(token)}
-              className={`history-cloze-blank ${token || revealedAnswer ? "filled" : ""} ${selectedTokenId ? "ready" : ""} ${locked ? "earned" : ""} ${revealedAnswer ? "revealed" : ""}`}
+              draggable={!preview && !locked && !awaitingRetry && !revealAnswers && Boolean(token)}
+              className={`history-cloze-blank ${token || revealedAnswer ? "filled" : ""} ${selectedTokenId ? "ready" : ""} ${locked || checkedCorrectBlanks.has(part.blank.id) ? "earned" : ""} ${checkedWrongBlanks.has(part.blank.id) ? "wrong" : ""} ${revealedAnswer ? "revealed" : ""}`}
               aria-label={token ? `${token.text}, case ${part.blank.label}` : `Case vide ${part.blank.label}`}
               onClick={() => selectedTokenId ? assignToken(part.blank.id, selectedTokenId) : token && !locked && !revealAnswers && returnToBank(token.id)}
               onDragStart={(event) => {
-                if (!token || locked || revealAnswers) return;
+                if (!token || locked || awaitingRetry || revealAnswers) return;
                 event.dataTransfer.setData("text/history-cloze-token", token.id);
                 event.dataTransfer.effectAllowed = "move";
               }}
@@ -90,7 +95,7 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
         >
           {tokens.map((token) => {
             const used = usedTokenIds.has(token.id);
-            const disabled = used || revealAnswers;
+            const disabled = used || awaitingRetry || revealAnswers;
             return (
               <button
                 key={token.id}
@@ -112,7 +117,7 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
         </div>
         <div className="history-cloze-actions">
           <button type="button" className="history-cloze-reset" onClick={reset} disabled={preview} aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>
-          <button type="button" className="history-cloze-validate" onClick={onValidate} disabled={preview}>Valider</button>
+          <button type="button" className="history-cloze-validate" onClick={onValidate} disabled={preview}>{awaitingRetry ? "Réessayer" : "Valider"}</button>
         </div>
       </div>
     </div>

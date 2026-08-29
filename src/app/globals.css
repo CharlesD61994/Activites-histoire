@@ -516,6 +516,10 @@
 .history-answer-list label.earned,
 .history-order-list > div.earned,
 .history-cloze-blank.earned { border-color: var(--success); background: color-mix(in srgb, var(--success) 12%, #fff); }
+.history-choice-grid button.wrong,
+.history-answer-list label.wrong,
+.history-order-list > div.wrong,
+.history-cloze-blank.wrong { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, #fff); }
 .history-choice-grid button.revealed,
 .history-answer-list label.revealed,
 .history-order-list > div.revealed,
@@ -558,6 +562,10 @@
   font-size: clamp(1.25rem, 2vw, 1.8rem);
   font-weight: 850;
 }
+.history-short-text-reader input.earned { border-color: var(--success); background: color-mix(in srgb, var(--success) 10%, #fff); }
+.history-short-text-reader input.wrong { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, #fff); }
+.history-hotspot-reader.earned { outline: 3px solid var(--success); outline-offset: 3px; }
+.history-hotspot-reader.wrong { outline: 3px solid var(--danger); outline-offset: 3px; }
 .history-hotspot-reader .revealed-hotspot { border-color: var(--success); background: rgb(255 255 255 / 85%); }
 .history-order-list { display: grid; gap: 10px; }
 .history-order-list > div {
