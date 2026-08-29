@@ -512,6 +512,14 @@
   color: var(--portal-ink); font-size: 1.08rem; font-weight: 900; text-align: left;
 }
 .history-choice-grid button.selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, #fff); }
+.history-choice-grid button.earned,
+.history-answer-list label.earned,
+.history-order-list > div.earned,
+.history-cloze-blank.earned { border-color: var(--success); background: color-mix(in srgb, var(--success) 12%, #fff); }
+.history-choice-grid button.revealed,
+.history-answer-list label.revealed,
+.history-order-list > div.revealed,
+.history-cloze-blank.revealed { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 9%, #fff); }
 .history-answer-list { display: grid; gap: 12px; }
 .history-answer-list label {
   grid-template-columns: minmax(0, 1fr) minmax(220px, 32%);
@@ -550,6 +558,7 @@
   font-size: clamp(1.25rem, 2vw, 1.8rem);
   font-weight: 850;
 }
+.history-hotspot-reader .revealed-hotspot { border-color: var(--success); background: rgb(255 255 255 / 85%); }
 .history-order-list { display: grid; gap: 10px; }
 .history-order-list > div {
   display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center;

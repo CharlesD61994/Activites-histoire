@@ -1,4 +1,5 @@
 import type { HistoryInteractiveAction, HistoryOperation, HistorySocietyAspect, Sentence } from "@/types";
+import { historyQuestionMaxPoints } from "./history-scoring";
 
 export const historyOperationLabels: Record<HistoryOperation, string> = {
   establish_facts: "Établir des faits",
@@ -67,7 +68,7 @@ export function getInitialHistoryAction(operation: HistoryOperation, savedAction
 }
 
 export function getHistoryActivityPointTotal(sentence: Sentence): number {
-  return sentence.historyActivity?.questions.reduce((sum, question) => sum + question.points, 0) ?? 0;
+  return sentence.historyActivity?.questions.reduce((sum, question) => sum + historyQuestionMaxPoints(question), 0) ?? 0;
 }
 
 export function getHistoryActivitySummary(sentence: Sentence) {

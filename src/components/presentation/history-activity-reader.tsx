@@ -12,7 +12,7 @@ import { historyBoxShadow } from "@/lib/history-shadow";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales } from "@/lib/history-canvas";
-import { clozeAnswerIsCorrect } from "@/lib/history-cloze";
+import { evaluateHistoryQuestion } from "@/lib/history-scoring";
 import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
 import { historyTextStyleToCss } from "@/lib/history-text-style";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
@@ -24,20 +24,6 @@ type Props = {
 };
 
 type Validation = "idle" | "correct" | "incorrect";
-
-function sameSet(a: string[], b: string[]) {
-  return a.length === b.length && a.every((item) => b.includes(item));
-}
-
-function distancePercent(a: { x: number; y: number }, b: { x: number; y: number }) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
-function normalizeTextAnswer(value: string, caseSensitive?: boolean) {
-  const normalized = value.trim().replace(/\s+/g, " ");
-  if (caseSensitive) return normalized;
-  return normalized.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("fr-CA");
-}
 
 export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: Props) {
   const activity = sentence.historyActivity;
@@ -58,7 +44,9 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   const [clozeAnswers, setClozeAnswers] = useState<Record<string, string>>({});
   const [shortTextAnswer, setShortTextAnswer] = useState("");
   const [validation, setValidation] = useState<Validation>("idle");
-  const [awarded, setAwarded] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
+  const [earnedItemIds, setEarnedItemIds] = useState<string[]>([]);
+  const [revealed, setRevealed] = useState(false);
 
   const documents = activity?.documents ?? [];
   const linkedDocuments = question?.documentIds.length
@@ -70,9 +58,10 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
   const statusText = useMemo(() => {
     if (validation === "correct") return question?.feedbackCorrect || "Bonne réponse.";
-    if (validation === "incorrect") return question?.feedbackIncorrect || "Pas encore. On ajuste ensemble, puis on réessaie.";
+    if (validation === "incorrect" && revealed) return "Les réponses restantes sont révélées.";
+    if (validation === "incorrect") return attemptCount >= 1 ? "Dernière chance: corrige ce qui reste." : question?.feedbackIncorrect || "Pas encore. On ajuste ensemble, puis on réessaie.";
     return "";
-  }, [question, validation]);
+  }, [attemptCount, question, revealed, validation]);
 
   useEffect(() => {
     if (!selectedDocument) return;
@@ -142,8 +131,14 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     return <Card><h2>Activité d’histoire incomplète</h2><p>Retourne dans l’éditeur pour ajouter une question.</p></Card>;
   }
 
+  const earnedItemSet = new Set(earnedItemIds);
+  const earnedAnswerLocked = earnedItemSet.has("answer");
+
   function toggleChoice(id: string) {
     if (!question) return;
+    if (revealed) return;
+    if (question.action === "choice_single" && earnedAnswerLocked) return;
+    if (question.action === "choice_multiple" && earnedItemSet.has(`choice:${id}`)) return;
     setValidation("idle");
     if (question.action === "choice_single") {
       setSelectedChoices([id]);
@@ -153,11 +148,13 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   }
 
   function moveEvent(id: string, direction: -1 | 1) {
+    if (revealed || earnedItemSet.has(`timeline:${id}`)) return;
     setValidation("idle");
     setEventOrder((current) => {
       const index = current.indexOf(id);
       const target = index + direction;
       if (index < 0 || target < 0 || target >= current.length) return current;
+      if (earnedItemSet.has(`timeline:${current[target]}`)) return current;
       const next = [...current];
       [next[index], next[target]] = [next[target], next[index]];
       return next;
@@ -166,32 +163,31 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
   function validate() {
     if (!question) return;
-    let correct = false;
-    if (question.action === "choice_single" || question.action === "choice_multiple") {
-      correct = sameSet(selectedChoices, (question.choices ?? []).filter((choice) => choice.isCorrect).map((choice) => choice.id));
-    } else if (question.action === "classification") {
-      correct = (question.classificationItems ?? []).every((item) => classificationAnswers[item.id] === item.correctCategoryId);
-    } else if (question.action === "matching") {
-      correct = (question.matchingPrompts ?? []).every((prompt) => matchingAnswers[prompt.id] === prompt.correctTargetId);
-    } else if (question.action === "chronological_order" || question.action === "timeline") {
-      const expected = (question.timelineEvents ?? []).slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id);
-      correct = sameSet(eventOrder, expected) && eventOrder.every((id, index) => id === expected[index]);
-    } else if (question.action === "document_hotspot") {
-      correct = Boolean(question.hotspot && hotspotAnswer && distancePercent(hotspotAnswer, question.hotspot) <= question.hotspot.radius);
-    } else if (question.action === "cloze_choice") {
-      correct = (question.clozeBlanks ?? []).every((blank) => clozeAnswerIsCorrect(question, blank, clozeAnswers[blank.id]));
-    } else if (question.action === "short_text") {
-      const answer = normalizeTextAnswer(shortTextAnswer, question.textAnswerCaseSensitive);
-      correct = Boolean(answer) && (question.acceptedTextAnswers ?? []).some((accepted) => normalizeTextAnswer(accepted, question.textAnswerCaseSensitive) === answer);
-    }
+    if (revealed) return;
+    const attempt = Math.min(attemptCount + 1, 2);
+    const result = evaluateHistoryQuestion(question, {
+      selectedChoices,
+      classificationAnswers,
+      matchingAnswers,
+      eventOrder,
+      hotspotAnswer,
+      clozeAnswers,
+      shortTextAnswer
+    });
+    const currentEarned = new Set(earnedItemIds);
+    const newlyCorrect = result.correctItemIds.filter((id) => !currentEarned.has(id));
+    const pointsPerItem = attempt === 1 ? 1 : 0.5;
+    newlyCorrect.forEach((itemId) => onPoint(`history-${question.id}-${itemId}`, pointsPerItem));
+    const nextEarned = Array.from(new Set([...earnedItemIds, ...newlyCorrect]));
+    const allEarned = result.allItemIds.length > 0 && result.allItemIds.every((id) => nextEarned.includes(id));
+    const shouldReveal = !allEarned && attempt >= 2;
 
-    setValidation(correct ? "correct" : "incorrect");
-    if (correct) {
+    setAttemptCount(attempt);
+    setEarnedItemIds(nextEarned);
+    setRevealed(shouldReveal);
+    setValidation(allEarned ? "correct" : "incorrect");
+    if (allEarned || shouldReveal) {
       onCompleteChange?.(true);
-      if (!awarded) {
-        onPoint(`history-${question.id}`, question.points);
-        setAwarded(true);
-      }
     }
   }
 
@@ -205,6 +201,10 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     setClozeAnswers({});
     setShortTextAnswer("");
     setValidation("idle");
+    setAttemptCount(0);
+    setEarnedItemIds([]);
+    setRevealed(false);
+    onCompleteChange?.(false);
   }
 
   function openDocument(document: HistorySourceDocument) {
@@ -290,10 +290,12 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           setShortTextAnswer={setShortTextAnswer}
           validation={validation}
           statusText={statusText}
+          earnedItemIds={earnedItemIds}
+          revealed={revealed}
           onValidate={validate}
           onReset={resetAnswers}
           onOpenDocument={openDocument}
-          resetValidation={() => setValidation("idle")}
+          resetValidation={() => !revealed && setValidation("idle")}
         />
         {documentModal}
       </div>
@@ -363,9 +365,11 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
               setClozeAnswers={setClozeAnswers}
               shortTextAnswer={shortTextAnswer}
               setShortTextAnswer={setShortTextAnswer}
+              earnedItemIds={earnedItemIds}
+              revealed={revealed}
               onValidate={validate}
               onReset={resetAnswers}
-              resetValidation={() => setValidation("idle")}
+              resetValidation={() => !revealed && setValidation("idle")}
             />
 
             {statusText && (
@@ -404,6 +408,8 @@ function HistoryCanvasStage({
   setShortTextAnswer,
   validation,
   statusText,
+  earnedItemIds,
+  revealed,
   onValidate,
   onReset,
   onOpenDocument,
@@ -429,6 +435,8 @@ function HistoryCanvasStage({
   setShortTextAnswer: (next: string) => void;
   validation: Validation;
   statusText: string;
+  earnedItemIds: string[];
+  revealed: boolean;
   onValidate: () => void;
   onReset: () => void;
   onOpenDocument: (document: HistorySourceDocument) => void;
@@ -474,6 +482,8 @@ function HistoryCanvasStage({
           setClozeAnswers={setClozeAnswers}
           shortTextAnswer={shortTextAnswer}
           setShortTextAnswer={setShortTextAnswer}
+          earnedItemIds={earnedItemIds}
+          revealed={revealed}
           onValidate={onValidate}
           onReset={onReset}
           resetValidation={resetValidation}
@@ -544,6 +554,8 @@ function HistoryQuestionInteraction({
   setClozeAnswers,
   shortTextAnswer,
   setShortTextAnswer,
+  earnedItemIds,
+  revealed,
   onValidate,
   onReset,
   resetValidation
@@ -564,10 +576,14 @@ function HistoryQuestionInteraction({
   setClozeAnswers: (next: Record<string, string>) => void;
   shortTextAnswer: string;
   setShortTextAnswer: (next: string) => void;
+  earnedItemIds?: string[];
+  revealed?: boolean;
   onValidate?: () => void;
   onReset?: () => void;
   resetValidation: () => void;
 }) {
+  const earned = new Set(earnedItemIds ?? []);
+
   function withReaderActions(content: ReactNode) {
     return (
       <div className="history-reader-interaction-stack">
@@ -581,31 +597,55 @@ function HistoryQuestionInteraction({
   }
 
   if (question.action === "choice_single" || question.action === "choice_multiple") {
-    return withReaderActions(<div className="history-choice-grid">{(question.choices ?? []).map((choice) => <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={selectedChoices.includes(choice.id) ? "selected" : ""} onClick={() => toggleChoice(choice.id)}>{choice.text}</button>)}</div>);
+    return withReaderActions(<div className="history-choice-grid">{(question.choices ?? []).map((choice) => {
+      const correct = Boolean(choice.isCorrect);
+      const itemId = question.action === "choice_single" ? "answer" : `choice:${choice.id}`;
+      const locked = earned.has(itemId) || Boolean(revealed);
+      return <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={[selectedChoices.includes(choice.id) ? "selected" : "", earned.has(itemId) ? "earned" : "", revealed && correct ? "revealed" : ""].filter(Boolean).join(" ")} disabled={locked && !selectedChoices.includes(choice.id)} onClick={() => toggleChoice(choice.id)}>{choice.text}</button>;
+    })}</div>);
   }
 
   if (question.action === "classification") {
-    return withReaderActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value={classificationAnswers[item.id] ?? ""} onChange={(event) => { resetValidation(); setClassificationAnswers({ ...classificationAnswers, [item.id]: event.target.value }); }}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>);
+    return withReaderActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => {
+      const itemId = `classification:${item.id}`;
+      const locked = earned.has(itemId) || Boolean(revealed);
+      const value = locked ? item.correctCategoryId : classificationAnswers[item.id] ?? "";
+      return <label key={item.id} className={earned.has(itemId) ? "earned" : revealed ? "revealed" : ""}>{item.text}<select value={value} disabled={locked} onChange={(event) => { resetValidation(); setClassificationAnswers({ ...classificationAnswers, [item.id]: event.target.value }); }}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>;
+    })}</div>);
   }
 
   if (question.action === "matching") {
-    return withReaderActions(<div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}>{prompt.prompt}<select value={matchingAnswers[prompt.id] ?? ""} onChange={(event) => { resetValidation(); setMatchingAnswers({ ...matchingAnswers, [prompt.id]: event.target.value }); }}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>);
+    return withReaderActions(<div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => {
+      const itemId = `matching:${prompt.id}`;
+      const locked = earned.has(itemId) || Boolean(revealed);
+      const value = locked ? prompt.correctTargetId : matchingAnswers[prompt.id] ?? "";
+      return <label key={prompt.id} className={earned.has(itemId) ? "earned" : revealed ? "revealed" : ""}>{prompt.prompt}<select value={value} disabled={locked} onChange={(event) => { resetValidation(); setMatchingAnswers({ ...matchingAnswers, [prompt.id]: event.target.value }); }}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>;
+    })}</div>);
   }
 
   if (question.action === "chronological_order" || question.action === "timeline") {
     const eventsById = new Map((question.timelineEvents ?? []).map((event) => [event.id, event]));
-    return withReaderActions(<div className="history-order-list">{eventOrder.map((id) => { const event = eventsById.get(id); if (!event) return null; return <div key={id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onClick={() => moveEvent(id, -1)}>Monter</button><button type="button" onClick={() => moveEvent(id, 1)}>Descendre</button></div>; })}</div>);
+    const order = revealed ? [...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id) : eventOrder;
+    return withReaderActions(<div className="history-order-list">{order.map((id) => {
+      const event = eventsById.get(id);
+      if (!event) return null;
+      const itemId = `timeline:${id}`;
+      const locked = earned.has(itemId) || Boolean(revealed);
+      return <div key={id} className={earned.has(itemId) ? "earned" : revealed ? "revealed" : ""}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" disabled={locked} onClick={() => moveEvent(id, -1)}>Monter</button><button type="button" disabled={locked} onClick={() => moveEvent(id, 1)}>Descendre</button></div>;
+    })}</div>);
   }
 
   if (question.action === "document_hotspot") {
     return withReaderActions(hotspotDocument?.src ? (
       <button type="button" className="history-hotspot-reader" onClick={(event) => {
+        if (revealed || earned.has("answer")) return;
         resetValidation();
         const rect = event.currentTarget.getBoundingClientRect();
         setHotspotAnswer({ x: ((event.clientX - rect.left) / rect.width) * 100, y: ((event.clientY - rect.top) / rect.height) * 100 });
       }}>
         <img src={hotspotDocument.src} alt={hotspotDocument.title} />
         {hotspotAnswer && <span style={{ left: `${hotspotAnswer.x}%`, top: `${hotspotAnswer.y}%` }} />}
+        {revealed && question.hotspot && <span className="revealed-hotspot" style={{ left: `${question.hotspot.x}%`, top: `${question.hotspot.y}%` }} />}
       </button>
     ) : <p>Cette action demande un document image ou une carte.</p>);
   }
@@ -614,7 +654,8 @@ function HistoryQuestionInteraction({
     return withReaderActions(
       <div className="history-short-text-reader">
         <input
-          value={shortTextAnswer}
+          value={revealed ? question.acceptedTextAnswers?.[0] ?? shortTextAnswer : shortTextAnswer}
+          readOnly={earned.has("answer") || Boolean(revealed)}
           onChange={(event) => {
             resetValidation();
             setShortTextAnswer(event.target.value);
@@ -622,13 +663,13 @@ function HistoryQuestionInteraction({
           onKeyDown={(event) => {
             if (event.key === "Enter") event.preventDefault();
           }}
-          placeholder="Écrire un mot ou une courte phrase"
+          placeholder={revealed ? question.acceptedTextAnswers?.[0] ?? "Réponse révélée" : "Écrire un mot ou une courte phrase"}
         />
       </div>
     );
   }
 
   return (
-    <HistoryClozeInteraction question={question} answers={clozeAnswers} onAnswersChange={setClozeAnswers} onInteraction={resetValidation} onValidate={onValidate} />
+    <HistoryClozeInteraction question={question} answers={clozeAnswers} onAnswersChange={setClozeAnswers} onInteraction={resetValidation} onValidate={onValidate} lockedBlankIds={earnedItemIds?.filter((id) => id.startsWith("cloze:")).map((id) => id.slice("cloze:".length))} revealAnswers={revealed} />
   );
 }

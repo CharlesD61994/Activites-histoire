@@ -253,7 +253,7 @@ export default function PresentationPage({
             revealOrder: 0
           },
           stage: "find",
-          points: Math.max(1, points),
+          points: Math.max(0, points),
           pointId
         }
       ];

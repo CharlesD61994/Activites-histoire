@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { HistoryCanvasEditor, createDefaultHistoryCanvas } from "@/components/history-canvas-editor";
 import { HistoryClozeAuthoringEditor } from "@/components/history-cloze-authoring-editor";
 import { normalizeHistoryCanvasLayout, resizeHistoryInteractionBlocks } from "@/lib/history-canvas";
+import { historyQuestionMaxPoints } from "@/lib/history-scoring";
 import {
   allHistoryOperations,
   allHistorySocietyAspects,
@@ -116,6 +117,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
 
   const allowedActions = historyActionsByOperation[operation];
   const imageDocuments = documents.filter((document) => document.kind === "image" || document.kind === "map");
+  const questionPointTotal = historyQuestionMaxPoints(question);
 
   useEffect(() => {
     if (!allowedActions.includes(question.action)) {
@@ -149,11 +151,12 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   }
 
   function save() {
+    const normalizedQuestion = normalizeQuestion(question, question.action);
     const activity: HistoryActivityData = {
       operation,
       aspects,
       documents,
-      questions: [normalizeQuestion(question, question.action)],
+      questions: [{ ...normalizedQuestion, points: historyQuestionMaxPoints(normalizedQuestion) }],
       canvas
     };
     const sentence: Sentence = {
@@ -391,7 +394,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
           contextPanel={(
             <>
               {actionEditor}
-              <label>Points<input type="number" min={1} max={20} value={question.points} onChange={(event) => updateQuestion({ points: Number(event.target.value) })} /></label>
+              <label>Points<input type="number" readOnly value={questionPointTotal} /></label>
             </>
           )}
         />
