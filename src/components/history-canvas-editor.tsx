@@ -37,11 +37,24 @@ type DragState = {
   startX: number;
   startY: number;
   block: HistoryCanvasBlock;
+  blocks?: HistoryCanvasBlock[];
 };
 
 type TextTarget =
   | { kind: "block"; id: string }
   | { kind: "choice"; id: string; blockId: string };
+
+type SelectionBox = {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+};
+
+type ContextMenuState = {
+  x: number;
+  y: number;
+} | null;
 
 const resizeHandles: HistoryResizeHandle[] = ["n", "e", "s", "w", "ne", "se", "sw", "nw"];
 const proportionalResizeHandles: HistoryResizeHandle[] = ["ne", "se", "sw", "nw"];
@@ -71,6 +84,36 @@ const shapeOptions = [
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function selectionBounds(selection: SelectionBox) {
+  const x = Math.min(selection.startX, selection.currentX);
+  const y = Math.min(selection.startY, selection.currentY);
+  return {
+    x,
+    y,
+    width: Math.abs(selection.currentX - selection.startX),
+    height: Math.abs(selection.currentY - selection.startY)
+  };
+}
+
+function blockIntersectsRect(block: HistoryCanvasBlock, rect: { x: number; y: number; width: number; height: number }) {
+  return block.x < rect.x + rect.width
+    && block.x + block.width > rect.x
+    && block.y < rect.y + rect.height
+    && block.y + block.height > rect.y;
+}
+
+function constrainedGroupDelta(blocks: HistoryCanvasBlock[], dx: number, dy: number, canvas: Pick<HistoryActivityCanvas, "width" | "height">) {
+  if (blocks.length === 0) return { dx: 0, dy: 0 };
+  const minX = Math.min(...blocks.map((block) => block.x));
+  const minY = Math.min(...blocks.map((block) => block.y));
+  const maxX = Math.max(...blocks.map((block) => block.x + block.width));
+  const maxY = Math.max(...blocks.map((block) => block.y + block.height));
+  return {
+    dx: clamp(dx, -minX, canvas.width - maxX),
+    dy: clamp(dy, -minY, canvas.height - maxY)
+  };
 }
 
 function readerFullscreenStageHeight() {
@@ -187,10 +230,14 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
 export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange, availableActions, onActionChange, onAddDocument, onUpdateDocument, onDeleteDocument, contextPanel }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const fittedDocumentsRef = useRef(new Set<string>());
+  const clipboardRef = useRef<HistoryCanvasBlock[]>([]);
   const [selectedId, setSelectedId] = useState("");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [inspectedId, setInspectedId] = useState("");
   const [textTarget, setTextTarget] = useState<TextTarget | null>(null);
   const [drag, setDrag] = useState<DragState | null>(null);
+  const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>(null);
   const [interactionMenuOpen, setInteractionMenuOpen] = useState(false);
   const [resourceMenuOpen, setResourceMenuOpen] = useState(false);
   const [documentLibraryOpen, setDocumentLibraryOpen] = useState(false);
@@ -200,9 +247,26 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   const activeTextStyle = textTarget?.kind === "block"
     ? canvas.blocks.find((block) => block.id === textTarget.id)?.textStyle
     : question.choices?.find((choice) => choice.id === textTarget?.id)?.textStyle;
+  const activeSelectionIds = selectedIds.length > 0 ? selectedIds : selectedId ? [selectedId] : [];
+  const selectedBlocks = canvas.blocks.filter((block) => activeSelectionIds.includes(block.id));
+  const canPaste = clipboardRef.current.length > 0;
 
   function patchCanvas(patch: Partial<HistoryActivityCanvas>) {
     onChange({ ...canvas, ...patch });
+  }
+
+  function selectOnly(id: string) {
+    setSelectedId(id);
+    setSelectedIds(id ? [id] : []);
+    setContextMenu(null);
+  }
+
+  function clearSelection() {
+    setSelectedId("");
+    setSelectedIds([]);
+    setInspectedId("");
+    setTextTarget(null);
+    setContextMenu(null);
   }
 
   function updateBlock(id: string, patch: Partial<HistoryCanvasBlock>) {
@@ -227,7 +291,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     setDocumentLibraryOpen(false);
     setInteractionMenuOpen(false);
     setTextTarget(target);
-    setSelectedId(target.kind === "block" ? target.id : target.blockId);
+    selectOnly(target.kind === "block" ? target.id : target.blockId);
   }
 
   function updateActiveTextStyle(patch: Partial<HistoryTextStyle>) {
@@ -241,13 +305,76 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     if (choice) updateChoice(choice.id, { textStyle: { ...choice.textStyle, ...patch } });
   }
 
+  function isKeyboardEditingTarget(target: EventTarget | null) {
+    const element = target instanceof HTMLElement ? target : null;
+    return Boolean(element?.closest("input, textarea, select, [contenteditable='true']"));
+  }
+
+  function moveSelectedBlocks(dx: number, dy: number) {
+    if (selectedBlocks.length === 0) return;
+    const delta = constrainedGroupDelta(selectedBlocks, dx, dy, canvas);
+    if (delta.dx === 0 && delta.dy === 0) return;
+    const selected = new Set(selectedBlocks.map((block) => block.id));
+    patchCanvas({
+      blocks: canvas.blocks.map((block) => selected.has(block.id)
+        ? { ...block, x: block.x + delta.dx, y: block.y + delta.dy }
+        : block)
+    });
+  }
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setTextTarget(null);
+      if (event.key === "Escape") {
+        setTextTarget(null);
+        setContextMenu(null);
+        setSelectionBox(null);
+        return;
+      }
+      if (isKeyboardEditingTarget(event.target)) return;
+
+      const lowerKey = event.key.toLowerCase();
+      if ((event.ctrlKey || event.metaKey) && lowerKey === "c") {
+        if (activeSelectionIds.length === 0) return;
+        event.preventDefault();
+        copySelectedBlocks();
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && lowerKey === "x") {
+        if (activeSelectionIds.length === 0) return;
+        event.preventDefault();
+        cutSelectedBlocks();
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && lowerKey === "v") {
+        if (clipboardRef.current.length === 0) return;
+        event.preventDefault();
+        pasteBlocks();
+        return;
+      }
+      if ((event.ctrlKey || event.metaKey) && lowerKey === "d") {
+        if (activeSelectionIds.length === 0) return;
+        event.preventDefault();
+        duplicateSelectedBlocks();
+        return;
+      }
+      if (event.key === "Delete" || event.key === "Backspace") {
+        if (activeSelectionIds.length === 0) return;
+        event.preventDefault();
+        removeSelectedBlocks();
+        return;
+      }
+      if (["ArrowUp", "ArrowRight", "ArrowDown", "ArrowLeft"].includes(event.key)) {
+        if (activeSelectionIds.length === 0) return;
+        event.preventDefault();
+        const step = event.shiftKey ? 24 : 4;
+        const dx = event.key === "ArrowRight" ? step : event.key === "ArrowLeft" ? -step : 0;
+        const dy = event.key === "ArrowDown" ? step : event.key === "ArrowUp" ? -step : 0;
+        moveSelectedBlocks(dx, dy);
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  });
 
   useEffect(() => {
     if (!isSurfaceExpanded) return;
@@ -280,7 +407,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       block.aspectRatio = size.aspectRatio;
     }
     patchCanvas({ blocks: [...canvas.blocks, block] });
-    setSelectedId(block.id);
+    selectOnly(block.id);
     setInspectedId("");
     setTextTarget(null);
   }
@@ -288,7 +415,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   function addShape(kind: HistoryCanvasShapeKind) {
     const block = defaultShapeBlock(kind, canvas);
     patchCanvas({ blocks: [...canvas.blocks, block] });
-    setSelectedId(block.id);
+    selectOnly(block.id);
     setInspectedId("");
     setTextTarget(null);
     setResourceMenuOpen(false);
@@ -297,7 +424,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   function addVisual(item: HistoryVisualLibraryItem) {
     const block = defaultVisualBlock(item, canvas);
     patchCanvas({ blocks: [...canvas.blocks, block] });
-    setSelectedId(block.id);
+    selectOnly(block.id);
     setInspectedId("");
     setTextTarget(null);
     setResourceMenuOpen(false);
@@ -321,7 +448,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
           visualOpacity: 1, visualBackgroundEnabled: false
         };
         patchCanvas({ blocks: [...canvas.blocks, block] });
-        setSelectedId(block.id);
+        selectOnly(block.id);
         setInspectedId("");
         setResourceMenuOpen(false);
       };
@@ -342,7 +469,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     block.contentHeight = size.height;
     block.aspectRatio = size.aspectRatio;
     patchCanvas({ blocks: [...canvas.blocks, block] });
-    setSelectedId(block.id);
+    selectOnly(block.id);
     setInspectedId("");
     setTextTarget(null);
     setDocumentLibraryOpen(false);
@@ -405,16 +532,14 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     if (!window.confirm("Supprimer ce document de l’activité et retirer toutes ses occurrences du tableau?")) return;
     onDeleteDocument(documentId);
     patchCanvas({ blocks: canvas.blocks.filter((block) => block.documentId !== documentId) });
-    setSelectedId("");
-    setInspectedId("");
-    setTextTarget(null);
+    clearSelection();
   }
 
   function chooseInteraction(action: HistoryInteractiveAction) {
     onActionChange(action);
     const existingInteraction = canvas.blocks.find((block) => block.type === "interaction");
     if (existingInteraction) {
-      setSelectedId(existingInteraction.id);
+      selectOnly(existingInteraction.id);
       setInspectedId("");
       setTextTarget(null);
     } else {
@@ -464,9 +589,50 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   function removeBlock(id: string) {
     const blocks = canvas.blocks.filter((block) => block.id !== id);
     patchCanvas({ blocks });
-    setSelectedId(blocks[0]?.id ?? "");
+    selectOnly(blocks[0]?.id ?? "");
     setInspectedId("");
     setTextTarget(null);
+  }
+
+  function removeSelectedBlocks() {
+    if (activeSelectionIds.length === 0) return;
+    const selected = new Set(activeSelectionIds);
+    patchCanvas({ blocks: canvas.blocks.filter((block) => !selected.has(block.id)) });
+    clearSelection();
+  }
+
+  function copySelectedBlocks() {
+    if (selectedBlocks.length === 0) return;
+    clipboardRef.current = selectedBlocks.map((block) => ({ ...block }));
+    setContextMenu(null);
+  }
+
+  function pasteBlocks() {
+    if (clipboardRef.current.length === 0) return;
+    const copies = clipboardRef.current.map((source, index) => ({
+      ...source,
+      id: crypto.randomUUID(),
+      x: source.x + 28 + index * 10,
+      y: source.y + 28 + index * 10
+    }));
+    const { dx, dy } = constrainedGroupDelta(copies, 0, 0, canvas);
+    const normalizedCopies = copies.map((copy) => ({
+      ...copy,
+      x: clamp(copy.x + dx, 0, canvas.width - copy.width),
+      y: clamp(copy.y + dy, 0, canvas.height - copy.height)
+    }));
+    patchCanvas({ blocks: [...canvas.blocks, ...normalizedCopies] });
+    setSelectedIds(normalizedCopies.map((block) => block.id));
+    setSelectedId(normalizedCopies[normalizedCopies.length - 1]?.id ?? "");
+    setInspectedId("");
+    setTextTarget(null);
+    setContextMenu(null);
+  }
+
+  function cutSelectedBlocks() {
+    if (activeSelectionIds.length === 0) return;
+    copySelectedBlocks();
+    removeSelectedBlocks();
   }
 
   function duplicateBlock(id: string) {
@@ -479,13 +645,20 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       y: clamp(source.y + 28, 0, canvas.height - source.height)
     };
     patchCanvas({ blocks: [...canvas.blocks, copy] });
-    setSelectedId(copy.id);
+    selectOnly(copy.id);
     setInspectedId(copy.id);
     setTextTarget(null);
   }
 
+  function duplicateSelectedBlocks() {
+    if (selectedBlocks.length === 0) return;
+    clipboardRef.current = selectedBlocks.map((block) => ({ ...block }));
+    pasteBlocks();
+  }
+
   function changeBlockLayer(id: string, action: HistoryLayerAction) {
     patchCanvas({ blocks: reorderHistoryCanvasBlock(canvas.blocks, id, action) });
+    setContextMenu(null);
   }
 
   function eventToCanvas(event: React.PointerEvent) {
@@ -501,15 +674,24 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function onPointerMove(event: React.PointerEvent) {
-    if (!drag) return;
     const point = eventToCanvas(event);
+    if (selectionBox) {
+      setSelectionBox({ ...selectionBox, currentX: point.x, currentY: point.y });
+      return;
+    }
+    if (!drag) return;
     const dx = point.x - drag.startX;
     const dy = point.y - drag.startY;
     if (drag.mode === "move") {
       if (Math.hypot(dx, dy) < 4) return;
-      updateBlock(drag.id, {
-        x: clamp(drag.block.x + dx, 0, canvas.width - drag.block.width),
-        y: clamp(drag.block.y + dy, 0, canvas.height - drag.block.height)
+      const movingBlocks = drag.blocks && drag.blocks.length > 0 ? drag.blocks : [drag.block];
+      const delta = constrainedGroupDelta(movingBlocks, dx, dy, canvas);
+      const movingById = new Map(movingBlocks.map((block) => [block.id, block]));
+      patchCanvas({
+        blocks: canvas.blocks.map((block) => {
+          const startBlock = movingById.get(block.id);
+          return startBlock ? { ...block, x: startBlock.x + delta.dx, y: startBlock.y + delta.dy } : block;
+        })
       });
       return;
     }
@@ -521,6 +703,23 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
       canvas,
       question
     ));
+  }
+
+  function finishPointerAction() {
+    if (selectionBox) {
+      const bounds = selectionBounds(selectionBox);
+      if (bounds.width > 6 && bounds.height > 6) {
+        const ids = canvas.blocks
+          .filter((block) => block.type !== "validation" && blockIntersectsRect(block, bounds))
+          .map((block) => block.id);
+        setSelectedIds(ids);
+        setSelectedId(ids[ids.length - 1] ?? "");
+        setInspectedId("");
+        setTextTarget(null);
+      }
+      setSelectionBox(null);
+    }
+    setDrag(null);
   }
 
   function renderBlock(block: HistoryCanvasBlock) {
@@ -669,16 +868,21 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
             "--history-expanded-stage-height": `${expandedSurfaceHeight}px`
           } as React.CSSProperties}
           onPointerMove={onPointerMove}
-          onPointerUp={() => setDrag(null)}
-          onPointerCancel={() => setDrag(null)}
+          onPointerUp={finishPointerAction}
+          onPointerCancel={finishPointerAction}
+          onContextMenu={(event) => {
+            event.preventDefault();
+            setContextMenu({ x: event.clientX, y: event.clientY });
+          }}
           onPointerDown={(event) => {
             if (event.target === event.currentTarget) {
-              setSelectedId("");
-              setInspectedId("");
-              setTextTarget(null);
+              const point = eventToCanvas(event);
+              clearSelection();
+              setSelectionBox({ startX: point.x, startY: point.y, currentX: point.x, currentY: point.y });
               setResourceMenuOpen(false);
               setDocumentLibraryOpen(false);
               setInteractionMenuOpen(false);
+              event.currentTarget.setPointerCapture(event.pointerId);
             }
           }}
         >
@@ -688,7 +892,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               key={block.id}
               role="button"
               tabIndex={0}
-              className={`history-canvas-block block-${block.type} ${selectedId === block.id ? "selected" : ""}`}
+              className={`history-canvas-block block-${block.type} ${activeSelectionIds.includes(block.id) ? "selected" : ""}`}
               style={{
                 left: `${block.x / canvas.width * 100}%`,
                 top: `${block.y / canvas.height * 100}%`,
@@ -699,25 +903,52 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                 const target = event.target as HTMLElement;
                 if (target.closest(".history-canvas-resize-handle")) return;
                 const point = eventToCanvas(event);
+                setContextMenu(null);
+                const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+                const alreadySelected = activeSelectionIds.includes(block.id);
+                if (additive) {
+                  const nextIds = alreadySelected
+                    ? activeSelectionIds.filter((id) => id !== block.id)
+                    : [...activeSelectionIds, block.id];
+                  setSelectedIds(nextIds);
+                  setSelectedId(nextIds[nextIds.length - 1] ?? "");
+                  setDrag(null);
+                  return;
+                }
+                const movingIds = alreadySelected ? activeSelectionIds : [block.id];
+                setSelectedIds(movingIds);
                 setSelectedId(block.id);
                 if (!target.closest("[contenteditable='true']")) setTextTarget(null);
                 if (inspectedId && inspectedId !== block.id) setInspectedId("");
-                setDrag({ id: block.id, mode: "move", startX: point.x, startY: point.y, block });
+                setDrag({
+                  id: block.id,
+                  mode: "move",
+                  startX: point.x,
+                  startY: point.y,
+                  block,
+                  blocks: canvas.blocks.filter((item) => movingIds.includes(item.id))
+                });
                 try {
                   event.currentTarget.setPointerCapture(event.pointerId);
                 } catch {
                   // Some browsers only allow capture after pointerdown reaches its target.
                 }
               }}
-              onClick={() => setSelectedId(block.id)}
+              onClick={(event) => event.stopPropagation()}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!activeSelectionIds.includes(block.id)) selectOnly(block.id);
+                setContextMenu({ x: event.clientX, y: event.clientY });
+              }}
               onDoubleClick={(event) => {
                 event.stopPropagation();
-                setSelectedId(block.id);
+                selectOnly(block.id);
                 setInspectedId(block.id);
               }}
             >
               {renderScaledBlock(block)}
-              {resizeHandlesForBlock(block).map((handle) => (
+              {selectedId === block.id && resizeHandlesForBlock(block).map((handle) => (
                 <span
                   key={handle}
                   className={`history-canvas-resize-handle resize-${handle}`}
@@ -725,7 +956,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
                     event.stopPropagation();
                     event.currentTarget.setPointerCapture(event.pointerId);
                     const point = eventToCanvas(event);
-                    setSelectedId(block.id);
+                    selectOnly(block.id);
                     setTextTarget(null);
                     if (inspectedId && inspectedId !== block.id) setInspectedId("");
                     setDrag({ id: block.id, mode: "resize", handle, startX: point.x, startY: point.y, block });
@@ -735,7 +966,36 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
               </div>
             );
           })}
+          {selectionBox && (
+            <div
+              className="history-canvas-selection-box"
+              style={{
+                left: `${selectionBounds(selectionBox).x / canvas.width * 100}%`,
+                top: `${selectionBounds(selectionBox).y / canvas.height * 100}%`,
+                width: `${selectionBounds(selectionBox).width / canvas.width * 100}%`,
+                height: `${selectionBounds(selectionBox).height / canvas.height * 100}%`
+              }}
+            />
+          )}
         </div>
+
+        {contextMenu && (
+          <div
+            className="history-canvas-context-menu"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+            role="menu"
+          >
+            <button type="button" role="menuitem" disabled={activeSelectionIds.length === 0} onClick={copySelectedBlocks}>Copier</button>
+            <button type="button" role="menuitem" disabled={activeSelectionIds.length === 0} onClick={cutSelectedBlocks}>Couper</button>
+            <button type="button" role="menuitem" disabled={!canPaste} onClick={pasteBlocks}>Coller</button>
+            <button type="button" role="menuitem" disabled={activeSelectionIds.length === 0} onClick={duplicateSelectedBlocks}>Dupliquer</button>
+            <span aria-hidden="true" />
+            <button type="button" role="menuitem" disabled={activeSelectionIds.length !== 1} onClick={() => activeSelectionIds[0] && changeBlockLayer(activeSelectionIds[0], "bring_front")}>Premier plan</button>
+            <button type="button" role="menuitem" disabled={activeSelectionIds.length !== 1} onClick={() => activeSelectionIds[0] && changeBlockLayer(activeSelectionIds[0], "send_back")}>Arrière-plan</button>
+            <span aria-hidden="true" />
+            <button type="button" role="menuitem" className="danger" disabled={activeSelectionIds.length === 0} onClick={removeSelectedBlocks}>Supprimer</button>
+          </div>
+        )}
 
         {inspectedBlock && (
           <aside className="history-canvas-inspector">
