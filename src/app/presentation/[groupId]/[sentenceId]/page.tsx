@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -97,6 +97,7 @@ export default function PresentationPage({
   const readerPersistenceKey = `reader-progress-${groupId}-${plannedSessionId ?? "single"}-${sentenceId}-${competitionSourceId ?? "normal"}`;
   const [pendingPoints, setPendingPoints] = useState<PendingPoint[]>([]);
   const [finished, setFinished] = useState(false);
+  const finishStartedRef = useRef(false);
   const [readerComplete, setReaderComplete] = useState(false);
   const [showPodium, setShowPodium] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -175,7 +176,9 @@ export default function PresentationPage({
   useEffect(() => {
     setReaderComplete(false);
     setFinished(false);
-  }, [sentenceId]);
+    setPendingPoints([]);
+    finishStartedRef.current = false;
+  }, [groupId, plannedSessionId, sentenceId]);
 
   const pendingTotal = pendingPoints.reduce((sum, item) => sum + item.points, 0);
   const isTextActivity = sentence?.activityType === "text_correction";
@@ -489,7 +492,8 @@ export default function PresentationPage({
   }
 
   function finishSentence() {
-    if (finished) return;
+    if (finished || finishStartedRef.current) return;
+    finishStartedRef.current = true;
 
     pendingPoints.forEach(
       ({ correction, stage, points, pointId }) => {

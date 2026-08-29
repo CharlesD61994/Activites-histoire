@@ -1,4 +1,5 @@
 import type { CorrectionCode, ScoreEvent, Sentence } from "@/types";
+import { getHistoryActivityPointTotal } from "./history-activities";
 
 export type CodeStat = {
   codeId: string;
@@ -94,7 +95,9 @@ export function getPerfectSentenceCount(
     const sentence = sentences.find((item) => item.id === sessionEvents[0]?.sentenceId);
     if (!sentence) return;
 
-    const maxPoints = sentence.corrections.reduce((sum, correction) => sum + correction.points, 0);
+    const maxPoints = sentence.activityType === "history"
+      ? getHistoryActivityPointTotal(sentence)
+      : sentence.corrections.reduce((sum, correction) => sum + correction.points, 0);
     const earned = sessionEvents.reduce((sum, event) => sum + event.points, 0);
 
     if (maxPoints > 0 && earned >= maxPoints) perfect += 1;
