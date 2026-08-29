@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AlignCenter, AlignLeft, AlignRight, ArrowRight, Bold, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Circle, Copy, FileText, FlipHorizontal2, FlipVertical2, Image as ImageIcon, Italic, Layers3, Map as MapIcon, Maximize2, MessageSquareText, Minus, Minimize2, MousePointer2, Plus, RectangleHorizontal, RotateCcw, RotateCw, Shapes, Square, Trash2, Triangle, Underline, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
@@ -229,6 +229,7 @@ export function createDefaultHistoryCanvas(question: HistoryQuestion, documents:
 
 export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQuestionChange, availableActions, onActionChange, onAddDocument, onUpdateDocument, onDeleteDocument, contextPanel }: Props) {
   const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const fittedDocumentsRef = useRef(new Set<string>());
   const clipboardRef = useRef<HistoryCanvasBlock[]>([]);
   const [selectedId, setSelectedId] = useState("");
@@ -385,6 +386,19 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
     window.addEventListener("resize", updateExpandedSurfaceHeight);
     return () => window.removeEventListener("resize", updateExpandedSurfaceHeight);
   }, [isSurfaceExpanded]);
+
+  useLayoutEffect(() => {
+    if (!contextMenu) return;
+    const menu = contextMenuRef.current;
+    if (!menu) return;
+    const margin = 8;
+    const rect = menu.getBoundingClientRect();
+    const nextX = clamp(contextMenu.x, margin, Math.max(margin, window.innerWidth - rect.width - margin));
+    const nextY = clamp(contextMenu.y, margin, Math.max(margin, window.innerHeight - rect.height - margin));
+    if (nextX !== contextMenu.x || nextY !== contextMenu.y) {
+      setContextMenu({ x: nextX, y: nextY });
+    }
+  }, [contextMenu]);
 
   function toggleExpandedSurface() {
     setResourceMenuOpen(false);
@@ -981,6 +995,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
         {contextMenu && (
           <div
+            ref={contextMenuRef}
             className="history-canvas-context-menu"
             style={{ left: contextMenu.x, top: contextMenu.y }}
             role="menu"
