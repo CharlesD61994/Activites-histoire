@@ -4,7 +4,7 @@ import {
   grammarObjectiveLabels,
   grammarPhaseLabels
 } from "@/lib/grammar-workflow";
-import { historyOperationLabels } from "@/lib/history-activities";
+import { historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
 import type { Sentence } from "@/types";
 
 type Props = {
@@ -47,7 +47,10 @@ export function ActivityObjectiveBadges({
   return (
     <span className="activity-objective-badges">
       {!secondaryOnly && (
-        <span className={`activity-type-badge objective-${primaryKey}`}>
+        <span
+          className={`activity-type-badge objective-${primaryKey}`}
+          style={sentence.activityType === "history" ? historyOperationStyle(sentence.historyActivity?.operation) : undefined}
+        >
           {primaryLabel}
         </span>
       )}

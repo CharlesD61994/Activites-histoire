@@ -64,6 +64,7 @@ function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
   return {
     id,
     prompt: "Quelle réponse permet de répondre à la consigne?",
+    operation: undefined,
     action,
     documentIds: [],
     points: 1,
@@ -175,6 +176,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
 
   function save() {
     const normalizedQuestion = normalizeQuestion(question, question.action);
+    normalizedQuestion.operation = operation;
     const activity: HistoryActivityData = {
       operation,
       aspects,

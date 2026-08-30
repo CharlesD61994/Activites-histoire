@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import type { HistoryInteractiveAction, HistoryOperation, HistorySocietyAspect, Sentence } from "@/types";
 import { historyQuestionMaxPoints } from "./history-scoring";
 
@@ -10,6 +11,17 @@ export const historyOperationLabels: Record<HistoryOperation, string> = {
   causes_consequences: "Déterminer des causes et des conséquences",
   differences_similarities: "Dégager des différences et des similitudes",
   changes_continuities: "Déterminer des changements et des continuités"
+};
+
+export const historyOperationColors: Record<HistoryOperation, string> = {
+  establish_facts: "#2563eb",
+  causality_links: "#c2410c",
+  situate_time: "#7c3aed",
+  situate_space: "#0891b2",
+  relate_facts: "#0f766e",
+  causes_consequences: "#dc2626",
+  differences_similarities: "#9333ea",
+  changes_continuities: "#4d7c0f"
 };
 
 export const historyActionLabels: Record<HistoryInteractiveAction, string> = {
@@ -83,12 +95,70 @@ export function getHistoryActivityPointTotal(sentence: Sentence): number {
   return sentence.historyActivity?.questions.reduce((sum, question) => sum + historyQuestionMaxPoints(question), 0) ?? 0;
 }
 
+export function getHistoryActivityOperations(sentence: Sentence): HistoryOperation[] {
+  const activity = sentence.historyActivity;
+  if (!activity) return [];
+  const operations = activity.questions.map((question) => question.operation ?? activity.operation);
+  return operations.length > 0 ? operations : [activity.operation];
+}
+
+export function getHistoryActivityOperationStats(sentence: Sentence) {
+  const counts = new Map<HistoryOperation, number>();
+  getHistoryActivityOperations(sentence).forEach((operation) => {
+    counts.set(operation, (counts.get(operation) ?? 0) + 1);
+  });
+
+  const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((sum, [, count]) => sum + count, 0);
+  const primary = entries[0]?.[0] ?? sentence.historyActivity?.operation;
+  const isSingle = entries.length <= 1;
+  const isMajority = Boolean(primary && entries[0]?.[1] > total / 2);
+
+  return {
+    entries,
+    operations: entries.map(([operation]) => operation),
+    primary,
+    isSingle,
+    isMajority,
+    isMixed: entries.length > 1 && !isMajority
+  };
+}
+
+export function historyOperationStyle(operation?: HistoryOperation) {
+  const color = operation ? historyOperationColors[operation] : "#2878df";
+  return {
+    "--history-operation-color": color
+  } as CSSProperties;
+}
+
+export function getHistoryActivityAccentStyle(sentence: Sentence) {
+  const stats = getHistoryActivityOperationStats(sentence);
+  const color = stats.primary ? historyOperationColors[stats.primary] : "#2878df";
+  const stripe = stats.operations.length > 1
+    ? stats.operations.map((operation, index, operations) => {
+        const start = (index / operations.length) * 100;
+        const end = ((index + 1) / operations.length) * 100;
+        return `${historyOperationColors[operation]} ${start}% ${end}%`;
+      }).join(", ")
+    : color;
+
+  return {
+    "--history-operation-color": color,
+    "--activity-accent": color,
+    "--history-operation-stripe": stats.isMixed ? `linear-gradient(to bottom, ${stripe})` : color
+  } as CSSProperties;
+}
+
 export function getHistoryActivitySummary(sentence: Sentence) {
   const activity = sentence.historyActivity;
   if (!activity) return null;
   const firstQuestion = activity.questions[0];
+  const operationStats = getHistoryActivityOperationStats(sentence);
   return {
     operation: historyOperationLabels[activity.operation],
+    operations: operationStats.operations,
+    primaryOperation: operationStats.primary,
+    isMixedOperationActivity: operationStats.isMixed,
     action: firstQuestion ? historyActionLabels[firstQuestion.action] : "Action à choisir",
     documentCount: activity.documents.length,
     questionCount: activity.questions.length,

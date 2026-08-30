@@ -12,14 +12,21 @@ import {
   getWordClassActivityPointTotal,
   getWordClassAnalysisTargetCount
 } from "@/lib/activity-types";
-import { getHistoryActivityPointTotal, getHistoryActivitySummary } from "@/lib/history-activities";
-import type { ActivityType, SentenceDifficulty } from "@/types";
+import { getHistoryActivityAccentStyle, getHistoryActivityPointTotal, getHistoryActivitySummary, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
+import type { ActivityType, Sentence, SentenceDifficulty } from "@/types";
 
 const difficultyLabels: Record<SentenceDifficulty, string> = {
   easy: "Facile",
   medium: "Moyenne",
   hard: "Difficile"
 };
+
+function assignedGroupSummary(sentence: Sentence, groups: { id: string; name: string }[]) {
+  const assigned = groups.filter((group) => sentence.assignedGroupIds.includes(group.id));
+  if (assigned.length === 0) return "Aucun groupe";
+  if (assigned.length <= 2) return assigned.map((group) => group.name).join(", ");
+  return `${assigned.slice(0, 2).map((group) => group.name).join(", ")} +${assigned.length - 2}`;
+}
 
 export default function SentencesPage() {
   const { data, deleteSentence, duplicateSentence, saveSentence, toggleActivityCompetition } = useAppStore();
@@ -136,14 +143,28 @@ export default function SentencesPage() {
                 0
               );
           return (
-            <Card key={sentence.id} className="sentence-card">
+            <Card
+              key={sentence.id}
+              className={`sentence-card ${isHistoryActivity ? "history-activity-card" : ""} ${historySummary?.isMixedOperationActivity ? "history-activity-card-mixed" : ""}`}
+              style={isHistoryActivity ? getHistoryActivityAccentStyle(sentence) : undefined}
+            >
               <div className="sentence-card-top">
                 <div>
                   <span className="eyebrow">
                     {level?.name ?? "Niveau inconnu"} · {difficultyLabels[sentence.difficulty]}
                   </span>
-                  <ActivityObjectiveBadges sentence={sentence} />
+                  {!isHistoryActivity && <ActivityObjectiveBadges sentence={sentence} />}
                   <h2>{sentence.title}</h2>
+                  {isHistoryActivity && historySummary && (
+                    <div className="history-card-operation-pills">
+                      {historySummary.operations.slice(0, 3).map((operation) => (
+                        <span className="history-operation-pill" style={historyOperationStyle(operation)} key={operation}>
+                          {historyOperationLabels[operation]}
+                        </span>
+                      ))}
+                      {historySummary.operations.length > 3 && <span className="history-operation-pill more">+{historySummary.operations.length - 3}</span>}
+                    </div>
+                  )}
                 </div>
                 <div className="row-actions">
                   <Link href={`/phrases/${sentence.id}/modifier`} aria-label="Modifier"><Pencil size={18} /></Link>
@@ -207,7 +228,9 @@ export default function SentencesPage() {
                       : `${sentence.corrections.length} erreur${sentence.corrections.length > 1 ? "s" : ""}`}
                 </span>
                 <span>{maxPoints} points</span>
+                {isHistoryActivity && <span>{historySummary?.documentCount ?? 0} document{(historySummary?.documentCount ?? 0) > 1 ? "s" : ""}</span>}
                 <span>{sentence.assignedGroupIds.length} groupe{sentence.assignedGroupIds.length > 1 ? "s" : ""}</span>
+                {isHistoryActivity && <span>{assignedGroupSummary(sentence, data.groups)}</span>}
                 {sentence.tags.map((tag) => <span className="tag" key={tag}>{tag}</span>)}
               </div>
             </Card>

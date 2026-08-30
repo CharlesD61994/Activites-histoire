@@ -13,7 +13,7 @@ import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { blockContentSize, blockScales } from "@/lib/history-canvas";
 import { evaluateHistoryQuestion } from "@/lib/history-scoring";
-import { historyActionLabels, historyOperationLabels } from "@/lib/history-activities";
+import { historyActionLabels, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
 import { historyTextStyleToCss } from "@/lib/history-text-style";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion, HistorySourceDocument, Sentence } from "@/types";
 
@@ -350,9 +350,10 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     <div className="history-reader">
       <Card className="history-reader-main">
         <div className="history-reader-heading">
-          <span className="activity-type-badge objective-history">{historyOperationLabels[activity.operation]}</span>
+          <span className="activity-type-badge objective-history" style={historyOperationStyle(activity.operation)}>{historyOperationLabels[activity.operation]}</span>
           <span className="history-reader-action-label">{historyActionLabels[question.action]}</span>
-          <h1>{question.prompt}</h1>
+          <h1>{sentence.title}</h1>
+          <p className="history-reader-question-lead">{question.prompt}</p>
         </div>
 
         <div
@@ -668,7 +669,7 @@ function HistoryQuestionInteraction({
     const imageMode = question.action === "image_selection";
     const referenceMode = question.action === "reference_point";
     const choiceContent = (
-      <div className={imageMode ? "history-image-choice-grid" : referenceMode ? "history-reference-choice-grid" : "history-choice-grid"}>
+      <div className={imageMode ? "history-image-choice-grid" : referenceMode ? "history-reference-choice-grid" : question.action === "true_false" ? "history-choice-grid history-true-false-grid" : "history-choice-grid"}>
         {referenceMode && <strong className="history-reference-point-label">{question.acceptedTextAnswers?.[0] ?? "Repère"}</strong>}
         {(question.choices ?? []).map((choice) => {
       const correct = Boolean(choice.isCorrect);

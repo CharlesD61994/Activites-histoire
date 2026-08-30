@@ -1,5 +1,5 @@
 import { wordClassLabels } from "@/lib/activity-types";
-import { getHistoryActivitySummary } from "@/lib/history-activities";
+import { getHistoryActivitySummary, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
 import type { Sentence } from "@/types";
 
 type Props = {
@@ -13,11 +13,18 @@ export function SentenceRenderer({ sentence, highlightErrors = true, showCorrect
     const summary = getHistoryActivitySummary(sentence);
     return (
       <div className="sentence-preview worksheet-bank-preview history-bank-preview">
-        <strong>{summary?.action ?? "Action interactive"}</strong>
-        <span>{sentence.originalText}</span>
-        <small>
-          {summary?.documentCount ?? 0} document{(summary?.documentCount ?? 0) > 1 ? "s" : ""} · {summary?.questionCount ?? 0} question{(summary?.questionCount ?? 0) > 1 ? "s" : ""}
-        </small>
+        <strong>Séquence d’histoire</strong>
+        <span>
+          {(summary?.questionCount ?? 0)} question{(summary?.questionCount ?? 0) > 1 ? "s" : ""} · {(summary?.points ?? 0)} point{(summary?.points ?? 0) > 1 ? "s" : ""} · {(summary?.documentCount ?? 0)} document{(summary?.documentCount ?? 0) > 1 ? "s" : ""}
+        </span>
+        <span className="history-operation-pill-row">
+          {(summary?.operations ?? []).slice(0, 3).map((operation) => (
+            <small className="history-operation-pill" style={historyOperationStyle(operation)} key={operation}>
+              {historyOperationLabels[operation]}
+            </small>
+          ))}
+          {(summary?.operations.length ?? 0) > 3 && <small className="history-operation-pill more">+{(summary?.operations.length ?? 0) - 3}</small>}
+        </span>
       </div>
     );
   }

@@ -1372,7 +1372,7 @@ function HistoryInteractionEditor({
     const imageMode = question.action === "image_selection";
     const referenceMode = question.action === "reference_point";
     return withCanvasActions(
-      <div className={`${imageMode ? "history-image-choice-grid" : referenceMode ? "history-reference-choice-grid" : "history-choice-grid"} history-canvas-choice-editor`}>
+      <div className={`${imageMode ? "history-image-choice-grid" : referenceMode ? "history-reference-choice-grid" : question.action === "true_false" ? "history-choice-grid history-true-false-grid" : "history-choice-grid"} history-canvas-choice-editor`}>
         {referenceMode && <strong className="history-reference-point-label">{question.acceptedTextAnswers?.[0] ?? "Repère"}</strong>}
         {(question.choices ?? []).map((choice) => (
           <button type="button" key={choice.id}>

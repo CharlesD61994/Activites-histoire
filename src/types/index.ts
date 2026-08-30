@@ -259,6 +259,7 @@ export type HistoryActivityCanvas = {
 export type HistoryQuestion = {
   id: string;
   prompt: string;
+  operation?: HistoryOperation;
   action: HistoryInteractiveAction;
   documentIds: string[];
   points: number;

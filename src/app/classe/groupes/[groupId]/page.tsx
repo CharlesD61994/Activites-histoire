@@ -26,6 +26,7 @@ import {
 } from "@/components/activity-objective-badges";
 import { useAppStore } from "@/store/app-store";
 import { getWordClassActivityPointTotal } from "@/lib/activity-types";
+import { getHistoryActivityAccentStyle, getHistoryActivityPointTotal, getHistoryActivitySummary, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
 import { groupAccentColor, groupShieldLabel } from "@/lib/group-colors";
 import { getWeeklyPoints } from "@/lib/stats";
 import {
@@ -219,6 +220,10 @@ export default function ClassroomGroupPage({
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
 
   function activityPointTotal(activity: typeof activities[number]) {
+    if (activity.activityType === "history") {
+      return getHistoryActivityPointTotal(activity);
+    }
+
     if (activity.activityType === "word_classes") {
       return getWordClassActivityPointTotal(activity);
     }
@@ -253,13 +258,18 @@ export default function ClassroomGroupPage({
         ? Math.min(100, Math.round((score / totalPoints) * 100))
         : 0;
     const objectiveKey = getActivityObjectiveKey(activity);
+    const isHistoryActivity = activity.activityType === "history";
+    const historySummary = getHistoryActivitySummary(activity);
 
     return (
       <Card
-        className={
-          "classroom-mission-card activity-accent-" +
-          objectiveKey
-        }
+        className={[
+          "classroom-mission-card",
+          "activity-accent-" + objectiveKey,
+          isHistoryActivity ? "history-mission-card" : "",
+          historySummary?.isMixedOperationActivity ? "history-mission-card-mixed" : ""
+        ].filter(Boolean).join(" ")}
+        style={isHistoryActivity ? getHistoryActivityAccentStyle(activity) : undefined}
         key={activity.id}
       >
         <div className="classroom-mission-band">
@@ -284,7 +294,24 @@ export default function ClassroomGroupPage({
 
           <div className="classroom-mission-copy">
             <h3>{activity.title}</h3>
-            <ActivityObjectiveBadges sentence={activity} secondaryOnly />
+            {isHistoryActivity && historySummary ? (
+              <>
+                <div className="history-card-operation-pills">
+                  {historySummary.operations.slice(0, 3).map((operation) => (
+                    <span className="history-operation-pill" style={historyOperationStyle(operation)} key={operation}>
+                      {historyOperationLabels[operation]}
+                    </span>
+                  ))}
+                  {historySummary.operations.length > 3 && <span className="history-operation-pill more">+{historySummary.operations.length - 3}</span>}
+                </div>
+                <div className="classroom-mission-summary">
+                  <span>{historySummary.questionCount} question{historySummary.questionCount > 1 ? "s" : ""}</span>
+                  <span>{historySummary.documentCount} document{historySummary.documentCount > 1 ? "s" : ""}</span>
+                </div>
+              </>
+            ) : (
+              <ActivityObjectiveBadges sentence={activity} secondaryOnly />
+            )}
           </div>
         </div>
 
