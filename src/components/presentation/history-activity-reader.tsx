@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { CheckCircle2, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, FileText, RotateCcw, X, XCircle, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryCanvasShape } from "@/components/history-canvas-shape";
@@ -27,7 +27,9 @@ type Validation = "idle" | "correct" | "incorrect";
 
 export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: Props) {
   const activity = sentence.historyActivity;
-  const question = activity?.questions[0];
+  const questions = activity?.questions ?? [];
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+  const question = questions[activeQuestionIndex] ?? questions[0];
   const [selectedDocument, setSelectedDocument] = useState<HistorySourceDocument | null>(null);
   const [documentZoom, setDocumentZoom] = useState(1);
   const [documentNaturalSize, setDocumentNaturalSize] = useState({ width: 0, height: 0 });
@@ -52,6 +54,11 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   const [revealed, setRevealed] = useState(false);
 
   const documents = activity?.documents ?? [];
+  const activeOperation = question?.operation ?? activity?.operation;
+  const activeCanvas = question?.canvas ?? activity?.canvas;
+  const questionComplete = validation === "correct" || (validation === "incorrect" && revealed);
+  const hasNextQuestion = activeQuestionIndex < questions.length - 1;
+  const primaryActionLabel = questionComplete && hasNextQuestion ? "Question suivante" : awaitingRetry ? "Réessayer" : "Valider";
   const linkedDocuments = question?.documentIds.length
     ? documents.filter((document) => question.documentIds.includes(document.id))
     : documents;
@@ -66,6 +73,28 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     if (validation === "incorrect") return attemptCount >= 1 ? "Dernière chance: corrige ce qui reste." : question?.feedbackIncorrect || "Pas encore. On ajuste ensemble, puis on réessaie.";
     return "";
   }, [attemptCount, awaitingRetry, question, revealed, validation]);
+
+  useEffect(() => {
+    setActiveQuestionIndex(0);
+  }, [sentence.id]);
+
+  useEffect(() => {
+    setSelectedChoices([]);
+    setClassificationAnswers({});
+    setMatchingAnswers({});
+    setEventOrder(question?.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
+    setHotspotAnswer(null);
+    setClozeAnswers({});
+    setShortTextAnswer("");
+    setValidation("idle");
+    setAttemptCount(0);
+    setEarnedItemIds([]);
+    setCheckedCorrectItemIds([]);
+    setCheckedWrongItemIds([]);
+    setAwaitingRetry(false);
+    setRevealed(false);
+    onCompleteChange?.(false);
+  }, [onCompleteChange, question]);
 
   useEffect(() => {
     if (!selectedDocument) return;
@@ -200,8 +229,21 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     setAwaitingRetry(!allEarned && !shouldReveal);
     setValidation(allEarned ? "correct" : "incorrect");
     if (allEarned || shouldReveal) {
-      onCompleteChange?.(true);
+      onCompleteChange?.(!hasNextQuestion);
     }
+  }
+
+  function goToNextQuestion() {
+    if (!hasNextQuestion) return;
+    setActiveQuestionIndex((current) => Math.min(questions.length - 1, current + 1));
+  }
+
+  function handlePrimaryAction() {
+    if (questionComplete && hasNextQuestion) {
+      goToNextQuestion();
+      return;
+    }
+    validate();
   }
 
   function prepareRetry() {
@@ -307,11 +349,22 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     </div>
   );
 
-  if (activity.canvas?.blocks.length) {
+  if (activeCanvas?.blocks.length) {
     return (
       <div className="history-reader history-reader-canvas-mode">
+        {questions.length > 1 && (
+          <div className="history-reader-sequence-nav">
+            <button type="button" onClick={() => setActiveQuestionIndex((current) => Math.max(0, current - 1))} disabled={activeQuestionIndex === 0} aria-label="Question précédente">
+              <ChevronLeft size={18} />
+            </button>
+            <span>Question {activeQuestionIndex + 1} / {questions.length}</span>
+            <button type="button" onClick={goToNextQuestion} disabled={!questionComplete || !hasNextQuestion} aria-label="Question suivante">
+              <ChevronRight size={18} />
+            </button>
+          </div>
+        )}
         <HistoryCanvasStage
-          canvas={activity.canvas}
+          canvas={activeCanvas}
           documents={documents}
           question={question}
           selectedChoices={selectedChoices}
@@ -336,8 +389,9 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           checkedWrongItemIds={checkedWrongItemIds}
           awaitingRetry={awaitingRetry}
           revealed={revealed}
-          onValidate={validate}
+          onValidate={handlePrimaryAction}
           onReset={resetAnswers}
+          primaryActionLabel={primaryActionLabel}
           onOpenDocument={openDocument}
           resetValidation={() => !revealed && setValidation("idle")}
         />
@@ -350,8 +404,9 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     <div className="history-reader">
       <Card className="history-reader-main">
         <div className="history-reader-heading">
-          <span className="activity-type-badge objective-history" style={historyOperationStyle(activity.operation)}>{historyOperationLabels[activity.operation]}</span>
+          {activeOperation && <span className="activity-type-badge objective-history" style={historyOperationStyle(activeOperation)}>{historyOperationLabels[activeOperation]}</span>}
           <span className="history-reader-action-label">{historyActionLabels[question.action]}</span>
+          {questions.length > 1 && <span className="history-reader-action-label">Question {activeQuestionIndex + 1} / {questions.length}</span>}
           <h1>{sentence.title}</h1>
           <p className="history-reader-question-lead">{question.prompt}</p>
         </div>
@@ -416,8 +471,9 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
               checkedWrongItemIds={checkedWrongItemIds}
               awaitingRetry={awaitingRetry}
               revealed={revealed}
-              onValidate={validate}
+              onValidate={handlePrimaryAction}
               onReset={resetAnswers}
+              primaryActionLabel={primaryActionLabel}
               resetValidation={() => !revealed && setValidation("idle")}
             />
 
@@ -464,6 +520,7 @@ function HistoryCanvasStage({
   revealed,
   onValidate,
   onReset,
+  primaryActionLabel,
   onOpenDocument,
   resetValidation
 }: {
@@ -494,6 +551,7 @@ function HistoryCanvasStage({
   revealed: boolean;
   onValidate: () => void;
   onReset: () => void;
+  primaryActionLabel: string;
   onOpenDocument: (document: HistorySourceDocument) => void;
   resetValidation: () => void;
 }) {
@@ -545,6 +603,7 @@ function HistoryCanvasStage({
           revealed={revealed}
           onValidate={onValidate}
           onReset={onReset}
+          primaryActionLabel={primaryActionLabel}
           resetValidation={resetValidation}
         />
       );
@@ -621,6 +680,7 @@ function HistoryQuestionInteraction({
   revealed,
   onValidate,
   onReset,
+  primaryActionLabel,
   resetValidation
 }: {
   question: HistoryQuestion;
@@ -647,6 +707,7 @@ function HistoryQuestionInteraction({
   revealed?: boolean;
   onValidate?: () => void;
   onReset?: () => void;
+  primaryActionLabel?: string;
   resetValidation: () => void;
 }) {
   const earned = new Set(earnedItemIds ?? []);
@@ -655,11 +716,11 @@ function HistoryQuestionInteraction({
 
   function withReaderActions(content: ReactNode) {
     return (
-      <div className="history-reader-interaction-stack">
+      <div className={`history-reader-interaction-stack ${question.action === "true_false" ? "history-true-false-stack" : ""}`}>
         <div className="history-reader-interaction-body">{content}</div>
         <div className="history-reader-actions">
           <button type="button" className="history-reader-reset" onClick={onReset} aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>
-          <Button type="button" onClick={onValidate}>{awaitingRetry ? "Réessayer" : "Valider"}</Button>
+          <Button type="button" onClick={onValidate}>{primaryActionLabel ?? (awaitingRetry ? "Réessayer" : "Valider")}</Button>
         </div>
       </div>
     );
@@ -762,6 +823,6 @@ function HistoryQuestionInteraction({
   }
 
   return (
-    <HistoryClozeInteraction question={question} answers={clozeAnswers} onAnswersChange={setClozeAnswers} onInteraction={resetValidation} onValidate={onValidate} lockedBlankIds={earnedItemIds?.filter((id) => id.startsWith("cloze:")).map((id) => id.slice("cloze:".length))} checkedCorrectBlankIds={checkedCorrectItemIds?.filter((id) => id.startsWith("cloze:")).map((id) => id.slice("cloze:".length))} checkedWrongBlankIds={checkedWrongItemIds?.filter((id) => id.startsWith("cloze:")).map((id) => id.slice("cloze:".length))} awaitingRetry={awaitingRetry} revealAnswers={revealed} />
+    <HistoryClozeInteraction question={question} answers={clozeAnswers} onAnswersChange={setClozeAnswers} onInteraction={resetValidation} onValidate={onValidate} primaryActionLabel={primaryActionLabel} lockedBlankIds={earnedItemIds?.filter((id) => id.startsWith("cloze:")).map((id) => id.slice("cloze:".length))} checkedCorrectBlankIds={checkedCorrectItemIds?.filter((id) => id.startsWith("cloze:")).map((id) => id.slice("cloze:".length))} checkedWrongBlankIds={checkedWrongItemIds?.filter((id) => id.startsWith("cloze:")).map((id) => id.slice("cloze:".length))} awaitingRetry={awaitingRetry} revealAnswers={revealed} />
   );
 }

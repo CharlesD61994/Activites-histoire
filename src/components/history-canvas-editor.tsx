@@ -1358,7 +1358,7 @@ function HistoryInteractionEditor({
 }) {
   function withCanvasActions(content: React.ReactNode) {
     return (
-      <div className="history-reader-interaction-stack history-canvas-interaction-preview">
+      <div className={`history-reader-interaction-stack history-canvas-interaction-preview ${question.action === "true_false" ? "history-true-false-stack" : ""}`}>
         <div className="history-reader-interaction-body">{content}</div>
         <div className="history-reader-actions">
           <button type="button" className="history-reader-reset" aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>

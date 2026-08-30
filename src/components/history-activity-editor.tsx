@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -121,44 +121,89 @@ function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractive
 
 export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props) {
   const initialHistory = initialSentence?.historyActivity;
+  const initialOperation = initialHistory?.operation ?? "establish_facts";
   const [title, setTitle] = useState(initialSentence?.title ?? "Nouvelle activité d’histoire");
   const [levelId, setLevelId] = useState(initialSentence?.levelId ?? levels[0]?.id ?? "");
   const [difficulty, setDifficulty] = useState<SentenceDifficulty>(initialSentence?.difficulty ?? "easy");
   const [tagInput, setTagInput] = useState(initialSentence?.tags.join(", ") ?? "");
-  const [operation, setOperation] = useState<HistoryOperation>(initialHistory?.operation ?? "establish_facts");
+  const [operation, setOperation] = useState<HistoryOperation>(initialOperation);
   const [aspects, setAspects] = useState<HistorySocietyAspect[]>(initialHistory?.aspects ?? ["society"]);
   const [documents, setDocuments] = useState<HistorySourceDocument[]>(initialHistory?.documents ?? []);
-  const [question, setQuestion] = useState<HistoryQuestion>(() => {
-    const initialOperation = initialHistory?.operation ?? "establish_facts";
-    const savedQuestion = initialHistory?.questions[0];
-    const initialAction = getInitialHistoryAction(initialOperation, savedQuestion?.action);
-    return normalizeQuestion(savedQuestion ?? defaultQuestion(initialAction), initialAction);
+  const [questions, setQuestions] = useState<HistoryQuestion[]>(() => {
+    const savedQuestions = initialHistory?.questions.length ? initialHistory.questions : undefined;
+    return (savedQuestions ?? [undefined]).map((savedQuestion, index) => {
+      const questionOperation = savedQuestion?.operation ?? initialOperation;
+      const initialAction = getInitialHistoryAction(questionOperation, savedQuestion?.action);
+      const normalized = normalizeQuestion(savedQuestion ?? defaultQuestion(initialAction), initialAction);
+      normalized.operation = questionOperation;
+      normalized.canvas = normalizeHistoryCanvasLayout(
+        savedQuestion?.canvas ?? (index === 0 ? initialHistory?.canvas : undefined) ?? createDefaultHistoryCanvas(normalized, initialHistory?.documents ?? []),
+        normalized
+      );
+      return normalized;
+    });
   });
-  const [canvas, setCanvas] = useState<HistoryActivityCanvas>(() => normalizeHistoryCanvasLayout(
-    initialHistory?.canvas ?? createDefaultHistoryCanvas(question, initialHistory?.documents ?? []),
-    question
-  ));
+  const [activeQuestionId, setActiveQuestionId] = useState(questions[0]?.id ?? "");
+  const activeQuestionIndex = Math.max(0, questions.findIndex((item) => item.id === activeQuestionId));
+  const question = questions[activeQuestionIndex] ?? questions[0];
+  const canvas = question.canvas ?? createDefaultHistoryCanvas(question, documents);
 
-  const allowedActions = historyActionsByOperation[operation];
+  const questionOperation = question.operation ?? operation;
+  const allowedActions = historyActionsByOperation[questionOperation];
   const imageDocuments = documents.filter((document) => document.kind === "image" || document.kind === "map");
   const questionPointTotal = historyQuestionMaxPoints(question);
+
+  const replaceQuestion = useCallback((nextQuestion: HistoryQuestion) => {
+    setQuestions((items) => items.map((item) => item.id === nextQuestion.id ? nextQuestion : item));
+  }, []);
 
   useEffect(() => {
     if (!allowedActions.includes(question.action)) {
       const nextQuestion = normalizeQuestion(question, allowedActions[0]);
-      setQuestion(nextQuestion);
-      setCanvas((current) => resizeHistoryInteractionBlocks(current, nextQuestion));
+      nextQuestion.operation = questionOperation;
+      nextQuestion.canvas = resizeHistoryInteractionBlocks(canvas, nextQuestion);
+      replaceQuestion(nextQuestion);
     }
-  }, [allowedActions, question]);
+  }, [allowedActions, canvas, question, questionOperation, replaceQuestion]);
 
   function selectInteractiveAction(action: HistoryInteractiveAction) {
     const nextQuestion = normalizeQuestion(question, action);
-    setQuestion(nextQuestion);
-    setCanvas((current) => resizeHistoryInteractionBlocks(current, nextQuestion));
+    nextQuestion.operation = questionOperation;
+    nextQuestion.canvas = resizeHistoryInteractionBlocks(canvas, nextQuestion);
+    replaceQuestion(nextQuestion);
   }
 
   function updateQuestion(patch: Partial<HistoryQuestion>) {
-    setQuestion((current) => ({ ...current, ...patch }));
+    replaceQuestion({ ...question, ...patch });
+  }
+
+  function updateQuestionCanvas(nextCanvas: HistoryActivityCanvas) {
+    updateQuestion({ canvas: nextCanvas });
+  }
+
+  function selectOperation(nextOperation: HistoryOperation) {
+    setOperation(nextOperation);
+    const nextAction = getInitialHistoryAction(nextOperation, question.action);
+    const nextQuestion = normalizeQuestion({ ...question, operation: nextOperation }, nextAction);
+    nextQuestion.canvas = nextAction === question.action ? canvas : resizeHistoryInteractionBlocks(canvas, nextQuestion);
+    replaceQuestion(nextQuestion);
+  }
+
+  function addQuestion() {
+    const action = getInitialHistoryAction(questionOperation);
+    const nextQuestion = normalizeQuestion(defaultQuestion(action), action);
+    nextQuestion.operation = questionOperation;
+    nextQuestion.prompt = `Question ${questions.length + 1}`;
+    nextQuestion.canvas = createDefaultHistoryCanvas(nextQuestion, documents);
+    setQuestions((items) => [...items, nextQuestion]);
+    setActiveQuestionId(nextQuestion.id);
+  }
+
+  function deleteActiveQuestion() {
+    if (questions.length <= 1) return;
+    const nextQuestions = questions.filter((item) => item.id !== question.id);
+    setQuestions(nextQuestions);
+    setActiveQuestionId(nextQuestions[Math.min(activeQuestionIndex, nextQuestions.length - 1)]?.id ?? "");
   }
 
   function addDocument(document: HistorySourceDocument) {
@@ -175,21 +220,25 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   }
 
   function save() {
-    const normalizedQuestion = normalizeQuestion(question, question.action);
-    normalizedQuestion.operation = operation;
+    const normalizedQuestions = questions.map((item) => {
+      const normalizedQuestion = normalizeQuestion(item, item.action);
+      normalizedQuestion.operation = item.operation ?? operation;
+      normalizedQuestion.canvas = normalizeHistoryCanvasLayout(item.canvas ?? createDefaultHistoryCanvas(normalizedQuestion, documents), normalizedQuestion);
+      return { ...normalizedQuestion, points: historyQuestionMaxPoints(normalizedQuestion) };
+    });
     const activity: HistoryActivityData = {
-      operation,
+      operation: normalizedQuestions[0]?.operation ?? operation,
       aspects,
       documents,
-      questions: [{ ...normalizedQuestion, points: historyQuestionMaxPoints(normalizedQuestion) }],
-      canvas
+      questions: normalizedQuestions,
+      canvas: normalizedQuestions[0]?.canvas
     };
     const sentence: Sentence = {
       id: initialSentence?.id ?? crypto.randomUUID(),
       activityType: "history",
       levelId,
       title: title.trim() || "Activité d’histoire",
-      originalText: question.prompt,
+      originalText: normalizedQuestions[0]?.prompt ?? question.prompt,
       difficulty,
       tags: tagInput.split(",").map((tag) => tag.trim()).filter(Boolean),
       corrections: [],
@@ -425,7 +474,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
       <Card className="history-editor-panel">
         <h3>Opération intellectuelle</h3>
         <div className="history-action-grid">
-          {allHistoryOperations.map((item) => <button key={item} type="button" className={operation === item ? "active" : ""} onClick={() => setOperation(item)}>{historyOperationLabels[item]}</button>)}
+          {allHistoryOperations.map((item) => <button key={item} type="button" className={questionOperation === item ? "active" : ""} onClick={() => selectOperation(item)}>{historyOperationLabels[item]}</button>)}
         </div>
         <h3>Aspects de société</h3>
         <div className="history-chip-grid">
@@ -434,12 +483,37 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
       </Card>
 
       <div className="history-canvas-editor-section">
+        <Card className="history-question-strip">
+          <div className="history-question-tabs" role="tablist" aria-label="Questions de l’activité">
+            {questions.map((item, index) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={item.id === question.id}
+                className={item.id === question.id ? "active" : ""}
+                key={item.id}
+                onClick={() => setActiveQuestionId(item.id)}
+              >
+                <strong>Question {index + 1}</strong>
+                <span>{historyQuestionMaxPoints(item)} pt{historyQuestionMaxPoints(item) > 1 ? "s" : ""}</span>
+              </button>
+            ))}
+            <button type="button" className="history-question-add" onClick={addQuestion}>
+              <Plus size={16} />
+              Question
+            </button>
+          </div>
+          <button type="button" className="history-question-delete" onClick={deleteActiveQuestion} disabled={questions.length <= 1}>
+            <Trash2 size={16} />
+            Supprimer la question
+          </button>
+        </Card>
         <HistoryCanvasEditor
           canvas={canvas}
           documents={documents}
           question={question}
-          onChange={setCanvas}
-          onQuestionChange={setQuestion}
+          onChange={updateQuestionCanvas}
+          onQuestionChange={replaceQuestion}
           availableActions={allowedActions}
           onActionChange={selectInteractiveAction}
           onAddDocument={addDocument}

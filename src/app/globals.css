@@ -418,6 +418,63 @@
 .history-layer-actions button span { overflow: hidden; font-size: .7rem; font-weight: 850; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .history-canvas-choice-editor { width: 100%; height: 100%; min-height: 0; overflow: hidden; }
 .history-canvas-choice-editor button span { display: block; width: 100%; min-height: 1lh; outline: 0; }
+.history-question-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 12px;
+}
+.history-question-tabs {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 7px;
+  overflow-x: auto;
+}
+.history-question-tabs button {
+  display: inline-grid;
+  min-width: 118px;
+  min-height: 48px;
+  align-content: center;
+  gap: 2px;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--portal-ink);
+  text-align: left;
+}
+.history-question-tabs button.active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, #fff);
+}
+.history-question-tabs button span {
+  color: var(--text-muted);
+  font-size: .72rem;
+  font-weight: 850;
+}
+.history-question-tabs .history-question-add {
+  min-width: 96px;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  color: var(--primary);
+  font-weight: 900;
+}
+.history-question-delete {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--danger);
+  font-weight: 850;
+}
 .history-canvas-block.block-text p { width: 100%; height: 100%; outline: 0; }
 .history-canvas-block.block-validation .button { width: 100%; height: 100%; min-height: 0; font-size: clamp(1rem, 1.6vw, 1.35rem); }
 .history-canvas-block.block-validation .button span { outline: 0; }
@@ -597,6 +654,37 @@
   font-weight: 760;
   line-height: 1.45;
 }
+.history-reader-sequence-nav {
+  position: absolute;
+  z-index: 8;
+  top: 12px;
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 8px;
+  border: 1px solid rgb(8 47 85 / 14%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 88%);
+  color: var(--portal-ink);
+  box-shadow: 0 8px 20px rgb(8 47 85 / 12%);
+  transform: translateX(-50%);
+}
+.history-reader-sequence-nav button {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--primary);
+}
+.history-reader-sequence-nav span {
+  font-size: .8rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
 .history-reader-documents { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .history-reader-document-card {
   display: grid; min-height: 150px; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px;
@@ -607,6 +695,15 @@
 .history-reader-document-card small { color: var(--text-muted); }
 .history-reader-interaction-stack { display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; }
 .history-reader-interaction-body { min-width: 0; min-height: 0; overflow: auto; }
+.history-reader-interaction-stack.history-true-false-stack {
+  height: auto;
+  align-self: start;
+  grid-template-rows: auto auto;
+  overflow: visible;
+}
+.history-reader-interaction-stack.history-true-false-stack .history-reader-interaction-body {
+  overflow: visible;
+}
 .history-canvas-interaction-preview { overflow: hidden; }
 .history-canvas-interaction-preview .history-reader-actions { padding: 0; }
 .history-canvas-interaction-preview .history-reader-actions button,
@@ -632,6 +729,7 @@
   height: auto;
   align-self: start;
   grid-auto-rows: auto;
+  overflow: visible;
 }
 .history-canvas-choice-editor.history-true-false-grid button {
   min-height: 86px;
@@ -639,6 +737,7 @@
 .history-canvas-scaled-content .history-true-false-grid {
   height: auto;
   grid-auto-rows: auto;
+  overflow: visible;
 }
 .history-canvas-scaled-content .history-true-false-grid button {
   min-height: 86px;

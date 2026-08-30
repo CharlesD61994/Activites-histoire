@@ -31,7 +31,7 @@ export function reorderHistoryCanvasBlock(
 export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 165 };
   if (question.action === "document_hotspot") return { width: 760, height: 575 };
-  if (question.action === "true_false") return { width: 520, height: 165 };
+  if (question.action === "true_false") return { width: 520, height: 230 };
   if (question.action === "reference_point") return { width: 680, height: 230 };
   if (question.action === "image_selection") return { width: 780, height: Math.max(360, Math.ceil((question.choices?.length ?? 2) / 2) * 205 + 80) };
   if (question.action === "choice_single" || question.action === "choice_multiple") {
@@ -72,7 +72,7 @@ function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) 
   if (block.type === "interaction") {
     if (question.action === "short_text") return { width: 360, height: 165 };
     if (question.action === "document_hotspot") return { width: 360, height: 260 };
-    if (question.action === "true_false") return { width: 320, height: 150 };
+    if (question.action === "true_false") return { width: 320, height: 205 };
     if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "image_selection" || question.action === "reference_point") return { width: 360, height: 190 };
     if (question.action === "classification" || question.action === "matching" || question.action === "sort_categories" || question.action === "table_fill") return { width: 380, height: 210 };
     if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 400, height: 225 };

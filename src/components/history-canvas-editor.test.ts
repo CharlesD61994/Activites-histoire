@@ -62,8 +62,8 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, trueFalseQuestion);
 
-    expect(interactionBlockSize(trueFalseQuestion)).toEqual({ width: 520, height: 165 });
-    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 165, contentWidth: 520, contentHeight: 165 });
+    expect(interactionBlockSize(trueFalseQuestion)).toEqual({ width: 520, height: 230 });
+    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 230, contentWidth: 520, contentHeight: 230 });
   });
 
   it("restores the complete interaction ratio for an already resized block", () => {

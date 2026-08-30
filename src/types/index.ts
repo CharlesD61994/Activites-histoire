@@ -278,6 +278,7 @@ export type HistoryQuestion = {
   textAnswerCaseSensitive?: boolean;
   feedbackCorrect?: string;
   feedbackIncorrect?: string;
+  canvas?: HistoryActivityCanvas;
 };
 
 export type HistoryActivityData = {

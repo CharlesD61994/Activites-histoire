@@ -12,6 +12,7 @@ type Props = {
   onAnswersChange?: (answers: Record<string, string>) => void;
   onInteraction?: () => void;
   onValidate?: () => void;
+  primaryActionLabel?: string;
   lockedBlankIds?: string[];
   checkedCorrectBlankIds?: string[];
   checkedWrongBlankIds?: string[];
@@ -21,7 +22,7 @@ type Props = {
   onPointerDown?: (event: React.PointerEvent) => void;
 };
 
-export function HistoryClozeInteraction({ question, answers = {}, onAnswersChange, onInteraction, onValidate, lockedBlankIds = [], checkedCorrectBlankIds = [], checkedWrongBlankIds = [], awaitingRetry = false, revealAnswers = false, preview = false, onPointerDown }: Props) {
+export function HistoryClozeInteraction({ question, answers = {}, onAnswersChange, onInteraction, onValidate, primaryActionLabel, lockedBlankIds = [], checkedCorrectBlankIds = [], checkedWrongBlankIds = [], awaitingRetry = false, revealAnswers = false, preview = false, onPointerDown }: Props) {
   const [selectedTokenId, setSelectedTokenId] = useState("");
   const parts = useMemo(() => parseHistoryCloze(question), [question]);
   const tokens = useMemo(() => historyClozeTokens(question), [question]);
@@ -117,7 +118,7 @@ export function HistoryClozeInteraction({ question, answers = {}, onAnswersChang
         </div>
         <div className="history-cloze-actions">
           <button type="button" className="history-cloze-reset" onClick={reset} disabled={preview} aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>
-          <button type="button" className="history-cloze-validate" onClick={onValidate} disabled={preview}>{awaitingRetry ? "Réessayer" : "Valider"}</button>
+          <button type="button" className="history-cloze-validate" onClick={onValidate} disabled={preview}>{primaryActionLabel ?? (awaitingRetry ? "Réessayer" : "Valider")}</button>
         </div>
       </div>
     </div>
