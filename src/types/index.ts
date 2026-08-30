@@ -80,11 +80,17 @@ export type HistoryOperation =
 export type HistoryInteractiveAction =
   | "choice_single"
   | "choice_multiple"
+  | "true_false"
+  | "image_selection"
   | "classification"
+  | "sort_categories"
   | "matching"
+  | "table_fill"
   | "chronological_order"
+  | "arrange_order"
   | "timeline"
   | "document_hotspot"
+  | "reference_point"
   | "cloze_choice"
   | "short_text";
 
@@ -117,6 +123,7 @@ export type HistoryChoiceOption = {
   id: string;
   text: string;
   isCorrect: boolean;
+  documentId?: string;
   textStyle?: HistoryTextStyle;
 };
 

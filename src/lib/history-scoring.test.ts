@@ -58,7 +58,30 @@ describe("history scoring", () => {
       selectedChoices: ["a", "b"]
     })).toMatchObject({
       correctItemIds: ["choice:a"],
-      wrongItemIds: ["choice:c"]
+      wrongItemIds: ["choice:c", "choice-wrong:b"]
+    });
+  });
+
+  it("scores true or false as a single-answer interaction", () => {
+    const question: HistoryQuestion = {
+      id: "q-true-false",
+      prompt: "Cette affirmation est-elle vraie?",
+      action: "true_false",
+      documentIds: [],
+      points: 1,
+      choices: [
+        { id: "true", text: "Vrai", isCorrect: false },
+        { id: "false", text: "Faux", isCorrect: true }
+      ]
+    };
+
+    expect(historyQuestionMaxPoints(question)).toBe(1);
+    expect(evaluateHistoryQuestion(question, {
+      ...emptyAnswers,
+      selectedChoices: ["false"]
+    })).toMatchObject({
+      correctItemIds: ["answer"],
+      wrongItemIds: []
     });
   });
 

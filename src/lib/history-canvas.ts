@@ -31,12 +31,14 @@ export function reorderHistoryCanvasBlock(
 export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 165 };
   if (question.action === "document_hotspot") return { width: 760, height: 575 };
+  if (question.action === "true_false" || question.action === "reference_point") return { width: 680, height: 230 };
+  if (question.action === "image_selection") return { width: 780, height: Math.max(360, Math.ceil((question.choices?.length ?? 2) / 2) * 205 + 80) };
   if (question.action === "choice_single" || question.action === "choice_multiple") {
     return { width: 680, height: Math.max(225, Math.ceil((question.choices?.length ?? 2) / 2) * 135 + 75) };
   }
-  if (question.action === "classification") return { width: 720, height: Math.max(255, (question.classificationItems?.length ?? 1) * 120 + 75) };
-  if (question.action === "matching") return { width: 720, height: Math.max(255, (question.matchingPrompts?.length ?? 1) * 120 + 75) };
-  if (question.action === "chronological_order" || question.action === "timeline") return { width: 760, height: Math.max(275, (question.timelineEvents?.length ?? 2) * 105 + 75) };
+  if (question.action === "classification" || question.action === "sort_categories") return { width: 720, height: Math.max(255, (question.classificationItems?.length ?? 1) * 120 + 75) };
+  if (question.action === "matching" || question.action === "table_fill") return { width: 720, height: Math.max(255, (question.matchingPrompts?.length ?? 1) * 120 + 75) };
+  if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 760, height: Math.max(275, (question.timelineEvents?.length ?? 2) * 105 + 75) };
   return { width: 920, height: Math.max(300, 190 + Math.ceil(((question.clozeBlanks?.length ?? 1) + (question.clozeDistractors?.length ?? 0)) / 4) * 62) };
 }
 
@@ -69,9 +71,9 @@ function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) 
   if (block.type === "interaction") {
     if (question.action === "short_text") return { width: 360, height: 165 };
     if (question.action === "document_hotspot") return { width: 360, height: 260 };
-    if (question.action === "choice_single" || question.action === "choice_multiple") return { width: 360, height: 190 };
-    if (question.action === "classification" || question.action === "matching") return { width: 380, height: 210 };
-    if (question.action === "chronological_order" || question.action === "timeline") return { width: 400, height: 225 };
+    if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "true_false" || question.action === "image_selection" || question.action === "reference_point") return { width: 360, height: 190 };
+    if (question.action === "classification" || question.action === "matching" || question.action === "sort_categories" || question.action === "table_fill") return { width: 380, height: 210 };
+    if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 400, height: 225 };
     return { width: 420, height: 260 };
   }
   if (block.type === "shape") {

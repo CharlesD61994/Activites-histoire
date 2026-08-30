@@ -51,6 +51,14 @@ function makeChoice(text: string, isCorrect = false): HistoryChoiceOption {
   return { id: crypto.randomUUID(), text, isCorrect };
 }
 
+function isChoiceAction(action: HistoryInteractiveAction) {
+  return action === "choice_single" || action === "choice_multiple" || action === "true_false" || action === "image_selection" || action === "reference_point";
+}
+
+function isSingleChoiceAction(action: HistoryInteractiveAction) {
+  return action === "choice_single" || action === "true_false" || action === "reference_point";
+}
+
 function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
   const id = crypto.randomUUID();
   return {
@@ -80,6 +88,21 @@ function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
 function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractiveAction): HistoryQuestion {
   const next = { ...defaultQuestion(action), ...question, action };
   if (!next.choices?.length) next.choices = [makeChoice("Réponse A", true), makeChoice("Réponse B")];
+  if (action === "true_false") {
+    next.choices = [
+      { ...(next.choices[0] ?? makeChoice("Vrai", true)), text: "Vrai", isCorrect: next.choices?.[0]?.isCorrect ?? true },
+      { ...(next.choices[1] ?? makeChoice("Faux")), text: "Faux", isCorrect: next.choices?.[1]?.isCorrect ?? false }
+    ];
+    if (!next.choices.some((choice) => choice.isCorrect)) next.choices[0].isCorrect = true;
+  }
+  if (action === "reference_point") {
+    next.choices = [
+      { ...(next.choices[0] ?? makeChoice("Avant", true)), text: next.choices?.[0]?.text || "Avant", isCorrect: next.choices?.[0]?.isCorrect ?? true },
+      { ...(next.choices[1] ?? makeChoice("Après")), text: next.choices?.[1]?.text || "Après", isCorrect: next.choices?.[1]?.isCorrect ?? false }
+    ];
+    if (!next.choices.some((choice) => choice.isCorrect)) next.choices[0].isCorrect = true;
+    next.acceptedTextAnswers = next.acceptedTextAnswers?.length ? next.acceptedTextAnswers : ["-10 000"];
+  }
   if (!next.categories?.length) next.categories = [{ id: crypto.randomUUID(), label: "Causes" }, { id: crypto.randomUUID(), label: "Conséquences" }];
   if (!next.classificationItems?.length) {
     next.classificationItems = [{ id: crypto.randomUUID(), text: "Élément à classer", correctCategoryId: next.categories[0].id }];
@@ -211,33 +234,62 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   const activeHotspotDocument = imageDocuments.find((document) => document.id === (question.hotspot?.documentId ?? imageDocuments[0]?.id));
 
   const actionEditor = (() => {
-    if (question.action === "choice_single" || question.action === "choice_multiple") {
+    if (isChoiceAction(question.action)) {
+      const singleChoice = isSingleChoiceAction(question.action);
+      const imageSelection = question.action === "image_selection";
+      const referencePoint = question.action === "reference_point";
       return (
         <section className="history-editor-panel">
-          <h3>Réponses</h3>
+          <h3>{imageSelection ? "Images à sélectionner" : referencePoint ? "Repère et choix" : "Réponses"}</h3>
+          {referencePoint && (
+            <label>
+              Repère affiché au centre
+              <input value={question.acceptedTextAnswers?.[0] ?? ""} onChange={(event) => updateQuestion({ acceptedTextAnswers: [event.target.value] })} placeholder="-10 000" />
+            </label>
+          )}
           {(question.choices ?? []).map((choice) => (
             <div className="history-inline-row" key={choice.id}>
-              <input value={choice.text} onChange={(event) => setChoice(choice.id, { text: event.target.value })} />
-              <label className="history-check"><input type="checkbox" checked={choice.isCorrect} onChange={(event) => setChoice(choice.id, { isCorrect: event.target.checked })} /> Bonne réponse</label>
-              <button type="button" onClick={() => updateQuestion({ choices: question.choices?.filter((item) => item.id !== choice.id) })} aria-label="Supprimer"><Trash2 size={16} /></button>
+              <input value={choice.text} disabled={question.action === "true_false"} onChange={(event) => setChoice(choice.id, { text: event.target.value })} />
+              {imageSelection && (
+                <select value={choice.documentId ?? ""} onChange={(event) => setChoice(choice.id, { documentId: event.target.value })}>
+                  <option value="">Choisir une image</option>
+                  {imageDocuments.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}
+                </select>
+              )}
+              <label className="history-check">
+                <input
+                  type={singleChoice ? "radio" : "checkbox"}
+                  name={`correct-${question.id}`}
+                  checked={choice.isCorrect}
+                  onChange={(event) => {
+                    if (singleChoice) {
+                      updateQuestion({ choices: (question.choices ?? []).map((item) => ({ ...item, isCorrect: item.id === choice.id })) });
+                    } else {
+                      setChoice(choice.id, { isCorrect: event.target.checked });
+                    }
+                  }}
+                />
+                Bonne réponse
+              </label>
+              {question.action !== "true_false" && <button type="button" onClick={() => updateQuestion({ choices: question.choices?.filter((item) => item.id !== choice.id) })} aria-label="Supprimer"><Trash2 size={16} /></button>}
             </div>
           ))}
-          <Button type="button" variant="secondary" onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice("Nouvelle réponse")] })}><Plus size={16} /> Ajouter une réponse</Button>
+          {!singleChoice && <Button type="button" variant="secondary" onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice(imageSelection ? "Nouvelle image" : "Nouvelle réponse")] })}><Plus size={16} /> Ajouter une réponse</Button>}
         </section>
       );
     }
 
-    if (question.action === "classification") {
+    if (question.action === "classification" || question.action === "sort_categories") {
       return (
         <section className="history-editor-panel">
-          <h3>Catégories et cartes</h3>
+          <h3>{question.action === "sort_categories" ? "Zones et affirmations à trier" : "Catégories et cartes"}</h3>
           <div className="history-two-columns">
             <div>
               <h4>Catégories</h4>
               {(question.categories ?? []).map((category) => <input key={category.id} value={category.label} onChange={(event) => setCategory(category.id, event.target.value)} />)}
             </div>
             <div>
-              <h4>Cartes à classer</h4>
+              <h4>{question.action === "sort_categories" ? "Affirmations à trier" : "Cartes à classer"}</h4>
               {(question.classificationItems ?? []).map((item) => (
                 <div className="history-inline-row" key={item.id}>
                   <input value={item.text} onChange={(event) => setClassificationItem(item.id, { text: event.target.value })} />
@@ -246,52 +298,52 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
                   </select>
                 </div>
               ))}
-              <Button type="button" variant="secondary" onClick={() => updateQuestion({ classificationItems: [...(question.classificationItems ?? []), { id: crypto.randomUUID(), text: "Nouvelle carte", correctCategoryId: question.categories?.[0]?.id ?? "" }] })}><Plus size={16} /> Ajouter une carte</Button>
+              <Button type="button" variant="secondary" onClick={() => updateQuestion({ classificationItems: [...(question.classificationItems ?? []), { id: crypto.randomUUID(), text: question.action === "sort_categories" ? "Nouvelle affirmation" : "Nouvelle carte", correctCategoryId: question.categories?.[0]?.id ?? "" }] })}><Plus size={16} /> Ajouter</Button>
             </div>
           </div>
         </section>
       );
     }
 
-    if (question.action === "matching") {
+    if (question.action === "matching" || question.action === "table_fill") {
       return (
         <section className="history-editor-panel">
-          <h3>Associations</h3>
+          <h3>{question.action === "table_fill" ? "Tableau à compléter" : "Associations"}</h3>
           <div className="history-two-columns">
             <div>
-              <h4>Réponses possibles</h4>
+              <h4>{question.action === "table_fill" ? "Réponses attendues" : "Réponses possibles"}</h4>
               {(question.matchingTargets ?? []).map((target) => <input key={target.id} value={target.text} onChange={(event) => setMatchingTarget(target.id, event.target.value)} />)}
               <Button type="button" variant="secondary" onClick={() => updateQuestion({ matchingTargets: [...(question.matchingTargets ?? []), { id: crypto.randomUUID(), text: "Nouvelle réponse" }] })}><Plus size={16} /> Ajouter</Button>
             </div>
             <div>
-              <h4>Éléments à associer</h4>
+              <h4>{question.action === "table_fill" ? "Lignes du tableau" : "Éléments à associer"}</h4>
               {(question.matchingPrompts ?? []).map((prompt) => (
                 <div className="history-inline-row" key={prompt.id}>
-                  <input value={prompt.prompt} onChange={(event) => setMatchingPrompt(prompt.id, { prompt: event.target.value })} />
+                  <input value={prompt.prompt} onChange={(event) => setMatchingPrompt(prompt.id, { prompt: event.target.value })} placeholder={question.action === "table_fill" ? "Libellé de la ligne" : "Élément de départ"} />
                   <select value={prompt.correctTargetId} onChange={(event) => setMatchingPrompt(prompt.id, { correctTargetId: event.target.value })}>
                     {(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}
                   </select>
                 </div>
               ))}
-              <Button type="button" variant="secondary" onClick={() => updateQuestion({ matchingPrompts: [...(question.matchingPrompts ?? []), { id: crypto.randomUUID(), prompt: "Nouvel élément", correctTargetId: question.matchingTargets?.[0]?.id ?? "" }] })}><Plus size={16} /> Ajouter</Button>
+              <Button type="button" variant="secondary" onClick={() => updateQuestion({ matchingPrompts: [...(question.matchingPrompts ?? []), { id: crypto.randomUUID(), prompt: question.action === "table_fill" ? "Nouvelle ligne" : "Nouvel élément", correctTargetId: question.matchingTargets?.[0]?.id ?? "" }] })}><Plus size={16} /> Ajouter</Button>
             </div>
           </div>
         </section>
       );
     }
 
-    if (question.action === "chronological_order" || question.action === "timeline") {
+    if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") {
       return (
         <section className="history-editor-panel">
-          <h3>Événements</h3>
+          <h3>{question.action === "arrange_order" ? "Cartes à ordonner" : "Événements"}</h3>
           {(question.timelineEvents ?? []).map((event) => (
             <div className="history-inline-row" key={event.id}>
-              <input value={event.text} onChange={(input) => setTimelineEvent(event.id, { text: input.target.value })} />
-              <input value={event.dateLabel ?? ""} onChange={(input) => setTimelineEvent(event.id, { dateLabel: input.target.value })} placeholder="Date ou période" />
+              <input value={event.text} onChange={(input) => setTimelineEvent(event.id, { text: input.target.value })} placeholder={question.action === "arrange_order" ? "Texte de la carte" : "Événement"} />
+              {question.action !== "arrange_order" && <input value={event.dateLabel ?? ""} onChange={(input) => setTimelineEvent(event.id, { dateLabel: input.target.value })} placeholder="Date ou période" />}
               <input type="number" min={1} value={event.correctOrder} onChange={(input) => setTimelineEvent(event.id, { correctOrder: Number(input.target.value) })} />
             </div>
           ))}
-          <Button type="button" variant="secondary" onClick={() => updateQuestion({ timelineEvents: [...(question.timelineEvents ?? []), { id: crypto.randomUUID(), text: "Nouvel événement", correctOrder: (question.timelineEvents?.length ?? 0) + 1 }] })}><Plus size={16} /> Ajouter un événement</Button>
+          <Button type="button" variant="secondary" onClick={() => updateQuestion({ timelineEvents: [...(question.timelineEvents ?? []), { id: crypto.randomUUID(), text: question.action === "arrange_order" ? "Nouvelle carte" : "Nouvel événement", correctOrder: (question.timelineEvents?.length ?? 0) + 1 }] })}><Plus size={16} /> Ajouter</Button>
         </section>
       );
     }

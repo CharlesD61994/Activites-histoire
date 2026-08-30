@@ -762,7 +762,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-    if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
+  if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && (question.action === "cloze_choice" || question.action === "image_selection" || question.action === "reference_point"))) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
@@ -1368,11 +1368,15 @@ function HistoryInteractionEditor({
     );
   }
 
-  if (question.action === "choice_single" || question.action === "choice_multiple") {
+  if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "true_false" || question.action === "image_selection" || question.action === "reference_point") {
+    const imageMode = question.action === "image_selection";
+    const referenceMode = question.action === "reference_point";
     return withCanvasActions(
-      <div className="history-choice-grid history-canvas-choice-editor">
+      <div className={`${imageMode ? "history-image-choice-grid" : referenceMode ? "history-reference-choice-grid" : "history-choice-grid"} history-canvas-choice-editor`}>
+        {referenceMode && <strong className="history-reference-point-label">{question.acceptedTextAnswers?.[0] ?? "Repère"}</strong>}
         {(question.choices ?? []).map((choice) => (
           <button type="button" key={choice.id}>
+            {imageMode && <span className="history-image-choice-media">{documents.find((document) => document.id === choice.documentId)?.src ? <img src={documents.find((document) => document.id === choice.documentId)?.src} alt="" /> : <ImageIcon size={32} />}</span>}
             <span style={historyTextStyleToCss(choice.textStyle)} contentEditable suppressContentEditableWarning onPointerDown={(event) => activateTextEditing(event, { kind: "choice", id: choice.id, blockId })} onFocus={(event) => activateTextEditing(event, { kind: "choice", id: choice.id, blockId })} onBlur={(event) => updateChoice(choice.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{choice.text}</span>
           </button>
         ))}
@@ -1380,15 +1384,16 @@ function HistoryInteractionEditor({
     );
   }
 
-  if (question.action === "classification") {
+  if (question.action === "classification" || question.action === "sort_categories") {
     return withCanvasActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>);
   }
 
-  if (question.action === "matching") {
-    return withCanvasActions(<div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}>{prompt.prompt}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>);
+  if (question.action === "matching" || question.action === "table_fill") {
+    const tableMode = question.action === "table_fill";
+    return withCanvasActions(<div className={tableMode ? "history-table-fill-list" : "history-answer-list"}>{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}><span>{prompt.prompt}</span><select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">{tableMode ? "Compléter" : "Associer à..."}</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>);
   }
 
-  if (question.action === "chronological_order" || question.action === "timeline") {
+  if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") {
     return withCanvasActions(<div className="history-order-list">{[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => <div key={event.id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onPointerDown={stopEditingPointer}>Monter</button><button type="button" onPointerDown={stopEditingPointer}>Descendre</button></div>)}</div>);
   }
 

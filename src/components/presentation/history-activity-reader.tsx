@@ -137,14 +137,16 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
   const earnedItemSet = new Set(earnedItemIds);
   const earnedAnswerLocked = earnedItemSet.has("answer");
+  const isSingleChoiceAction = question.action === "choice_single" || question.action === "true_false" || question.action === "reference_point";
+  const isMultipleChoiceAction = question.action === "choice_multiple" || question.action === "image_selection";
 
   function toggleChoice(id: string) {
     if (!question) return;
     if (revealed || awaitingRetry) return;
-    if (question.action === "choice_single" && earnedAnswerLocked) return;
-    if (question.action === "choice_multiple" && earnedItemSet.has(`choice:${id}`)) return;
+    if (isSingleChoiceAction && earnedAnswerLocked) return;
+    if (isMultipleChoiceAction && earnedItemSet.has(`choice:${id}`)) return;
     setValidation("idle");
-    if (question.action === "choice_single") {
+    if (isSingleChoiceAction) {
       setSelectedChoices([id]);
       return;
     }
@@ -206,8 +208,8 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     if (!question) return;
     const earned = new Set(earnedItemIds);
     setSelectedChoices((current) => {
-      if (question.action === "choice_single") return earned.has("answer") ? current : [];
-      if (question.action === "choice_multiple") return current.filter((id) => earned.has(`choice:${id}`));
+      if (question.action === "choice_single" || question.action === "true_false" || question.action === "reference_point") return earned.has("answer") ? current : [];
+      if (question.action === "choice_multiple" || question.action === "image_selection") return current.filter((id) => earned.has(`choice:${id}`));
       return current;
     });
     setClassificationAnswers((current) => Object.fromEntries(
@@ -392,6 +394,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
           <div className="history-reader-task-panel">
             <HistoryQuestionInteraction
               question={question}
+              documents={documents}
               selectedChoices={selectedChoices}
               toggleChoice={toggleChoice}
               classificationAnswers={classificationAnswers}
@@ -518,6 +521,7 @@ function HistoryCanvasStage({
       return (
         <HistoryQuestionInteraction
           question={question}
+          documents={documents}
           selectedChoices={selectedChoices}
           toggleChoice={toggleChoice}
           classificationAnswers={classificationAnswers}
@@ -593,6 +597,7 @@ function HistoryCanvasStage({
 
 function HistoryQuestionInteraction({
   question,
+  documents,
   selectedChoices,
   toggleChoice,
   classificationAnswers,
@@ -618,6 +623,7 @@ function HistoryQuestionInteraction({
   resetValidation
 }: {
   question: HistoryQuestion;
+  documents: HistorySourceDocument[];
   selectedChoices: string[];
   toggleChoice: (id: string) => void;
   classificationAnswers: Record<string, string>;
@@ -658,21 +664,36 @@ function HistoryQuestionInteraction({
     );
   }
 
-  if (question.action === "choice_single" || question.action === "choice_multiple") {
-    return withReaderActions(<div className="history-choice-grid">{(question.choices ?? []).map((choice) => {
+  if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "true_false" || question.action === "image_selection" || question.action === "reference_point") {
+    const imageMode = question.action === "image_selection";
+    const referenceMode = question.action === "reference_point";
+    const choiceContent = (
+      <div className={imageMode ? "history-image-choice-grid" : referenceMode ? "history-reference-choice-grid" : "history-choice-grid"}>
+        {referenceMode && <strong className="history-reference-point-label">{question.acceptedTextAnswers?.[0] ?? "Repère"}</strong>}
+        {(question.choices ?? []).map((choice) => {
       const correct = Boolean(choice.isCorrect);
-      const itemId = question.action === "choice_single" ? "answer" : `choice:${choice.id}`;
+      const singleChoice = question.action === "choice_single" || question.action === "true_false" || question.action === "reference_point";
+      const itemId = singleChoice ? "answer" : `choice:${choice.id}`;
       const locked = earned.has(itemId) || Boolean(revealed);
       const correctSelected = correct && selectedChoices.includes(choice.id);
-      const good = question.action === "choice_single"
+      const good = singleChoice
         ? (earned.has(itemId) || checkedCorrect.has(itemId)) && correctSelected
         : earned.has(itemId) || checkedCorrect.has(itemId);
-      const wrong = selectedChoices.includes(choice.id) && !correct && Boolean(awaitingRetry || revealed);
-      return <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={[selectedChoices.includes(choice.id) ? "selected" : "", good ? "earned" : "", wrong ? "wrong" : "", revealed && correct ? "revealed" : ""].filter(Boolean).join(" ")} disabled={Boolean(awaitingRetry) || (locked && !selectedChoices.includes(choice.id))} onClick={() => toggleChoice(choice.id)}>{choice.text}</button>;
-    })}</div>);
+      const wrong = selectedChoices.includes(choice.id) && (!correct || checkedWrong.has(`choice-wrong:${choice.id}`)) && Boolean(awaitingRetry || revealed);
+      const document = documents.find((item) => item.id === choice.documentId);
+      return (
+        <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={[selectedChoices.includes(choice.id) ? "selected" : "", good ? "earned" : "", wrong ? "wrong" : "", revealed && correct ? "revealed" : ""].filter(Boolean).join(" ")} disabled={Boolean(awaitingRetry) || (locked && !selectedChoices.includes(choice.id))} onClick={() => toggleChoice(choice.id)}>
+          {imageMode && <span className="history-image-choice-media">{document?.src ? <img src={document.src} alt="" /> : <FileText size={32} />}</span>}
+          <span>{choice.text}</span>
+        </button>
+      );
+        })}
+      </div>
+    );
+    return withReaderActions(choiceContent);
   }
 
-  if (question.action === "classification") {
+  if (question.action === "classification" || question.action === "sort_categories") {
     return withReaderActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => {
       const itemId = `classification:${item.id}`;
       const locked = earned.has(itemId) || Boolean(revealed);
@@ -681,16 +702,17 @@ function HistoryQuestionInteraction({
     })}</div>);
   }
 
-  if (question.action === "matching") {
-    return withReaderActions(<div className="history-answer-list">{(question.matchingPrompts ?? []).map((prompt) => {
+  if (question.action === "matching" || question.action === "table_fill") {
+    const tableMode = question.action === "table_fill";
+    return withReaderActions(<div className={tableMode ? "history-table-fill-list" : "history-answer-list"}>{(question.matchingPrompts ?? []).map((prompt) => {
       const itemId = `matching:${prompt.id}`;
       const locked = earned.has(itemId) || Boolean(revealed);
       const value = locked ? prompt.correctTargetId : matchingAnswers[prompt.id] ?? "";
-      return <label key={prompt.id} className={earned.has(itemId) || checkedCorrect.has(itemId) ? "earned" : checkedWrong.has(itemId) ? "wrong" : revealed ? "revealed" : ""}>{prompt.prompt}<select value={value} disabled={locked || Boolean(awaitingRetry)} onChange={(event) => { resetValidation(); setMatchingAnswers({ ...matchingAnswers, [prompt.id]: event.target.value }); }}><option value="">Associer à...</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>;
+      return <label key={prompt.id} className={earned.has(itemId) || checkedCorrect.has(itemId) ? "earned" : checkedWrong.has(itemId) ? "wrong" : revealed ? "revealed" : ""}><span>{prompt.prompt}</span><select value={value} disabled={locked || Boolean(awaitingRetry)} onChange={(event) => { resetValidation(); setMatchingAnswers({ ...matchingAnswers, [prompt.id]: event.target.value }); }}><option value="">{tableMode ? "Compléter" : "Associer à..."}</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>;
     })}</div>);
   }
 
-  if (question.action === "chronological_order" || question.action === "timeline") {
+  if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") {
     const eventsById = new Map((question.timelineEvents ?? []).map((event) => [event.id, event]));
     const order = revealed ? [...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id) : eventOrder;
     return withReaderActions(<div className="history-order-list">{order.map((id) => {
