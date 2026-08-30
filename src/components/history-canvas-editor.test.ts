@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blockScales, normalizeHistoryCanvasLayout, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock } from "../lib/history-canvas";
+import { blockScales, interactionBlockSize, normalizeHistoryCanvasLayout, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock } from "../lib/history-canvas";
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
 const shortTextQuestion: HistoryQuestion = {
@@ -11,6 +11,14 @@ const shortTextQuestion: HistoryQuestion = {
   acceptedTextAnswers: ["réponse"]
 };
 const resizeCanvas = { width: 1600, height: 900 };
+const trueFalseQuestion: HistoryQuestion = {
+  ...shortTextQuestion,
+  action: "true_false",
+  choices: [
+    { id: "true", text: "Vrai", isCorrect: true },
+    { id: "false", text: "Faux", isCorrect: false }
+  ]
+};
 
 describe("normalizeHistoryCanvasLayout", () => {
   it("preserves saved document dimensions and protects old interactions from becoming too small", () => {
@@ -26,7 +34,7 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(7);
+    expect(migrated.layoutVersion).toBe(8);
     expect(migrated.blocks[0]).toMatchObject({ width: 437, height: 612 });
     expect(migrated.blocks[1]).toMatchObject({ width: 610, height: 165, contentWidth: 520, contentHeight: 103 });
   });
@@ -40,8 +48,22 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(7);
+    expect(migrated.layoutVersion).toBe(8);
     expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 165 });
+  });
+
+  it("shrinks old default true-false blocks to the compact reader size", () => {
+    const resizeCanvas: HistoryActivityCanvas = {
+      width: 1600,
+      height: 900,
+      layoutVersion: 7,
+      blocks: [{ id: "interaction", type: "interaction", x: 900, y: 300, width: 680, height: 230, contentWidth: 680, contentHeight: 230 }]
+    };
+
+    const migrated = normalizeHistoryCanvasLayout(resizeCanvas, trueFalseQuestion);
+
+    expect(interactionBlockSize(trueFalseQuestion)).toEqual({ width: 520, height: 165 });
+    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 165, contentWidth: 520, contentHeight: 165 });
   });
 
   it("restores the complete interaction ratio for an already resized block", () => {

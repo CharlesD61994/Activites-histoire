@@ -1,6 +1,6 @@
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
-export const historyCanvasLayoutVersion = 7;
+export const historyCanvasLayoutVersion = 8;
 
 export type HistoryResizeHandle = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 export type HistoryLayerAction = "send_back" | "move_back" | "move_front" | "bring_front";
@@ -31,7 +31,8 @@ export function reorderHistoryCanvasBlock(
 export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 165 };
   if (question.action === "document_hotspot") return { width: 760, height: 575 };
-  if (question.action === "true_false" || question.action === "reference_point") return { width: 680, height: 230 };
+  if (question.action === "true_false") return { width: 520, height: 165 };
+  if (question.action === "reference_point") return { width: 680, height: 230 };
   if (question.action === "image_selection") return { width: 780, height: Math.max(360, Math.ceil((question.choices?.length ?? 2) / 2) * 205 + 80) };
   if (question.action === "choice_single" || question.action === "choice_multiple") {
     return { width: 680, height: Math.max(225, Math.ceil((question.choices?.length ?? 2) / 2) * 135 + 75) };
@@ -71,7 +72,8 @@ function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) 
   if (block.type === "interaction") {
     if (question.action === "short_text") return { width: 360, height: 165 };
     if (question.action === "document_hotspot") return { width: 360, height: 260 };
-    if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "true_false" || question.action === "image_selection" || question.action === "reference_point") return { width: 360, height: 190 };
+    if (question.action === "true_false") return { width: 320, height: 150 };
+    if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "image_selection" || question.action === "reference_point") return { width: 360, height: 190 };
     if (question.action === "classification" || question.action === "matching" || question.action === "sort_categories" || question.action === "table_fill") return { width: 380, height: 210 };
     if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 400, height: 225 };
     return { width: 420, height: 260 };
@@ -186,16 +188,23 @@ export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, ques
       blocks: canvas.blocks.map((block) => {
         const base = scalableBlockSize(block, question) ?? { width: block.width, height: block.height };
         const minimum = minimumBlockSize(block, question);
-        const width = Math.max(block.width, minimum.width);
-        const height = Math.max(block.height, minimum.height);
+        const isOldDefaultTrueFalse =
+          question.action === "true_false" &&
+          block.type === "interaction" &&
+          Math.abs(block.width - 680) < 1 &&
+          Math.abs(block.height - 230) < 1 &&
+          Math.abs((block.contentWidth ?? 680) - 680) < 1 &&
+          Math.abs((block.contentHeight ?? 230) - 230) < 1;
+        const width = isOldDefaultTrueFalse ? base.width : Math.max(block.width, minimum.width);
+        const height = isOldDefaultTrueFalse ? base.height : Math.max(block.height, minimum.height);
         return {
           ...block,
           width,
           height,
           x: Math.min(block.x, canvas.width - width),
           y: Math.min(block.y, canvas.height - height),
-          contentWidth: block.contentWidth ?? base.width,
-          contentHeight: block.contentHeight ?? base.height
+          contentWidth: isOldDefaultTrueFalse ? base.width : block.contentWidth ?? base.width,
+          contentHeight: isOldDefaultTrueFalse ? base.height : block.contentHeight ?? base.height
         };
       })
     };
