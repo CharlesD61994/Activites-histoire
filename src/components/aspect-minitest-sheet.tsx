@@ -1,14 +1,6 @@
 "use client";
 
 import type { DragEvent } from "react";
-import {
-  Atom,
-  Banknote,
-  Building2,
-  Map,
-  Palette,
-  UsersRound
-} from "lucide-react";
 import type {
   AspectMinitestAspect,
   AspectMinitestAspectKey,
@@ -28,29 +20,44 @@ type Props = {
   className?: string;
 };
 
-export function AspectIcon({ aspectKey }: { aspectKey: AspectMinitestAspectKey }) {
-  const props = { size: 42, strokeWidth: 1.45, "aria-hidden": true } as const;
-  if (aspectKey === "society") return <UsersRound {...props} />;
-  if (aspectKey === "politics") return <Building2 {...props} />;
-  if (aspectKey === "economy") return <Banknote {...props} />;
-  if (aspectKey === "culture") return <Palette {...props} />;
-  if (aspectKey === "science") return <Atom {...props} />;
-  return <Map {...props} />;
+const aspectIllustrations: Record<AspectMinitestAspectKey, string> = {
+  society: "/aspect-minitest/social.png",
+  politics: "/aspect-minitest/politics.png",
+  economy: "/aspect-minitest/economy.png",
+  culture: "/aspect-minitest/culture.png",
+  territory: "/aspect-minitest/territory.png",
+  science: "/aspect-minitest/science.png"
+};
+
+export function AspectIllustration({ aspectKey }: { aspectKey: AspectMinitestAspectKey }) {
+  return <img src={aspectIllustrations[aspectKey]} alt="" aria-hidden="true" />;
 }
 
-function MinitestHeader({ data }: { data: AspectMinitestData }) {
+function MinitestHeader({ data, corrected }: { data: AspectMinitestData; corrected: boolean }) {
   const total = data.aspects.reduce((sum, aspect) => sum + aspect.total, 0);
   return (
     <>
       <div className="aspect-minitest-sheet-header">
-        <strong>{data.headerLabel}</strong>
-        <span>{data.nameLabel}<i /></span>
-        <span>{data.groupLabel}<i /></span>
-        <span>{data.dateLabel}<i /></span>
-        <span className="aspect-minitest-sheet-total">Total&nbsp;: <b>___ / {total}</b></span>
+        <span className="aspect-minitest-name-line"><strong>{data.nameLabel}</strong><i /></span>
+        <span className={`aspect-minitest-corrected-label ${corrected ? "is-visible" : ""}`}>{data.headerLabel}</span>
+        <span className="aspect-minitest-group-line"><i /><strong>{data.groupLabel}</strong></span>
+        {data.dateLabel && <span className="aspect-minitest-date-line">{data.dateLabel}<i /></span>}
+        <span className="aspect-minitest-chapter-label">{data.chapterLabel ?? ""}</span>
+        <span className="aspect-minitest-sheet-total">/{total}</span>
       </div>
-      <div className="aspect-minitest-title-band">{data.bannerTitle}</div>
+      <MinitestTitle title={data.bannerTitle} />
     </>
+  );
+}
+
+function MinitestTitle({ title }: { title: string }) {
+  const separator = title.match(/\s[–—]\s/);
+  if (!separator?.index) return <div className="aspect-minitest-title-band">{title}</div>;
+  const topicStart = separator.index + separator[0].length;
+  return (
+    <div className="aspect-minitest-title-band">
+      <span>{title.slice(0, topicStart)}<em>{title.slice(topicStart)}</em></span>
+    </div>
   );
 }
 
@@ -115,10 +122,9 @@ function AspectCell({
       onDrop={interactiveCorrection ? drop : undefined}
     >
       <div className="aspect-minitest-aspect-heading">
-        <span className="aspect-minitest-aspect-icon"><AspectIcon aspectKey={aspect.key} /></span>
         <strong>{aspect.label}</strong>
         <span className="aspect-minitest-aspect-score">
-          {earned === undefined ? "___" : earned} / {aspect.total}
+          {earned === undefined ? `/${aspect.total}` : `${earned} / ${aspect.total}`}
         </span>
       </div>
       <div className="aspect-minitest-token-grid">
@@ -132,6 +138,9 @@ function AspectCell({
             onRemove={interactiveCorrection ? () => onAssign?.(phrase.id, undefined) : undefined}
           />
         ))}
+      </div>
+      <div className={`aspect-minitest-aspect-art is-${aspect.key}`}>
+        <AspectIllustration aspectKey={aspect.key} />
       </div>
     </div>
   );
@@ -157,7 +166,7 @@ export function AspectMinitestSheet({
   return (
     <div className={`aspect-minitest-print-set ${className}`}>
       <section className="aspect-minitest-paper aspect-minitest-table-page">
-        <MinitestHeader data={data} />
+        <MinitestHeader data={data} corrected={variant === "answer"} />
         <div className="aspect-minitest-instruction-row">
           <div className="aspect-minitest-instruction-block">
             <strong>{data.instructionTitle}</strong>
@@ -169,7 +178,7 @@ export function AspectMinitestSheet({
           </aside>
         </div>
 
-        {interactiveCorrection && (
+        {interactiveCorrection && unassigned.length > 0 && (
           <div
             className="aspect-minitest-correction-bank"
             onDragOver={(event) => event.preventDefault()}
@@ -187,6 +196,7 @@ export function AspectMinitestSheet({
           </div>
         )}
 
+        <h2 className="aspect-minitest-section-title">{data.sectionTitle ?? "L’Europe chrétienne au Moyen Âge"}</h2>
         <div className="aspect-minitest-aspect-grid">
           {data.aspects.map((aspect) => (
             <AspectCell
@@ -204,7 +214,7 @@ export function AspectMinitestSheet({
       </section>
 
       <section className="aspect-minitest-paper aspect-minitest-bank-page">
-        <MinitestHeader data={data} />
+        <MinitestHeader data={data} corrected={variant === "answer"} />
         <h2>{data.bankTitle}</h2>
         <div className="aspect-minitest-phrase-list">
           {data.phrases.filter((phrase) => phrase.text.trim()).map((phrase, index) => (

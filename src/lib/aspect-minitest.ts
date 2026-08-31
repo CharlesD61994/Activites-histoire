@@ -11,12 +11,12 @@ export const aspectMinitestAspectDefaults: ReadonlyArray<{
   label: string;
   total: number;
 }> = [
-  { key: "society", label: "Social", total: 5 },
-  { key: "politics", label: "Politique", total: 3 },
-  { key: "economy", label: "Économique", total: 5 },
-  { key: "culture", label: "Culturel", total: 2 },
-  { key: "science", label: "Scientifique", total: 2 },
-  { key: "territory", label: "Territorial", total: 3 }
+  { key: "society", label: "Social", total: 2 },
+  { key: "politics", label: "Politique", total: 4 },
+  { key: "economy", label: "Économique", total: 3 },
+  { key: "culture", label: "Culturel", total: 5 },
+  { key: "territory", label: "Territorial", total: 3 },
+  { key: "science", label: "Scientifique", total: 3 }
 ];
 
 export function createAspectMinitestAspects(): AspectMinitestAspect[] {
@@ -32,15 +32,17 @@ export function createAspectMinitestPhrase(text = ""): AspectMinitestPhrase {
 
 export function createAspectMinitestData(): AspectMinitestData {
   return {
-    headerLabel: "MINITEST",
-    nameLabel: "Nom :",
-    groupLabel: "Groupe :",
-    dateLabel: "Date :",
-    bannerTitle: "Test sur les aspects",
+    headerLabel: "Corrigé",
+    nameLabel: "NOM",
+    groupLabel: "GROUPE",
+    dateLabel: "",
+    chapterLabel: "CHAPITRE 5 — La christianisation de l’Occident",
+    bannerTitle: "Test sur les aspects – La christianisation de l’Occident",
+    sectionTitle: "L’Europe chrétienne au Moyen Âge",
     instructionTitle: "Aspects de société",
-    instructions: "Pour chaque aspect de société, place le numéro de la phrase qui correspond à la bonne réalité sociale.",
-    tipTitle: "Psst!",
-    tipText: "Consulte la banque de phrases pour classer chaque réalité dans le bon aspect de société.",
+    instructions: "Pour chaque aspect de société, écris le numéro de la phrase qui correspond à la bonne réalité sociale ci-dessous.",
+    tipTitle: "PSST !",
+    tipText: "VA VOIR LA DESCRIPTION DES ASPECTS DE SOCIÉTÉ À LA PAGE 3 DE TON CAHIER D’HISTOIRE ET N’OUBLIE PAS D’UTILISER LA BANQUE DE PHRASES À LA PAGE 2 DE CE CAHIER.",
     bankTitle: "Banque de phrases",
     aspects: createAspectMinitestAspects(),
     phrases: [createAspectMinitestPhrase()]

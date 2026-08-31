@@ -94,7 +94,9 @@ export type AspectMinitestData = {
   nameLabel: string;
   groupLabel: string;
   dateLabel: string;
+  chapterLabel?: string;
   bannerTitle: string;
+  sectionTitle?: string;
   instructionTitle: string;
   instructions: string;
   tipTitle: string;

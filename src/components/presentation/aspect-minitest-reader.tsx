@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { CheckCircle2, RotateCcw } from "lucide-react";
-import { AspectIcon, type AspectMinitestTokenStatus } from "@/components/aspect-minitest-sheet";
+import { AspectIllustration, type AspectMinitestTokenStatus } from "@/components/aspect-minitest-sheet";
 import { Button } from "@/components/ui/button";
 import type { AspectMinitestData, AspectMinitestPhrase, Sentence } from "@/types";
 
@@ -193,7 +193,6 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
                   onClick={() => { if (selectedPhraseId) assign(selectedPhraseId, aspect.id); }}
                 >
                   <div className="aspect-minitest-reader-aspect-heading">
-                    <AspectIcon aspectKey={aspect.key} />
                     <strong>{aspect.label}</strong>
                     <span>{hasValidated ? earnedByAspect[aspect.id] : "___"} / {aspect.total}</span>
                   </div>
@@ -214,6 +213,7 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
                       );
                     })}
                   </div>
+                  <div className={`aspect-minitest-reader-aspect-art is-${aspect.key}`}><AspectIllustration aspectKey={aspect.key} /></div>
                 </div>
               );
             })}
