@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { blockScales, interactionBlockSize, normalizeHistoryCanvasLayout, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock } from "../lib/history-canvas";
-import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
+import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryInteractiveAction, HistoryQuestion } from "../types";
 
 const shortTextQuestion: HistoryQuestion = {
   id: "question-1",
@@ -20,6 +20,42 @@ const trueFalseQuestion: HistoryQuestion = {
   ]
 };
 
+function interactionQuestion(action: HistoryInteractiveAction): HistoryQuestion {
+  return {
+    ...shortTextQuestion,
+    action,
+    choices: trueFalseQuestion.choices,
+    classificationItems: [{ id: "item-1", text: "Élément", correctCategoryId: "category-1" }],
+    matchingPrompts: [{ id: "prompt-1", prompt: "Élément", correctTargetId: "target-1" }],
+    timelineEvents: [
+      { id: "event-1", text: "Événement 1", correctOrder: 1 },
+      { id: "event-2", text: "Événement 2", correctOrder: 2 }
+    ]
+  };
+}
+
+describe("interactionBlockSize", () => {
+  it.each([
+    ["short_text", 520, 128],
+    ["true_false", 520, 120],
+    ["choice_single", 680, 120],
+    ["choice_multiple", 680, 120],
+    ["reference_point", 680, 132],
+    ["image_selection", 780, 216],
+    ["classification", 720, 126],
+    ["sort_categories", 720, 126],
+    ["matching", 720, 126],
+    ["table_fill", 720, 126],
+    ["chronological_order", 760, 198],
+    ["timeline", 760, 198],
+    ["arrange_order", 760, 198],
+    ["document_hotspot", 760, 500],
+    ["cloze_choice", 920, 300]
+  ] as const)("uses a compact content-to-actions ratio for %s", (action, width, height) => {
+    expect(interactionBlockSize(interactionQuestion(action))).toEqual({ width, height });
+  });
+});
+
 describe("normalizeHistoryCanvasLayout", () => {
   it("preserves saved document dimensions and protects old interactions from becoming too small", () => {
     const resizeCanvas: HistoryActivityCanvas = {
@@ -34,9 +70,9 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(8);
+    expect(migrated.layoutVersion).toBe(9);
     expect(migrated.blocks[0]).toMatchObject({ width: 437, height: 612 });
-    expect(migrated.blocks[1]).toMatchObject({ width: 610, height: 165, contentWidth: 520, contentHeight: 103 });
+    expect(migrated.blocks[1]).toMatchObject({ width: 610, height: 120, contentWidth: 520, contentHeight: 103 });
   });
 
   it("migrates the oversized legacy interaction block once", () => {
@@ -48,8 +84,8 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(8);
-    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 165 });
+    expect(migrated.layoutVersion).toBe(9);
+    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 128 });
   });
 
   it("shrinks old default true-false blocks to the compact reader size", () => {
@@ -62,8 +98,29 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, trueFalseQuestion);
 
-    expect(interactionBlockSize(trueFalseQuestion)).toEqual({ width: 520, height: 230 });
-    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 230, contentWidth: 520, contentHeight: 230 });
+    expect(interactionBlockSize(trueFalseQuestion)).toEqual({ width: 520, height: 120 });
+    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 120, contentWidth: 520, contentHeight: 120 });
+  });
+
+  it("compacts legacy default choice blocks", () => {
+    const choiceQuestion = {
+      ...interactionQuestion("choice_single"),
+      choices: [
+        { id: "a", text: "A", isCorrect: true },
+        { id: "b", text: "B", isCorrect: false },
+        { id: "c", text: "C", isCorrect: false }
+      ]
+    };
+    const legacyCanvas: HistoryActivityCanvas = {
+      width: 1600,
+      height: 900,
+      layoutVersion: 8,
+      blocks: [{ id: "interaction", type: "interaction", x: 800, y: 300, width: 680, height: 345, contentWidth: 680, contentHeight: 345 }]
+    };
+
+    const migrated = normalizeHistoryCanvasLayout(legacyCanvas, choiceQuestion);
+
+    expect(migrated.blocks[0]).toMatchObject({ width: 680, height: 196, contentWidth: 680, contentHeight: 196 });
   });
 
   it("restores the complete interaction ratio for an already resized block", () => {
@@ -76,7 +133,7 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.blocks[0]).toMatchObject({ width: 390, height: 123.75 });
+    expect(migrated.blocks[0]).toMatchObject({ width: 390, height: 96 });
   });
 
   it("freezes current version 5 dimensions as the document composition", () => {
@@ -198,14 +255,14 @@ describe("blockScales", () => {
       choices: Array.from({ length: 5 }, (_, index) => ({ id: String(index), text: String(index), isCorrect: index === 0 }))
     };
 
-    expect(blockScales(block, question)).toEqual({ x: 1, y: 270 / 480 });
+    expect(blockScales(block, question)).toEqual({ x: 1, y: 270 / 272 });
   });
 
   it("keeps short-text interactions tall enough for the answer field and action buttons", () => {
     const interaction: HistoryCanvasBlock = { id: "interaction", type: "interaction", x: 100, y: 100, width: 520, height: 165 };
     const resized = resizeHistoryCanvasBlock(interaction, "s", 0, -120, resizeCanvas, shortTextQuestion);
 
-    expect(resized.height).toBe(165);
+    expect(resized.height).toBe(90);
   });
 });
 

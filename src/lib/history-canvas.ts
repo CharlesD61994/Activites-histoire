@@ -1,6 +1,6 @@
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
-export const historyCanvasLayoutVersion = 8;
+export const historyCanvasLayoutVersion = 9;
 
 export type HistoryResizeHandle = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 export type HistoryLayerAction = "send_back" | "move_back" | "move_front" | "bring_front";
@@ -28,18 +28,39 @@ export function reorderHistoryCanvasBlock(
   return reordered;
 }
 
-export function interactionBlockSize(question: HistoryQuestion) {
+export const historyInteractionActionAreaHeight = 56;
+
+function stackedInteractionHeight(itemCount: number, itemHeight: number, columns = 1, gap = 12) {
+  const rows = Math.max(1, Math.ceil(itemCount / columns));
+  return rows * itemHeight + Math.max(0, rows - 1) * gap + historyInteractionActionAreaHeight;
+}
+
+function legacyInteractionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 165 };
   if (question.action === "document_hotspot") return { width: 760, height: 575 };
   if (question.action === "true_false") return { width: 520, height: 230 };
   if (question.action === "reference_point") return { width: 680, height: 230 };
   if (question.action === "image_selection") return { width: 780, height: Math.max(360, Math.ceil((question.choices?.length ?? 2) / 2) * 205 + 80) };
-  if (question.action === "choice_single" || question.action === "choice_multiple") {
-    return { width: 680, height: Math.max(225, Math.ceil((question.choices?.length ?? 2) / 2) * 135 + 75) };
-  }
+  if (question.action === "choice_single" || question.action === "choice_multiple") return { width: 680, height: Math.max(225, Math.ceil((question.choices?.length ?? 2) / 2) * 135 + 75) };
   if (question.action === "classification" || question.action === "sort_categories") return { width: 720, height: Math.max(255, (question.classificationItems?.length ?? 1) * 120 + 75) };
   if (question.action === "matching" || question.action === "table_fill") return { width: 720, height: Math.max(255, (question.matchingPrompts?.length ?? 1) * 120 + 75) };
   if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 760, height: Math.max(275, (question.timelineEvents?.length ?? 2) * 105 + 75) };
+  return { width: 920, height: Math.max(300, 190 + Math.ceil(((question.clozeBlanks?.length ?? 1) + (question.clozeDistractors?.length ?? 0)) / 4) * 62) };
+}
+
+export function interactionBlockSize(question: HistoryQuestion) {
+  if (question.action === "short_text") return { width: 520, height: 128 };
+  if (question.action === "document_hotspot") return { width: 760, height: 500 };
+  if (question.action === "true_false") return { width: 520, height: 120 };
+  if (question.action === "reference_point") return { width: 680, height: 132 };
+  if (question.action === "image_selection") return { width: 780, height: stackedInteractionHeight(question.choices?.length ?? 2, 160, 2) };
+  if (question.action === "choice_single" || question.action === "choice_multiple") {
+    return { width: 680, height: stackedInteractionHeight(question.choices?.length ?? 2, 64, 2) };
+  }
+  if (question.action === "classification" || question.action === "sort_categories") return { width: 720, height: stackedInteractionHeight(question.classificationItems?.length ?? 1, 70) };
+  if (question.action === "matching") return { width: 720, height: stackedInteractionHeight(question.matchingPrompts?.length ?? 1, 70) };
+  if (question.action === "table_fill") return { width: 720, height: stackedInteractionHeight(question.matchingPrompts?.length ?? 1, 70) };
+  if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 760, height: stackedInteractionHeight(question.timelineEvents?.length ?? 2, 66, 1, 10) };
   return { width: 920, height: Math.max(300, 190 + Math.ceil(((question.clozeBlanks?.length ?? 1) + (question.clozeDistractors?.length ?? 0)) / 4) * 62) };
 }
 
@@ -70,12 +91,13 @@ export function blockScales(block: HistoryCanvasBlock, question: HistoryQuestion
 
 function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
   if (block.type === "interaction") {
-    if (question.action === "short_text") return { width: 360, height: 165 };
+    if (question.action === "short_text") return { width: 320, height: 90 };
     if (question.action === "document_hotspot") return { width: 360, height: 260 };
-    if (question.action === "true_false") return { width: 320, height: 205 };
-    if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "image_selection" || question.action === "reference_point") return { width: 360, height: 190 };
-    if (question.action === "classification" || question.action === "matching" || question.action === "sort_categories" || question.action === "table_fill") return { width: 380, height: 210 };
-    if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 400, height: 225 };
+    if (question.action === "true_false") return { width: 320, height: 74 };
+    if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "reference_point") return { width: 360, height: 90 };
+    if (question.action === "image_selection") return { width: 360, height: 100 };
+    if (question.action === "classification" || question.action === "matching" || question.action === "sort_categories" || question.action === "table_fill") return { width: 380, height: 100 };
+    if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 400, height: 105 };
     return { width: 420, height: 260 };
   }
   if (block.type === "shape") {
@@ -188,23 +210,30 @@ export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, ques
       blocks: canvas.blocks.map((block) => {
         const base = scalableBlockSize(block, question) ?? { width: block.width, height: block.height };
         const minimum = minimumBlockSize(block, question);
-        const isOldDefaultTrueFalse =
+        const legacyBase = block.type === "interaction" ? legacyInteractionBlockSize(question) : null;
+        const isLegacyDefaultInteraction = Boolean(
+          legacyBase &&
+          Math.abs(block.width - legacyBase.width) < 1 &&
+          Math.abs(block.height - legacyBase.height) < 1 &&
+          Math.abs((block.contentWidth ?? legacyBase.width) - legacyBase.width) < 1 &&
+          Math.abs((block.contentHeight ?? legacyBase.height) - legacyBase.height) < 1
+        );
+        const isOlderTrueFalseDefault =
           question.action === "true_false" &&
           block.type === "interaction" &&
           Math.abs(block.width - 680) < 1 &&
-          Math.abs(block.height - 230) < 1 &&
-          Math.abs((block.contentWidth ?? 680) - 680) < 1 &&
-          Math.abs((block.contentHeight ?? 230) - 230) < 1;
-        const width = isOldDefaultTrueFalse ? base.width : Math.max(block.width, minimum.width);
-        const height = isOldDefaultTrueFalse ? base.height : Math.max(block.height, minimum.height);
+          Math.abs(block.height - 230) < 1;
+        const shouldUseCompactDefault = isLegacyDefaultInteraction || isOlderTrueFalseDefault;
+        const width = shouldUseCompactDefault ? base.width : Math.max(block.width, minimum.width);
+        const height = shouldUseCompactDefault ? base.height : Math.max(block.height, minimum.height);
         return {
           ...block,
           width,
           height,
           x: Math.min(block.x, canvas.width - width),
           y: Math.min(block.y, canvas.height - height),
-          contentWidth: isOldDefaultTrueFalse ? base.width : block.contentWidth ?? base.width,
-          contentHeight: isOldDefaultTrueFalse ? base.height : block.contentHeight ?? base.height
+          contentWidth: shouldUseCompactDefault ? base.width : block.contentWidth ?? base.width,
+          contentHeight: shouldUseCompactDefault ? base.height : block.contentHeight ?? base.height
         };
       })
     };

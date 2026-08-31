@@ -10,7 +10,7 @@ import { HistoryResourceLibrary } from "@/components/history-resource-library";
 import { historyCanvasBackgroundStyle } from "@/components/history-canvas-background";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
-import { blockContentSize, blockScales, historyCanvasLayoutVersion, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
+import { blockContentSize, blockScales, historyCanvasLayoutVersion, historyInteractionActionAreaHeight, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
 import { historyBoxShadow } from "@/lib/history-shadow";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import { defaultHistoryTextStyle, historyTextStyleToCss } from "@/lib/history-text-style";
@@ -762,7 +762,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
   }
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
-  if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && (question.action === "cloze_choice" || question.action === "image_selection" || question.action === "reference_point"))) return renderBlock(block);
+  if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
     const scale = blockScales(block, question);
     const contentSize = blockContentSize(block, question);
     return (
@@ -1357,8 +1357,12 @@ function HistoryInteractionEditor({
   stopEditingPointer: (event: React.PointerEvent) => void;
 }) {
   function withCanvasActions(content: React.ReactNode) {
+    const footerRatio = interactionActionAreaHeightRatio(question);
     return (
-      <div className={`history-reader-interaction-stack history-canvas-interaction-preview ${question.action === "true_false" ? "history-true-false-stack" : ""}`}>
+      <div
+        className="history-reader-interaction-stack history-canvas-interaction-preview history-canvas-proportional-interaction"
+        style={{ "--history-interaction-footer-ratio": footerRatio } as React.CSSProperties}
+      >
         <div className="history-reader-interaction-body">{content}</div>
         <div className="history-reader-actions">
           <button type="button" className="history-reader-reset" aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>
@@ -1413,4 +1417,8 @@ function HistoryInteractionEditor({
   return (
     <HistoryClozeInteraction question={question} preview onPointerDown={stopEditingPointer} />
   );
+}
+
+function interactionActionAreaHeightRatio(question: HistoryQuestion) {
+  return `${historyInteractionActionAreaHeight / interactionBlockSize(question).height * 100}%`;
 }
