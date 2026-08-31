@@ -727,7 +727,7 @@
 .history-canvas-interaction-preview .history-reader-actions .button { pointer-events: none; }
 .history-canvas-interaction-preview .history-reader-actions .button { min-width: 150px; }
 .history-canvas-proportional-interaction.history-true-false-stack .history-reader-actions .button {
-  min-width: 112px;
+  min-width: 104px;
 }
 .history-choice-grid { display: grid; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .history-choice-grid button {
@@ -737,11 +737,11 @@
 .history-true-false-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
 }
 .history-true-false-grid button {
   display: grid;
-  min-height: 88px;
+  min-height: 64px;
   place-items: center;
   padding: 10px 18px;
   border-radius: 10px;
