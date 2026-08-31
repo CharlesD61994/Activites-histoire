@@ -37,7 +37,7 @@ function interactionQuestion(action: HistoryInteractiveAction): HistoryQuestion 
 describe("interactionBlockSize", () => {
   it.each([
     ["short_text", 520, 128],
-    ["true_false", 520, 120],
+    ["true_false", 420, 144],
     ["choice_single", 680, 120],
     ["choice_multiple", 680, 120],
     ["reference_point", 680, 132],
@@ -70,7 +70,7 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(9);
+    expect(migrated.layoutVersion).toBe(10);
     expect(migrated.blocks[0]).toMatchObject({ width: 437, height: 612 });
     expect(migrated.blocks[1]).toMatchObject({ width: 610, height: 120, contentWidth: 520, contentHeight: 103 });
   });
@@ -84,7 +84,7 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, shortTextQuestion);
 
-    expect(migrated.layoutVersion).toBe(9);
+    expect(migrated.layoutVersion).toBe(10);
     expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 128 });
   });
 
@@ -98,8 +98,21 @@ describe("normalizeHistoryCanvasLayout", () => {
 
     const migrated = normalizeHistoryCanvasLayout(resizeCanvas, trueFalseQuestion);
 
-    expect(interactionBlockSize(trueFalseQuestion)).toEqual({ width: 520, height: 120 });
-    expect(migrated.blocks[0]).toMatchObject({ width: 520, height: 120, contentWidth: 520, contentHeight: 120 });
+    expect(interactionBlockSize(trueFalseQuestion)).toEqual({ width: 420, height: 144 });
+    expect(migrated.blocks[0]).toMatchObject({ width: 420, height: 144, contentWidth: 420, contentHeight: 144 });
+  });
+
+  it("migrates the previous wide true-false default", () => {
+    const previousCanvas: HistoryActivityCanvas = {
+      width: 1600,
+      height: 900,
+      layoutVersion: 9,
+      blocks: [{ id: "interaction", type: "interaction", x: 900, y: 300, width: 520, height: 120, contentWidth: 520, contentHeight: 120 }]
+    };
+
+    const migrated = normalizeHistoryCanvasLayout(previousCanvas, trueFalseQuestion);
+
+    expect(migrated.blocks[0]).toMatchObject({ width: 420, height: 144, contentWidth: 420, contentHeight: 144 });
   });
 
   it("compacts legacy default choice blocks", () => {

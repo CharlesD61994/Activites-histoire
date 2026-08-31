@@ -1360,7 +1360,7 @@ function HistoryInteractionEditor({
     const footerRatio = interactionActionAreaHeightRatio(question);
     return (
       <div
-        className="history-reader-interaction-stack history-canvas-interaction-preview history-canvas-proportional-interaction"
+        className={`history-reader-interaction-stack history-canvas-interaction-preview history-canvas-proportional-interaction ${question.action === "true_false" ? "history-true-false-stack" : ""}`}
         style={{ "--history-interaction-footer-ratio": footerRatio } as React.CSSProperties}
       >
         <div className="history-reader-interaction-body">{content}</div>

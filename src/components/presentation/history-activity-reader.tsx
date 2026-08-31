@@ -11,7 +11,7 @@ import { historyCanvasBackgroundStyle } from "@/components/history-canvas-backgr
 import { historyBoxShadow } from "@/lib/history-shadow";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
-import { blockContentSize, blockScales, historyInteractionActionAreaHeight, interactionBlockSize } from "@/lib/history-canvas";
+import { blockContentSize, blockScales, historyInteractionActionAreaHeight, interactionBlockSize, normalizeHistoryCanvasLayout } from "@/lib/history-canvas";
 import { evaluateHistoryQuestion } from "@/lib/history-scoring";
 import { historyActionLabels, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
 import { historyTextStyleToCss } from "@/lib/history-text-style";
@@ -55,7 +55,11 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
 
   const documents = activity?.documents ?? [];
   const activeOperation = question?.operation ?? activity?.operation;
-  const activeCanvas = question?.canvas ?? activity?.canvas;
+  const savedCanvas = question?.canvas ?? activity?.canvas;
+  const activeCanvas = useMemo(
+    () => question && savedCanvas ? normalizeHistoryCanvasLayout(savedCanvas, question) : savedCanvas,
+    [question, savedCanvas]
+  );
   const questionComplete = validation === "correct" || (validation === "incorrect" && revealed);
   const hasNextQuestion = activeQuestionIndex < questions.length - 1;
   const primaryActionLabel = questionComplete && hasNextQuestion ? "Question suivante" : awaitingRetry ? "Réessayer" : "Valider";
@@ -722,7 +726,7 @@ function HistoryQuestionInteraction({
       ? { "--history-interaction-footer-ratio": `${historyInteractionActionAreaHeight / interactionBlockSize(question).height * 100}%` } as React.CSSProperties
       : undefined;
     return (
-      <div className={`history-reader-interaction-stack ${proportionalActions ? "history-canvas-proportional-interaction" : ""}`} style={proportionalStyle}>
+      <div className={`history-reader-interaction-stack ${proportionalActions ? "history-canvas-proportional-interaction" : ""} ${question.action === "true_false" ? "history-true-false-stack" : ""}`} style={proportionalStyle}>
         <div className="history-reader-interaction-body">{content}</div>
         <div className="history-reader-actions">
           <button type="button" className="history-reader-reset" onClick={onReset} aria-label="Réinitialiser" title="Réinitialiser"><RotateCcw size={20} /></button>

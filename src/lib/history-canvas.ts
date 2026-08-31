@@ -1,6 +1,6 @@
 import type { HistoryActivityCanvas, HistoryCanvasBlock, HistoryQuestion } from "../types";
 
-export const historyCanvasLayoutVersion = 9;
+export const historyCanvasLayoutVersion = 10;
 
 export type HistoryResizeHandle = "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
 export type HistoryLayerAction = "send_back" | "move_back" | "move_front" | "bring_front";
@@ -51,7 +51,7 @@ function legacyInteractionBlockSize(question: HistoryQuestion) {
 export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "short_text") return { width: 520, height: 128 };
   if (question.action === "document_hotspot") return { width: 760, height: 500 };
-  if (question.action === "true_false") return { width: 520, height: 120 };
+  if (question.action === "true_false") return { width: 420, height: 144 };
   if (question.action === "reference_point") return { width: 680, height: 132 };
   if (question.action === "image_selection") return { width: 780, height: stackedInteractionHeight(question.choices?.length ?? 2, 160, 2) };
   if (question.action === "choice_single" || question.action === "choice_multiple") {
@@ -218,12 +218,13 @@ export function normalizeHistoryCanvasLayout(canvas: HistoryActivityCanvas, ques
           Math.abs((block.contentWidth ?? legacyBase.width) - legacyBase.width) < 1 &&
           Math.abs((block.contentHeight ?? legacyBase.height) - legacyBase.height) < 1
         );
-        const isOlderTrueFalseDefault =
+        const isPreviousTrueFalseDefault =
           question.action === "true_false" &&
           block.type === "interaction" &&
-          Math.abs(block.width - 680) < 1 &&
-          Math.abs(block.height - 230) < 1;
-        const shouldUseCompactDefault = isLegacyDefaultInteraction || isOlderTrueFalseDefault;
+          ((Math.abs(block.width - 520) < 1 && Math.abs(block.height - 120) < 1) ||
+            (Math.abs(block.width - 420) < 1 && Math.abs(block.height - 120) < 1) ||
+            (Math.abs(block.width - 680) < 1 && Math.abs(block.height - 230) < 1));
+        const shouldUseCompactDefault = isLegacyDefaultInteraction || isPreviousTrueFalseDefault;
         const width = shouldUseCompactDefault ? base.width : Math.max(block.width, minimum.width);
         const height = shouldUseCompactDefault ? base.height : Math.max(block.height, minimum.height);
         return {
