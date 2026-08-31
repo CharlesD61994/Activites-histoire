@@ -1,5 +1,6 @@
 import { wordClassLabels } from "@/lib/activity-types";
 import { getHistoryActivitySummary, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
+import { getAspectMinitestPhraseCount, getAspectMinitestPointTotal } from "@/lib/aspect-minitest";
 import type { Sentence } from "@/types";
 
 type Props = {
@@ -9,6 +10,17 @@ type Props = {
 };
 
 export function SentenceRenderer({ sentence, highlightErrors = true, showCorrected = false }: Props) {
+  if (sentence.activityType === "aspect_minitest") {
+    const phraseCount = getAspectMinitestPhraseCount(sentence);
+    const pointTotal = getAspectMinitestPointTotal(sentence);
+    return (
+      <div className="sentence-preview worksheet-bank-preview aspect-minitest-bank-preview">
+        <strong>Minitest sur les aspects</strong>
+        <span>{phraseCount} phrase{phraseCount > 1 ? "s" : ""} · {pointTotal} point{pointTotal > 1 ? "s" : ""} · 6 aspects</span>
+      </div>
+    );
+  }
+
   if (sentence.activityType === "history") {
     const summary = getHistoryActivitySummary(sentence);
     return (

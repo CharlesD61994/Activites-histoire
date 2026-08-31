@@ -18,6 +18,7 @@ import { WordGroupReader } from "@/components/presentation/word-group-reader";
 import { TreeAnalysisReader } from "@/components/presentation/tree-analysis-reader";
 import { WorksheetReader } from "@/components/presentation/worksheet-reader";
 import { HistoryActivityReader } from "@/components/presentation/history-activity-reader";
+import { AspectMinitestReader } from "@/components/presentation/aspect-minitest-reader";
 import {
   ReaderChromeProvider,
   ReaderChromeTarget
@@ -187,6 +188,8 @@ export default function PresentationPage({
   const isTreeAnalysisActivity = sentence?.activityType === "tree_analysis";
   const isHistoryActivity = sentence?.activityType === "history";
   const isWorksheetActivity = sentence?.activityType === "worksheet";
+  const isAspectMinitestActivity = sentence?.activityType === "aspect_minitest";
+  const isImmersiveHistoryActivity = isHistoryActivity || isAspectMinitestActivity;
   const treeAnalysisPointCount = useMemo(() => {
     if (!sentence || sentence.activityType !== "tree_analysis") return 0;
     return (
@@ -685,7 +688,7 @@ export default function PresentationPage({
   return (
     <ReaderChromeProvider>
     <div className="reader-scene">
-      <header className={`reader-scene-header ${isHistoryActivity ? "reader-scene-header-history" : ""}`}>
+      <header className={`reader-scene-header ${isImmersiveHistoryActivity ? "reader-scene-header-history" : ""}`}>
         <button
           type="button"
           onClick={leaveSentence}
@@ -697,13 +700,13 @@ export default function PresentationPage({
 
         <div className="reader-scene-title">
           <strong>{group.name}</strong>
-          {isHistoryActivity && (
+          {isImmersiveHistoryActivity && (
             <span>{sentence.title}</span>
           )}
         </div>
 
         <div className="reader-scene-view-controls">
-          {isHistoryActivity && (
+          {isImmersiveHistoryActivity && (
             <div className="reader-history-score-pill">
               <ClassroomPointsMedal compact />
               <div>
@@ -731,12 +734,12 @@ export default function PresentationPage({
         className={`reader-scene-main ${
           isTextActivity ? "reader-scene-main-text" : ""
         } ${
-          isWordClassActivity || isWordGroupActivity || isTreeAnalysisActivity || isHistoryActivity || isWorksheetActivity
+          isWordClassActivity || isWordGroupActivity || isTreeAnalysisActivity || isHistoryActivity || isWorksheetActivity || isAspectMinitestActivity
             ? "reader-scene-main-word-classes"
             : ""
-        } ${isHistoryActivity ? "reader-scene-main-history" : ""}`}
+        } ${isImmersiveHistoryActivity ? "reader-scene-main-history" : ""}`}
       >
-        {!isHistoryActivity && (
+        {!isImmersiveHistoryActivity && (
           <section className={`reader-command-ribbon ${isWorksheetActivity ? "worksheet-reader-ribbon" : ""}`}>
             <div className="reader-command-instruction">
               <span className="reader-command-number"><Target size={25} /></span>
@@ -756,7 +759,13 @@ export default function PresentationPage({
         )}
 
         <section className="reader-activity-flow">
-        {isHistoryActivity ? (
+        {isAspectMinitestActivity ? (
+          <AspectMinitestReader
+            sentence={sentence}
+            onPoint={queueHistoryPoint}
+            onCompleteChange={setReaderComplete}
+          />
+        ) : isHistoryActivity ? (
           <HistoryActivityReader
             sentence={sentence}
             onPoint={queueHistoryPoint}
@@ -807,7 +816,7 @@ export default function PresentationPage({
         )}
         </section>
 
-        {!isHistoryActivity && (
+        {!isImmersiveHistoryActivity && (
           <section
             className={[
               "reader-command-dock",

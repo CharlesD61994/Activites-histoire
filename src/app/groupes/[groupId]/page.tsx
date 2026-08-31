@@ -11,6 +11,7 @@ import { TeamManager } from "@/components/team-manager";
 import { groupAccentColor } from "@/lib/group-colors";
 import { useAppStore } from "@/store/app-store";
 import {
+  getActivityTypeLabel,
   getWordClassActivityPointTotal,
   getWordClassAnalysisTargetCount
 } from "@/lib/activity-types";
@@ -419,6 +420,8 @@ export default function GroupPage({ params }: { params: Promise<{ groupId: strin
                           ? "s"
                           : ""
                       }`
+                    : sentence.activityType === "aspect_minitest"
+                      ? getActivityTypeLabel(sentence.activityType)
                     : `${sentence.corrections.length} correction${
                         sentence.corrections.length > 1 ? "s" : ""
                       }`}

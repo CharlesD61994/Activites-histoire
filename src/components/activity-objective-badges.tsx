@@ -20,6 +20,8 @@ export function getActivityObjectiveKey(sentence: Sentence) {
       ? "history" as const
     : sentence.activityType === "worksheet"
       ? "worksheet" as const
+    : sentence.activityType === "aspect_minitest"
+      ? "aspect_minitest" as const
     : getSentenceObjective(sentence);
 }
 
@@ -29,7 +31,7 @@ export function ActivityObjectiveBadges({
   primaryOnly = false
 }: Props) {
   const secondaryObjectives =
-    sentence.activityType === "tree_analysis" || sentence.activityType === "worksheet" || sentence.activityType === "history"
+    sentence.activityType === "tree_analysis" || sentence.activityType === "worksheet" || sentence.activityType === "history" || sentence.activityType === "aspect_minitest"
       ? []
       : getSecondaryObjectives(sentence);
   const primaryKey = getActivityObjectiveKey(sentence);
@@ -42,6 +44,8 @@ export function ActivityObjectiveBadges({
           : "Activité d’histoire"
       : primaryKey === "worksheet"
         ? "Feuille d’activité"
+      : primaryKey === "aspect_minitest"
+        ? "Minitest sur les aspects"
       : grammarObjectiveLabels[primaryKey];
 
   return (

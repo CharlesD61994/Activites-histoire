@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Copy, FileText, Landmark, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
+import { Check, ClipboardCheck, Copy, FileText, Landmark, Pencil, Plus, Search, Trash2, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SentenceRenderer } from "@/components/sentence-renderer";
@@ -13,6 +13,7 @@ import {
   getWordClassAnalysisTargetCount
 } from "@/lib/activity-types";
 import { getHistoryActivityAccentStyle, getHistoryActivityPointTotal, getHistoryActivitySummary, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
+import { getAspectMinitestPhraseCount, getAspectMinitestPointTotal } from "@/lib/aspect-minitest";
 import type { ActivityType, Sentence, SentenceDifficulty } from "@/types";
 
 const difficultyLabels: Record<SentenceDifficulty, string> = {
@@ -93,6 +94,7 @@ export default function SentencesPage() {
           <option value="all">Tous les types</option>
           <option value="history">Activité d’histoire</option>
           <option value="worksheet">Feuille d’activité</option>
+          <option value="aspect_minitest">Minitest sur les aspects</option>
         </select>
 
         <select value={difficulty} onChange={(event) => setDifficulty(event.target.value as SentenceDifficulty | "all")} aria-label="Filtrer par difficulté">
@@ -119,6 +121,7 @@ export default function SentencesPage() {
           const isTreeAnalysisActivity = sentence.activityType === "tree_analysis";
           const isWorksheetActivity = sentence.activityType === "worksheet";
           const isHistoryActivity = sentence.activityType === "history";
+          const isAspectMinitest = sentence.activityType === "aspect_minitest";
           const historySummary = getHistoryActivitySummary(sentence);
           const targetCount =
             getWordClassAnalysisTargetCount(sentence);
@@ -136,6 +139,8 @@ export default function SentencesPage() {
                 ? treeAnalysisStepCount
                 : isHistoryActivity
                   ? getHistoryActivityPointTotal(sentence)
+                : isAspectMinitest
+                  ? getAspectMinitestPointTotal(sentence)
                 : isWorksheetActivity
                   ? worksheetStepCount
                   : sentence.corrections.reduce(
@@ -225,6 +230,8 @@ export default function SentencesPage() {
                         ? `${historySummary?.questionCount ?? 0} question${(historySummary?.questionCount ?? 0) > 1 ? "s" : ""}`
                       : isWorksheetActivity
                         ? `${sentence.treeAnalysisDocumentPages?.length ?? 1} page${(sentence.treeAnalysisDocumentPages?.length ?? 1) > 1 ? "s" : ""}`
+                      : isAspectMinitest
+                        ? `${getAspectMinitestPhraseCount(sentence)} phrase${getAspectMinitestPhraseCount(sentence) > 1 ? "s" : ""}`
                       : `${sentence.corrections.length} erreur${sentence.corrections.length > 1 ? "s" : ""}`}
                 </span>
                 <span>{maxPoints} points</span>
@@ -274,6 +281,10 @@ export default function SentencesPage() {
               <Link href="/phrases/nouvelle?type=worksheet" className="activity-type-choice">
                 <span className="activity-choice-icon"><FileText size={29}/></span>
                 <div><strong>Feuille d’activité</strong><p>Crée une feuille portrait avec du texte, des tableaux et des réponses révélables.</p></div>
+              </Link>
+              <Link href="/phrases/nouvelle?type=aspect_minitest" className="activity-type-choice" onClick={() => setShowTypeModal(false)}>
+                <span className="activity-choice-icon"><ClipboardCheck size={29}/></span>
+                <div><strong>Minitest sur les aspects</strong><p>Crée une fiche de classement, son corrigé interactif et ses deux versions imprimables.</p></div>
               </Link>
             </div>
           </Card>

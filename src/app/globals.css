@@ -8538,6 +8538,858 @@ textarea {
   }
 }
 
+/* Minitest sur les aspects */
+.aspect-minitest-editor {
+  width: 100%;
+}
+
+.aspect-minitest-editor-shell {
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.aspect-minitest-editor-topbar,
+.aspect-minitest-editor-topbar > div,
+.aspect-minitest-preview-toggle,
+.aspect-minitest-preview-heading,
+.aspect-minitest-phrase-editor > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.aspect-minitest-editor-topbar,
+.aspect-minitest-preview-heading {
+  justify-content: space-between;
+}
+
+.aspect-minitest-editor-topbar {
+  position: sticky;
+  top: 70px;
+  z-index: 20;
+  padding: 10px;
+  border: 1px solid #dce4ea;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 6px 18px rgb(24 45 61 / 8%);
+  backdrop-filter: blur(10px);
+}
+
+.aspect-minitest-preview-toggle {
+  padding: 3px;
+  border: 1px solid #dce4ea;
+  border-radius: 7px;
+  background: #eef2f4;
+}
+
+.aspect-minitest-preview-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #40515d;
+  font-weight: 800;
+}
+
+.aspect-minitest-preview-toggle button.active {
+  background: #fff;
+  color: #143f60;
+  box-shadow: 0 2px 7px rgb(24 45 61 / 12%);
+}
+
+.aspect-minitest-editor-settings,
+.aspect-minitest-content-editor,
+.aspect-minitest-phrase-editor {
+  border: 1px solid #dce4ea;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.aspect-minitest-editor-settings {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(140px, 1fr)) minmax(220px, 1.4fr);
+  gap: 12px;
+  padding: 14px;
+}
+
+.aspect-minitest-editor label {
+  display: grid;
+  gap: 5px;
+  color: #344955;
+  font-size: .82rem;
+  font-weight: 800;
+}
+
+.aspect-minitest-editor input,
+.aspect-minitest-editor select,
+.aspect-minitest-editor textarea {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid #cfd9df;
+  border-radius: 6px;
+  background: #fff;
+  color: #17384e;
+}
+
+.aspect-minitest-editor textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+
+.aspect-minitest-tag-input {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 7px;
+}
+
+.aspect-minitest-tags {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.aspect-minitest-tags button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid #d4dde2;
+  border-radius: 999px;
+  background: #f4f7f8;
+}
+
+.aspect-minitest-content-editor {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+}
+
+.aspect-minitest-content-editor section {
+  padding: 15px;
+  border-right: 1px solid #e1e7ea;
+}
+
+.aspect-minitest-content-editor section:last-child {
+  border-right: 0;
+}
+
+.aspect-minitest-content-editor h3,
+.aspect-minitest-phrase-editor h3 {
+  margin: 0 0 12px;
+  color: #17384e;
+  font-size: 1rem;
+}
+
+.aspect-minitest-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.aspect-minitest-form-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.aspect-minitest-aspect-inputs {
+  display: grid;
+  gap: 7px;
+}
+
+.aspect-minitest-aspect-inputs label {
+  grid-template-columns: 1fr auto 58px;
+  align-items: center;
+  gap: 5px;
+}
+
+.aspect-minitest-phrase-editor {
+  padding: 15px;
+}
+
+.aspect-minitest-phrase-editor > div:first-child {
+  justify-content: space-between;
+}
+
+.aspect-minitest-phrase-editor > div:first-child label {
+  grid-template-columns: auto minmax(220px, 360px);
+  align-items: center;
+}
+
+.aspect-minitest-phrase-editor > p {
+  margin: 0 0 10px;
+  color: #667985;
+  font-size: .86rem;
+}
+
+.aspect-minitest-phrase-editor-list {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.aspect-minitest-phrase-editor-list > div {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) minmax(140px, 190px) 38px;
+  align-items: center;
+  gap: 7px;
+}
+
+.aspect-minitest-phrase-editor-list strong {
+  text-align: right;
+}
+
+.aspect-minitest-phrase-editor-list button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid #d6dfe4;
+  border-radius: 6px;
+  background: #fff;
+  color: #9b3040;
+}
+
+.aspect-minitest-editor-message {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #e8c875;
+  border-radius: 7px;
+  background: #fff8df;
+  color: #684e0b;
+  font-weight: 750;
+}
+
+.aspect-minitest-preview-heading h2,
+.aspect-minitest-preview-heading p {
+  margin: 0;
+}
+
+.aspect-minitest-preview-heading p {
+  max-width: 520px;
+  color: #61747f;
+  font-size: .9rem;
+}
+
+.aspect-minitest-print-set {
+  display: grid;
+  justify-content: center;
+  gap: 28px;
+  padding: 18px;
+  overflow: auto;
+  border-radius: 8px;
+  background: #e6ebee;
+}
+
+.aspect-minitest-paper {
+  box-sizing: border-box;
+  position: relative;
+  width: 816px;
+  height: 1056px;
+  padding: 38px 42px;
+  overflow: hidden;
+  background: #fff;
+  color: #18242c;
+  box-shadow: 0 12px 30px rgb(20 40 54 / 16%);
+  container-type: inline-size;
+}
+
+.aspect-minitest-sheet-header {
+  display: grid;
+  grid-template-columns: auto minmax(150px, 1fr) 118px 118px auto;
+  align-items: end;
+  gap: 13px;
+  min-height: 34px;
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.aspect-minitest-sheet-header > strong {
+  color: #3f4a50;
+  font-size: 15px;
+  letter-spacing: .04em;
+}
+
+.aspect-minitest-sheet-header > span:not(.aspect-minitest-sheet-total) {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.aspect-minitest-sheet-header i {
+  flex: 1;
+  min-width: 30px;
+  border-bottom: 1px solid #424b50;
+}
+
+.aspect-minitest-sheet-total {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-weight: 800;
+}
+
+.aspect-minitest-sheet-total b {
+  display: grid;
+  min-width: 74px;
+  min-height: 32px;
+  padding: 0 7px;
+  place-items: center;
+  border: 2px solid #545d62;
+  background: #fff;
+}
+
+.aspect-minitest-title-band {
+  display: grid;
+  min-height: 54px;
+  padding: 8px 20px;
+  place-items: center;
+  background: #6d7478;
+  color: #fff;
+  font-size: 25px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.aspect-minitest-instruction-row {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  align-items: stretch;
+  gap: 18px;
+  margin: 20px 4px 18px;
+}
+
+.aspect-minitest-instruction-block {
+  border-left: 7px solid #5c656a;
+  padding: 9px 12px;
+  background: #f1f3f4;
+}
+
+.aspect-minitest-instruction-block strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 17px;
+}
+
+.aspect-minitest-instruction-block p,
+.aspect-minitest-tip p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.36;
+}
+
+.aspect-minitest-tip {
+  position: relative;
+  padding: 10px 14px;
+  border: 2px solid #747d82;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.aspect-minitest-tip::after {
+  content: "";
+  position: absolute;
+  right: 22px;
+  bottom: -11px;
+  width: 18px;
+  height: 18px;
+  border-right: 2px solid #747d82;
+  border-bottom: 2px solid #747d82;
+  background: #fff;
+  transform: rotate(45deg);
+}
+
+.aspect-minitest-tip strong {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 16px;
+  font-style: italic;
+}
+
+.aspect-minitest-correction-bank {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  margin: -5px 4px 12px;
+  padding: 7px 10px;
+  border: 1px dashed #929da3;
+  background: #f6f8f9;
+}
+
+.aspect-minitest-correction-bank > span {
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.aspect-minitest-correction-bank > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.aspect-minitest-aspect-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  height: 744px;
+}
+
+.aspect-minitest-print-set:has(.aspect-minitest-correction-bank) .aspect-minitest-aspect-grid {
+  height: 680px;
+}
+
+.aspect-minitest-aspect-cell {
+  display: grid;
+  grid-template-rows: 66px 1fr;
+  min-width: 0;
+  border: 2px solid #687278;
+  background: #fff;
+}
+
+.aspect-minitest-aspect-heading {
+  display: grid;
+  grid-template-columns: 58px 1fr auto;
+  align-items: center;
+  border-bottom: 2px solid #687278;
+  background: #e5e8e9;
+}
+
+.aspect-minitest-aspect-icon {
+  display: grid;
+  height: 100%;
+  place-items: center;
+  border-right: 1px solid #939b9f;
+  color: #414b50;
+}
+
+.aspect-minitest-aspect-heading > strong {
+  padding: 0 10px;
+  font-size: 18px;
+}
+
+.aspect-minitest-aspect-score {
+  display: grid;
+  min-width: 60px;
+  height: 100%;
+  padding: 0 7px;
+  place-items: center;
+  border-left: 1px solid #939b9f;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.aspect-minitest-token-grid,
+.aspect-minitest-reader-aspect-tokens {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  justify-self: center;
+  width: 156px;
+  gap: 9px 12px;
+  padding: 12px;
+}
+
+.aspect-minitest-token {
+  box-sizing: border-box;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 3px solid #171d21;
+  border-radius: 50%;
+  background: #171d21;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+  cursor: grab;
+}
+
+.aspect-minitest-token.is-correct,
+.aspect-minitest-token.is-revealed {
+  border-color: #2fa45a;
+  box-shadow: 0 0 0 2px rgb(47 164 90 / 16%);
+}
+
+.aspect-minitest-token.is-wrong {
+  border-color: #dc3e4f;
+  box-shadow: 0 0 0 2px rgb(220 62 79 / 15%);
+}
+
+.aspect-minitest-token.is-selected {
+  outline: 3px solid #1b80a5;
+  outline-offset: 3px;
+}
+
+.aspect-minitest-bank-page h2 {
+  margin: 30px 0 20px;
+  padding-bottom: 8px;
+  border-bottom: 3px solid #626b70;
+  font-size: 25px;
+}
+
+.aspect-minitest-phrase-list {
+  column-count: 2;
+  column-gap: 34px;
+  column-rule: 1px solid #d4d9dc;
+}
+
+.aspect-minitest-phrase-list p {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 6px;
+  min-height: 52px;
+  margin: 0 0 10px;
+  break-inside: avoid;
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.aspect-minitest-phrase-list strong {
+  text-align: right;
+}
+
+.aspect-minitest-bank-preview {
+  border-left: 4px solid #657278;
+}
+
+.activity-type-badge.objective-aspect_minitest {
+  border-color: #bfc9ce;
+  background: #edf1f3;
+  color: #334b58;
+}
+
+/* Lecteur du minitest */
+.aspect-minitest-reader {
+  display: grid;
+  width: min(1480px, 100%);
+  min-height: calc(100vh - 124px);
+  margin: 0 auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  color: #14354a;
+}
+
+.aspect-minitest-reader-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgb(20 53 74 / 16%);
+  background: #fff;
+}
+
+.aspect-minitest-reader-heading span {
+  color: #607681;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.aspect-minitest-reader-heading h1 {
+  margin: 1px 0 2px;
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
+}
+
+.aspect-minitest-reader-heading p {
+  max-width: 840px;
+  margin: 0;
+  color: #526b78;
+  font-size: .9rem;
+}
+
+.aspect-minitest-reader-total {
+  display: grid;
+  min-width: 120px;
+  padding: 8px 14px;
+  border: 2px solid #536a76;
+  background: #fff;
+  text-align: center;
+}
+
+.aspect-minitest-reader-total strong {
+  font-size: 1.2rem;
+}
+
+.aspect-minitest-reader-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.aspect-minitest-reader-bank {
+  min-height: 0;
+  padding: 16px;
+  overflow: auto;
+  border-right: 1px solid rgb(20 53 74 / 17%);
+  background: #f4f7f8;
+}
+
+.aspect-minitest-reader-bank-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.aspect-minitest-reader-bank-title > div {
+  display: grid;
+}
+
+.aspect-minitest-reader-token-bank {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 9px;
+  min-height: 70px;
+  padding: 13px;
+  border: 1px dashed #8799a3;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.aspect-minitest-reader-bank-empty {
+  align-self: center;
+  color: #71838c;
+  font-size: .82rem;
+}
+
+.aspect-minitest-reader-phrases {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.aspect-minitest-reader-phrases p {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 7px;
+  margin: 0;
+  padding: 7px 8px;
+  border-bottom: 1px solid #dce4e8;
+  font-size: .78rem;
+  line-height: 1.33;
+}
+
+.aspect-minitest-reader-phrases strong {
+  text-align: right;
+}
+
+.aspect-minitest-reader-board {
+  display: grid;
+  min-width: 0;
+  padding: 16px 20px;
+  overflow: auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 12px;
+  background: #eaf0f2;
+}
+
+.aspect-minitest-reader-tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid #abb8be;
+  border-radius: 7px;
+  background: #fff;
+  font-size: .84rem;
+}
+
+.aspect-minitest-reader-tip strong {
+  font-style: italic;
+}
+
+.aspect-minitest-reader-aspects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(230px, 1fr));
+  grid-template-rows: repeat(3, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.aspect-minitest-reader-aspect {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: 62px minmax(116px, 1fr);
+  border: 2px solid #718087;
+  border-radius: 7px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.aspect-minitest-reader-aspect.is-drop-ready {
+  border-color: #2c83a3;
+}
+
+.aspect-minitest-reader-aspect-heading {
+  display: grid;
+  grid-template-columns: 54px 1fr auto;
+  align-items: center;
+  border-bottom: 1px solid #a8b3b8;
+  background: #dde3e5;
+}
+
+.aspect-minitest-reader-aspect-heading svg {
+  justify-self: center;
+  width: 33px;
+  height: 33px;
+}
+
+.aspect-minitest-reader-aspect-heading strong {
+  padding: 0 6px;
+  font-size: .95rem;
+}
+
+.aspect-minitest-reader-aspect-heading span {
+  display: grid;
+  height: 100%;
+  min-width: 58px;
+  padding: 0 6px;
+  place-items: center;
+  border-left: 1px solid #a8b3b8;
+  background: #fff;
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.aspect-minitest-reader-aspect-tokens {
+  width: 164px;
+  gap: 10px;
+}
+
+.aspect-minitest-reader-aspect-tokens .aspect-minitest-token,
+.aspect-minitest-reader-token-bank .aspect-minitest-token {
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}
+
+.aspect-minitest-reader-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  min-height: 68px;
+  padding: 10px 20px;
+  border-top: 1px solid rgb(20 53 74 / 17%);
+  background: #fff;
+}
+
+.aspect-minitest-reader-actions p {
+  margin: 0 auto 0 0;
+  color: #536b77;
+  font-size: .88rem;
+}
+
+.aspect-minitest-reader-actions .button {
+  min-width: 138px;
+}
+
+@media (max-width: 1050px) {
+  .aspect-minitest-editor-settings,
+  .aspect-minitest-content-editor {
+    grid-template-columns: 1fr;
+  }
+  .aspect-minitest-content-editor section {
+    border-right: 0;
+    border-bottom: 1px solid #e1e7ea;
+  }
+  .aspect-minitest-reader-layout {
+    grid-template-columns: 280px minmax(640px, 1fr);
+  }
+}
+
+@media (min-width: 1600px) {
+  .aspect-minitest-reader-aspects {
+    grid-template-columns: repeat(3, minmax(230px, 1fr));
+    grid-template-rows: repeat(2, minmax(190px, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .aspect-minitest-editor-topbar,
+  .aspect-minitest-editor-topbar > div,
+  .aspect-minitest-preview-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .aspect-minitest-phrase-editor-list > div {
+    grid-template-columns: 30px minmax(0, 1fr) 38px;
+  }
+  .aspect-minitest-phrase-editor-list select {
+    grid-column: 2 / 4;
+  }
+  .aspect-minitest-reader {
+    min-width: 900px;
+  }
+}
+
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 0;
+  }
+  html:has(.aspect-minitest-editor),
+  body:has(.aspect-minitest-editor) {
+    width: 8.5in !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  body:has(.aspect-minitest-editor) * {
+    visibility: hidden !important;
+  }
+  body:has(.aspect-minitest-editor) .aspect-minitest-print-target,
+  body:has(.aspect-minitest-editor) .aspect-minitest-print-target * {
+    visibility: visible !important;
+  }
+  body:has(.aspect-minitest-editor) .aspect-minitest-print-target {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    display: block !important;
+    width: 8.5in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  body:has(.aspect-minitest-editor) .aspect-minitest-paper {
+    width: 8.5in !important;
+    height: 11in !important;
+    margin: 0 !important;
+    break-after: page;
+    box-shadow: none !important;
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+  body:has(.aspect-minitest-editor) .aspect-minitest-paper:last-child {
+    break-after: auto;
+  }
+  body:has(.aspect-minitest-editor) .aspect-minitest-correction-bank {
+    display: none !important;
+  }
+  body:has(.aspect-minitest-editor) .aspect-minitest-print-set:has(.aspect-minitest-correction-bank) .aspect-minitest-aspect-grid {
+    height: 744px;
+  }
+}
+
 /* V51 — lecteur d'histoire optimisé pour tableau */
 .reader-scene-main-history {
   grid-template-rows: auto minmax(0, 1fr) auto;

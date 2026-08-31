@@ -3,7 +3,7 @@
 import { demoData } from "@/data/demo-data";
 import type { AppData } from "@/types";
 
-export const DATA_VERSION = 34;
+export const DATA_VERSION = 35;
 
 function cloneDemoData(): AppData {
   return JSON.parse(JSON.stringify(demoData)) as AppData;

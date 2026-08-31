@@ -7,7 +7,8 @@ export const activityTypeLabels: Record<ActivityType, string> = {
   word_groups: "Groupes de mots",
   tree_analysis: "Analyse en arbre",
   history: "Activité d’histoire",
-  worksheet: "Feuille d’activité"
+  worksheet: "Feuille d’activité",
+  aspect_minitest: "Minitest sur les aspects"
 };
 
 export const wordClassLabels: Record<WordClass, string> = {

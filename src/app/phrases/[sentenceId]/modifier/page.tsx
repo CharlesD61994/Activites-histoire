@@ -8,6 +8,7 @@ import { TreeAnalysisEditor } from "@/components/tree-analysis-editor";
 import { MixedActivityEditor } from "@/components/mixed-activity-editor";
 import { HistoryActivityEditor } from "@/components/history-activity-editor";
 import { WorksheetEditor } from "@/components/worksheet-editor";
+import { AspectMinitestEditor } from "@/components/aspect-minitest-editor";
 import { Card } from "@/components/ui/card";
 import { useAppStore } from "@/store/app-store";
 
@@ -24,6 +25,7 @@ export default function EditSentencePage({ params }: { params: Promise<{ sentenc
   const isTreeAnalysisActivity = sentence.activityType === "tree_analysis";
   const isHistoryActivity = sentence.activityType === "history";
   const isWorksheetActivity = sentence.activityType === "worksheet";
+  const isAspectMinitestActivity = sentence.activityType === "aspect_minitest";
 
   return (
     <div className="page">
@@ -35,7 +37,9 @@ export default function EditSentencePage({ params }: { params: Promise<{ sentenc
           {isTreeAnalysisActivity
             ? "Modifie la phrase et sa mise en page d’analyse en arbre."
             : isHistoryActivity ? "Modifie l’opération, les documents, la consigne et les réponses de l’activité d’histoire."
-            : isWorksheetActivity ? "Modifie la mise en page, les réponses et le déroulement de la feuille." : "Modifie le contenu, les réponses et le déroulement dans l’éditeur grammatical unifié."}
+            : isWorksheetActivity ? "Modifie la mise en page, les réponses et le déroulement de la feuille."
+            : isAspectMinitestActivity ? "Modifie la fiche, la banque de phrases, les totaux et le corrigé des aspects."
+            : "Modifie le contenu, les réponses et le déroulement dans l’éditeur grammatical unifié."}
         </p>
       </div>
       {isTreeAnalysisActivity ? (
@@ -50,6 +54,8 @@ export default function EditSentencePage({ params }: { params: Promise<{ sentenc
         />
       ) : isWorksheetActivity ? (
         <WorksheetEditor initialSentence={sentence} levels={data.levels} onSave={(updated) => { saveSentence(updated); router.push("/phrases"); }}/>
+      ) : isAspectMinitestActivity ? (
+        <AspectMinitestEditor initialSentence={sentence} levels={data.levels} onSave={(updated) => { saveSentence(updated); router.push("/phrases"); }}/>
       ) : isHistoryActivity ? (
         <HistoryActivityEditor initialSentence={sentence} levels={data.levels} onSave={(updated) => { saveSentence(updated); router.push("/phrases"); }}/>
       ) : (

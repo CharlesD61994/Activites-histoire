@@ -65,7 +65,44 @@ export type ActivityType =
   | "word_groups"
   | "tree_analysis"
   | "history"
-  | "worksheet";
+  | "worksheet"
+  | "aspect_minitest";
+
+export type AspectMinitestAspectKey =
+  | "society"
+  | "politics"
+  | "economy"
+  | "culture"
+  | "science"
+  | "territory";
+
+export type AspectMinitestAspect = {
+  id: string;
+  key: AspectMinitestAspectKey;
+  label: string;
+  total: number;
+};
+
+export type AspectMinitestPhrase = {
+  id: string;
+  text: string;
+  aspectId?: string;
+};
+
+export type AspectMinitestData = {
+  headerLabel: string;
+  nameLabel: string;
+  groupLabel: string;
+  dateLabel: string;
+  bannerTitle: string;
+  instructionTitle: string;
+  instructions: string;
+  tipTitle: string;
+  tipText: string;
+  bankTitle: string;
+  aspects: AspectMinitestAspect[];
+  phrases: AspectMinitestPhrase[];
+};
 
 export type HistoryOperation =
   | "establish_facts"
@@ -709,6 +746,7 @@ export type Sentence = {
   primaryObjective?: GrammarObjective;
   isMixedActivity?: boolean;
   historyActivity?: HistoryActivityData;
+  aspectMinitest?: AspectMinitestData;
   workflowPhases?: GrammarWorkflowPhase[];
   grammarAnnotations?: GrammarAnnotation[];
   originalText: string;
