@@ -1389,7 +1389,7 @@ function HistoryInteractionEditor({
   }
 
   if (question.action === "classification" || question.action === "sort_categories") {
-    return withCanvasActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}>{item.text}<select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>);
+    return withCanvasActions(<div className="history-answer-list">{(question.classificationItems ?? []).map((item) => <label key={item.id}><span>{item.text}</span><select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div>);
   }
 
   if (question.action === "matching" || question.action === "table_fill") {

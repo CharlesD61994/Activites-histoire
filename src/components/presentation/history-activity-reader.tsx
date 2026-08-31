@@ -770,7 +770,7 @@ function HistoryQuestionInteraction({
       const itemId = `classification:${item.id}`;
       const locked = earned.has(itemId) || Boolean(revealed);
       const value = locked ? item.correctCategoryId : classificationAnswers[item.id] ?? "";
-      return <label key={item.id} className={earned.has(itemId) || checkedCorrect.has(itemId) ? "earned" : checkedWrong.has(itemId) ? "wrong" : revealed ? "revealed" : ""}>{item.text}<select value={value} disabled={locked || Boolean(awaitingRetry)} onChange={(event) => { resetValidation(); setClassificationAnswers({ ...classificationAnswers, [item.id]: event.target.value }); }}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>;
+      return <label key={item.id} className={earned.has(itemId) || checkedCorrect.has(itemId) ? "earned" : checkedWrong.has(itemId) ? "wrong" : revealed ? "revealed" : ""}><span>{item.text}</span><select value={value} disabled={locked || Boolean(awaitingRetry)} onChange={(event) => { resetValidation(); setClassificationAnswers({ ...classificationAnswers, [item.id]: event.target.value }); }}><option value="">Choisir</option>{(question.categories ?? []).map((category) => <option key={category.id} value={category.id}>{category.label}</option>)}</select></label>;
     })}</div>);
   }
 
