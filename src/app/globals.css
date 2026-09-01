@@ -9325,9 +9325,12 @@ textarea {
 .aspect-minitest-reader {
   display: grid;
   width: min(1480px, 100%);
-  min-height: calc(100vh - 124px);
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
   margin: 0 auto;
   grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
   color: #14354a;
 }
 
@@ -9377,6 +9380,7 @@ textarea {
   display: grid;
   grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
 }
 
 .aspect-minitest-reader-bank {
@@ -9424,8 +9428,11 @@ textarea {
 
 .aspect-minitest-reader-phrases {
   min-height: 0;
+  padding-right: 4px;
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  touch-action: pan-y;
 }
 
 .aspect-minitest-reader-phrase {
@@ -9474,6 +9481,8 @@ textarea {
 .aspect-minitest-reader-board {
   display: grid;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   padding: 16px 20px;
   overflow: hidden;
   grid-template-rows: auto minmax(0, 1fr);
@@ -9538,19 +9547,32 @@ textarea {
 }
 
 .aspect-minitest-reader-board-viewport {
+  position: relative;
   min-width: 0;
   min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  touch-action: pan-x pan-y;
+}
+
+.aspect-minitest-reader-board-stage {
+  position: relative;
+  min-width: 720px;
+  min-height: 512px;
 }
 
 .aspect-minitest-reader-aspects {
+  position: absolute;
+  inset: 0 auto auto 0;
   display: grid;
   min-width: 720px;
-  min-height: 100%;
+  min-height: 512px;
   grid-template-columns: repeat(3, minmax(210px, 1fr));
   grid-template-rows: repeat(2, minmax(250px, 1fr));
   gap: 12px;
   transform-origin: top left;
+  will-change: transform;
 }
 
 .aspect-minitest-reader-aspect {
@@ -9624,26 +9646,6 @@ textarea {
   width: 40px;
   height: 40px;
   font-size: 15px;
-}
-
-.aspect-minitest-drag-token {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 9999;
-  display: grid;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  background: #11181d;
-  box-shadow: 0 5px 14px rgb(0 0 0 / 28%);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 900;
-  line-height: 1;
-  pointer-events: none;
 }
 
 .aspect-minitest-reader-actions {
