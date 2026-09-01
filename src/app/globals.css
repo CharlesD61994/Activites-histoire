@@ -8540,6 +8540,9 @@ textarea {
 
 /* Minitest sur les aspects */
 .aspect-minitest-editor {
+  --aspect-minitest-accent: #ad5528;
+  --aspect-minitest-accent-dark: #743719;
+  --aspect-minitest-accent-soft: #fff0e6;
   width: 100%;
 }
 
@@ -8569,7 +8572,8 @@ textarea {
   position: static;
   z-index: 1;
   padding: 10px;
-  border: 1px solid #dce4ea;
+  border: 1px solid #e1c6b7;
+  border-top: 4px solid var(--aspect-minitest-accent);
   border-radius: 8px;
   background: rgb(255 255 255 / 96%);
   box-shadow: 0 6px 18px rgb(24 45 61 / 8%);
@@ -8610,14 +8614,24 @@ textarea {
 
 .aspect-minitest-preview-toggle button.active {
   background: #fff;
-  color: #143f60;
+  color: var(--aspect-minitest-accent-dark);
   box-shadow: 0 2px 7px rgb(24 45 61 / 12%);
+}
+
+.aspect-minitest-editor-topbar > div:last-child .button:last-child {
+  border-color: var(--aspect-minitest-accent);
+  background: var(--aspect-minitest-accent);
+  color: #fff;
+}
+
+.aspect-minitest-editor-topbar > div:last-child .button:last-child:hover {
+  background: var(--aspect-minitest-accent-dark);
 }
 
 .aspect-minitest-editor-settings,
 .aspect-minitest-content-editor,
 .aspect-minitest-phrase-editor {
-  border: 1px solid #dce4ea;
+  border: 1px solid #e4d3ca;
   border-radius: 8px;
   background: #fff;
 }
@@ -8646,6 +8660,13 @@ textarea {
   border-radius: 6px;
   background: #fff;
   color: #17384e;
+}
+
+.aspect-minitest-editor input:focus,
+.aspect-minitest-editor select:focus,
+.aspect-minitest-editor textarea:focus {
+  border-color: var(--aspect-minitest-accent);
+  outline: 3px solid rgb(173 85 40 / 15%);
 }
 
 .aspect-minitest-editor textarea {
@@ -8695,7 +8716,7 @@ textarea {
 .aspect-minitest-content-editor h3,
 .aspect-minitest-phrase-editor h3 {
   margin: 0 0 12px;
-  color: #17384e;
+  color: var(--aspect-minitest-accent-dark);
   font-size: 1rem;
 }
 
@@ -9339,8 +9360,8 @@ textarea {
 }
 
 .aspect-minitest-aspect-modal-options button.active {
-  border-color: #1e789b;
-  background: #eaf5f8;
+  border-color: #ad5528;
+  background: #fff0e6;
 }
 
 .aspect-minitest-aspect-modal-options span {
@@ -9349,17 +9370,20 @@ textarea {
 }
 
 .aspect-minitest-bank-preview {
-  border-left: 4px solid #657278;
+  border-left: 4px solid #ad5528;
 }
 
 .activity-type-badge.objective-aspect_minitest {
-  border-color: #bfc9ce;
-  background: #edf1f3;
-  color: #334b58;
+  border-color: #dba98e;
+  background: #fff0e6;
+  color: #743719;
 }
 
 /* Lecteur du minitest */
 .aspect-minitest-reader {
+  --aspect-minitest-accent: #ad5528;
+  --aspect-minitest-accent-dark: #743719;
+  --aspect-minitest-accent-soft: #fff0e6;
   display: grid;
   width: min(1480px, 100%);
   height: 100%;
@@ -9384,8 +9408,8 @@ textarea {
   padding: 16px;
   overflow: hidden;
   grid-template-rows: auto minmax(0, 1fr);
-  border-right: 1px solid rgb(20 53 74 / 17%);
-  background: #f4f7f8;
+  border-right: 3px solid var(--aspect-minitest-accent);
+  background: #fff8f3;
 }
 
 .aspect-minitest-reader-bank-title {
@@ -9398,6 +9422,10 @@ textarea {
 
 .aspect-minitest-reader-bank-title > div {
   display: grid;
+}
+
+.aspect-minitest-reader-bank-title .eyebrow {
+  color: var(--aspect-minitest-accent-dark);
 }
 
 .aspect-minitest-reader-token-bank {
@@ -9451,11 +9479,11 @@ textarea {
 
 .aspect-minitest-reader-phrase:hover,
 .aspect-minitest-reader-phrase.is-selected {
-  background: #e5f1f5;
+  background: var(--aspect-minitest-accent-soft);
 }
 
 .aspect-minitest-reader-phrase.is-selected {
-  box-shadow: inset 3px 0 #1e789b;
+  box-shadow: inset 3px 0 var(--aspect-minitest-accent);
 }
 
 .aspect-minitest-reader-phrase.is-dragging {
@@ -9482,7 +9510,7 @@ textarea {
   padding: 12px 20px;
   overflow: hidden;
   grid-template-rows: minmax(0, 1fr);
-  background: #eaf0f2;
+  background: #f2ece8;
 }
 
 .aspect-minitest-reader-zoom {
@@ -9599,7 +9627,8 @@ textarea {
 }
 
 .aspect-minitest-reader-aspect.is-drop-ready {
-  border-color: #2c83a3;
+  border-color: var(--aspect-minitest-accent);
+  box-shadow: 0 0 0 2px rgb(173 85 40 / 12%);
 }
 
 .aspect-minitest-reader-aspect-heading {
@@ -9687,6 +9716,16 @@ textarea {
 .aspect-minitest-reader-floating-actions .button {
   min-width: 126px;
   flex: 0 0 auto;
+}
+
+.aspect-minitest-reader-floating-actions .button:not(:disabled) {
+  border-color: var(--aspect-minitest-accent);
+  background: var(--aspect-minitest-accent);
+  color: #fff;
+}
+
+.aspect-minitest-reader-floating-actions .button:not(:disabled):hover {
+  background: var(--aspect-minitest-accent-dark);
 }
 
 .aspect-minitest-reader-floating-actions.is-placing,
@@ -12025,6 +12064,11 @@ textarea {
   background: linear-gradient(100deg, #082b49, var(--reader-chrome-navy) 55%, #174e78);
   color: #fff;
   box-shadow: 0 4px 16px rgb(5 35 61 / 18%);
+}
+
+.reader-scene-header.reader-scene-header-aspect-minitest {
+  background: #96481f;
+  box-shadow: 0 4px 16px rgb(91 40 17 / 24%);
 }
 
 .reader-scene-header .presentation-back,

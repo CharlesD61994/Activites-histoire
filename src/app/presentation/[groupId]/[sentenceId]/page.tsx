@@ -688,7 +688,7 @@ export default function PresentationPage({
   return (
     <ReaderChromeProvider>
     <div className="reader-scene">
-      <header className={`reader-scene-header ${isImmersiveHistoryActivity ? "reader-scene-header-history" : ""}`}>
+      <header className={`reader-scene-header ${isImmersiveHistoryActivity ? "reader-scene-header-history" : ""} ${isAspectMinitestActivity ? "reader-scene-header-aspect-minitest" : ""}`}>
         <button
           type="button"
           onClick={leaveSentence}
