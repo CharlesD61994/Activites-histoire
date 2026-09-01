@@ -36,7 +36,9 @@ export function tableTemplateLabel(kind: WorksheetTableTemplate) {
     sequence: "Ordre ou classement",
     association: "Association ou rôle",
     compact_rubric: "Points par bonne réponse",
-    rubric: "Grille de notation"
+    rubric: "Grille de notation",
+    section: "Section",
+    document: "Document"
   }[kind];
 }
 

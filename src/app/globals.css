@@ -12989,13 +12989,6 @@ textarea {
 .worksheet-settings-toggle small { color: var(--muted-foreground); font-weight: 800; white-space: nowrap; }
 .worksheet-settings-panel { display: grid; gap: 10px; margin-top: 8px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--secondary) 55%, #fff); }
 .worksheet-editor .tree-analysis-quick-add { position: sticky; top: 66px; z-index: 65; margin-top: 4px; margin-bottom: 4px; background: #fff; box-shadow: 0 8px 18px rgba(238,245,250,.86), var(--shadow-sm); }
-.worksheet-preset-bar { display: flex; min-height: 48px; margin-top: 8px; padding: 6px 10px; align-items: center; gap: 6px; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--secondary) 48%, #fff); }
-.worksheet-preset-bar > span { padding: 0 7px; color: var(--muted-foreground); font-size: .78rem; font-weight: 900; text-transform: uppercase; }
-.worksheet-preset-bar button { display: inline-flex; min-height: 34px; padding: 6px 10px; align-items: center; gap: 6px; border: 1px solid #d5e1ea; border-radius: 8px; background: #fff; color: var(--foreground); font: inherit; font-size: .84rem; font-weight: 850; white-space: nowrap; cursor: pointer; }
-.worksheet-preset-bar button:hover { border-color: color-mix(in srgb, var(--primary) 38%, var(--border)); color: var(--primary); }
-.worksheet-editor .worksheet-primary-tools { justify-content: flex-start; }
-.worksheet-secondary-tools { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 8px; padding: 9px 12px; border: 1px solid #dfe8f1; border-radius: 12px; background: #f7fafc; }
-.worksheet-secondary-tools .button { min-height: 38px; }
 .worksheet-meta-grid { grid-template-columns: minmax(220px, 1fr) minmax(150px, .55fr) minmax(140px, .48fr) minmax(280px, 1.25fr); align-items: end; }
 .worksheet-tag-editor { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; min-width: 0; }
 .worksheet-tag-editor > label { min-width: 0; }
@@ -13197,6 +13190,10 @@ textarea {
 .worksheet-page-image.reader { cursor: default; }
 .worksheet-image-delete { top: -11px; right: -11px; }
 .worksheet-image-resize { right: -5px; bottom: -5px; }
+.worksheet-document-image-button { position: absolute; z-index: 7; left: 50%; top: 50%; display: inline-flex; min-height: 38px; padding: 7px 12px; align-items: center; gap: 7px; transform: translate(-50%, -30%); border: 1px solid #9fb4c5; border-radius: 8px; background: #fff; color: #244b69; font: inherit; font-size: .82rem; font-weight: 850; cursor: pointer; box-shadow: 0 3px 10px rgb(24 67 105 / 12%); }
+.worksheet-document-image-button:hover { border-color: #244b69; background: #eef5fa; }
+.worksheet-document-block .worksheet-table-resize,
+.worksheet-score-resize { border-color: #fff; background: #111; box-shadow: 0 0 0 1px #111; }
 .worksheet-text-move-edge { position: absolute; z-index: 5; display: block; cursor: move; }
 .worksheet-text-move-edge.top,
 .worksheet-text-move-edge.bottom { left: -5px; right: -5px; height: 10px; }

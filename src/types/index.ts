@@ -669,7 +669,7 @@ export type TreeAnalysisTable = {
   width?: number;
   rowHeights?: number[];
   columnWidths?: number[];
-  kind?: "free" | "structured" | "choice" | "sequence" | "association" | "compact_rubric" | "rubric";
+  kind?: "free" | "structured" | "choice" | "sequence" | "association" | "compact_rubric" | "rubric" | "section" | "document";
   pageId?: string;
 };
 
@@ -726,6 +726,7 @@ export type WorksheetImage = {
   alt: string;
   wrapText: boolean;
   layoutMode?: "wrap" | "front" | "behind";
+  documentTableId?: string;
 };
 
 export type SentenceCorrection = {
