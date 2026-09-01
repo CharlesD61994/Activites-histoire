@@ -175,6 +175,7 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
   }
 
   const actionLabel = stage === "first-result" ? "Réessayer" : stage === "second-result" ? "Corriger" : stage === "complete" ? "Terminé" : "Valider";
+  const showAction = stage !== "placing" || allPlaced;
   const feedback = stage === "first-result"
     ? "Les bonnes réponses restent en place. Les réponses rouges retourneront dans la banque au prochain essai."
     : stage === "second-result"
@@ -188,10 +189,13 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
   return (
     <>
       <ReaderChromePortal slot="viewTools">
-        <div className="aspect-minitest-reader-zoom is-header" aria-label="Zoom du tableau">
-          <button type="button" onClick={() => setBoardZoom((value) => Math.max(80, value - 10))} disabled={boardZoom === 80} aria-label="Réduire le tableau" title="Réduire le tableau"><ZoomOut size={18} /></button>
-          <button type="button" onClick={() => setBoardZoom(100)} aria-label="Rétablir le zoom à 100 %" title="Rétablir le zoom">{boardZoom}%</button>
-          <button type="button" onClick={() => setBoardZoom((value) => Math.min(130, value + 10))} disabled={boardZoom === 130} aria-label="Agrandir le tableau" title="Agrandir le tableau"><ZoomIn size={18} /></button>
+        <div className="aspect-minitest-reader-header-tools">
+          {hasValidated && <strong className="aspect-minitest-reader-header-score" aria-label={`Résultat du minitest : ${totalEarned} sur ${maxScore}`}>{totalEarned} / {maxScore}</strong>}
+          <div className="aspect-minitest-reader-zoom is-header" aria-label="Zoom du tableau">
+            <button type="button" onClick={() => setBoardZoom((value) => Math.max(80, value - 10))} disabled={boardZoom === 80} aria-label="Réduire le tableau" title="Réduire le tableau"><ZoomOut size={18} /></button>
+            <button type="button" onClick={() => setBoardZoom(100)} aria-label="Rétablir le zoom à 100 %" title="Rétablir le zoom">{boardZoom}%</button>
+            <button type="button" onClick={() => setBoardZoom((value) => Math.min(130, value + 10))} disabled={boardZoom === 130} aria-label="Agrandir le tableau" title="Agrandir le tableau"><ZoomIn size={18} /></button>
+          </div>
         </div>
       </ReaderChromePortal>
 
@@ -292,20 +296,20 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
                 </div>
               </div>
             </div>
+            {showAction && (
+              <div className={`aspect-minitest-reader-floating-actions is-${stage}`} role="status">
+                <p>{feedback}</p>
+                <Button
+                  type="button"
+                  disabled={stage === "complete"}
+                  onClick={stage === "first-result" ? retry : stage === "second-result" ? reveal : validate}
+                >
+                  {stage === "complete" && <CheckCircle2 size={18} />}{actionLabel}
+                </Button>
+              </div>
+            )}
           </main>
         </div>
-
-        <footer className="aspect-minitest-reader-actions">
-          <p>{feedback}</p>
-          {hasValidated && <strong className="aspect-minitest-reader-score">{totalEarned} / {maxScore}</strong>}
-          <Button
-            type="button"
-            disabled={(stage === "placing" && !allPlaced) || stage === "complete"}
-            onClick={stage === "first-result" ? retry : stage === "second-result" ? reveal : validate}
-          >
-            {stage === "complete" && <CheckCircle2 size={18} />}{actionLabel}
-          </Button>
-        </footer>
       </div>
     </>
   );
