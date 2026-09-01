@@ -181,6 +181,14 @@ export function AspectMinitestSheet({
   const bankPhrases = (editableBank ? data.phrases : data.phrases.filter((phrase) => phrase.text.trim()))
     .map((phrase, index) => ({ phrase, number: index + 1 }));
   const bankColumnBreak = Math.ceil(bankPhrases.length / 2);
+  const bankColumns = [bankPhrases.slice(0, bankColumnBreak), bankPhrases.slice(bankColumnBreak)];
+  const bankColumnMetrics = bankColumns.map((column) => ({
+    phrases: column.length,
+    lines: column.reduce((sum, { phrase }) => sum + Math.max(1, Math.ceil(phrase.text.trim().length / 38)), 0)
+  }));
+  const regularBankHeight = Math.max(...bankColumnMetrics.map(({ phrases, lines }) => lines * 24.84 + phrases * 13), 0);
+  const balancedBankHeight = Math.max(...bankColumnMetrics.map(({ phrases, lines }) => lines * 21.96 + phrases * 8), 0);
+  const bankDensityClass = regularBankHeight <= 840 ? "" : balancedBankHeight <= 840 ? "is-balanced" : "is-compact";
 
   return (
     <div className={`aspect-minitest-print-set ${className}`}>
@@ -232,10 +240,10 @@ export function AspectMinitestSheet({
         <span className="aspect-minitest-page-number">1</span>
       </section>
 
-      <section className={`aspect-minitest-paper aspect-minitest-bank-page ${bankPhrases.length >= 17 ? "is-dense" : ""}`}>
+      <section className={`aspect-minitest-paper aspect-minitest-bank-page ${bankDensityClass}`}>
         <h2>{data.bankTitle}</h2>
         <div className="aspect-minitest-phrase-list">
-          {[bankPhrases.slice(0, bankColumnBreak), bankPhrases.slice(bankColumnBreak)].map((column, columnIndex) => (
+          {bankColumns.map((column, columnIndex) => (
             <div key={columnIndex}>
               {column.map(({ phrase, number }) => (
                 <p key={phrase.id} className={editableBank ? "is-editable" : ""}>

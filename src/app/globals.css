@@ -9231,11 +9231,27 @@ textarea {
   color: #000;
 }
 
-.aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list {
+.aspect-minitest-bank-page.is-balanced .aspect-minitest-phrase-list {
+  gap: 26px;
+}
+
+.aspect-minitest-bank-page.is-balanced .aspect-minitest-phrase-list p {
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 7px;
+  margin-bottom: 8px;
+  font-size: 18px;
+  line-height: 1.22;
+}
+
+.aspect-minitest-bank-page.is-balanced .aspect-minitest-phrase-list textarea {
+  line-height: 1.22;
+}
+
+.aspect-minitest-bank-page.is-compact .aspect-minitest-phrase-list {
   gap: 24px;
 }
 
-.aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list p {
+.aspect-minitest-bank-page.is-compact .aspect-minitest-phrase-list p {
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 6px;
   margin-bottom: 2px;
@@ -9243,7 +9259,7 @@ textarea {
   line-height: 1.05;
 }
 
-.aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list textarea {
+.aspect-minitest-bank-page.is-compact .aspect-minitest-phrase-list textarea {
   line-height: 1.05;
 }
 
