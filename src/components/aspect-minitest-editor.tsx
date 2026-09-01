@@ -37,6 +37,8 @@ export function AspectMinitestEditor({ initialSentence, levels, onSave }: Props)
   const [tagInput, setTagInput] = useState("");
   const [data, setData] = useState<AspectMinitestData>(() => initialSentence?.aspectMinitest ?? createAspectMinitestData());
   const [previewMode, setPreviewMode] = useState<"student" | "answer">("student");
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [aspectPhraseId, setAspectPhraseId] = useState<string>();
   const [message, setMessage] = useState("");
 
   const placements = useMemo(
@@ -60,14 +62,17 @@ export function AspectMinitestEditor({ initialSentence, levels, onSave }: Props)
     patchData({ phrases: data.phrases.map((phrase) => phrase.id === id ? { ...phrase, text } : phrase) });
   }
 
-  function insertPhraseAfter(id: string) {
+  function insertPhraseAfter(id: string, focusTarget: "manual" | "sheet" = "manual") {
     const index = data.phrases.findIndex((phrase) => phrase.id === id);
     const next = createAspectMinitestPhrase();
     const phrases = [...data.phrases];
     phrases.splice(index + 1, 0, next);
     patchData({ phrases });
     requestAnimationFrame(() => {
-      document.querySelector<HTMLInputElement>(`[data-minitest-phrase-id="${next.id}"]`)?.focus();
+      const selector = focusTarget === "sheet"
+        ? `[data-minitest-bank-phrase-id="${next.id}"]`
+        : `[data-minitest-phrase-id="${next.id}"]`;
+      document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector)?.focus();
     });
   }
 
@@ -123,8 +128,13 @@ export function AspectMinitestEditor({ initialSentence, levels, onSave }: Props)
 
   function print(variant: "student" | "answer") {
     setPreviewMode(variant);
+    setIsPrinting(true);
+    window.addEventListener("afterprint", () => setIsPrinting(false), { once: true });
     requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
   }
+
+  const aspectPhrase = aspectPhraseId ? data.phrases.find((phrase) => phrase.id === aspectPhraseId) : undefined;
+  const aspectPhraseNumber = aspectPhraseId ? data.phrases.findIndex((phrase) => phrase.id === aspectPhraseId) + 1 : 0;
 
   return (
     <div className="aspect-minitest-editor">
@@ -218,8 +228,39 @@ export function AspectMinitestEditor({ initialSentence, levels, onSave }: Props)
           variant={previewMode}
           placements={placements}
           interactiveCorrection={previewMode === "answer"}
+          editableBank={!isPrinting && previewMode === "student"}
           onAssign={assignPhrase}
+          onPhraseChange={updatePhrase}
+          onInsertPhraseAfter={(phraseId) => insertPhraseAfter(phraseId, "sheet")}
+          onSelectPhraseAspect={setAspectPhraseId}
         />
+
+        {aspectPhrase && (
+          <div className="modal-backdrop aspect-minitest-aspect-modal-backdrop" role="presentation" onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setAspectPhraseId(undefined);
+          }}>
+            <Card className="modal-card aspect-minitest-aspect-modal" role="dialog" aria-modal="true" aria-label={`Attribuer la phrase ${aspectPhraseNumber}`}>
+              <div className="modal-heading">
+                <div><span className="eyebrow">Phrase {aspectPhraseNumber}</span><h3>Choisir l’aspect</h3></div>
+                <button type="button" onClick={() => setAspectPhraseId(undefined)} aria-label="Fermer"><X size={18} /></button>
+              </div>
+              <p>{aspectPhrase.text.trim() || "Écris d’abord la phrase, puis choisis son aspect."}</p>
+              <div className="aspect-minitest-aspect-modal-options">
+                {data.aspects.map((aspect) => (
+                  <button
+                    key={aspect.id}
+                    type="button"
+                    className={aspectPhrase.aspectId === aspect.id ? "active" : ""}
+                    onClick={() => { assignPhrase(aspectPhrase.id, aspect.id); setAspectPhraseId(undefined); }}
+                  >
+                    {aspect.label}<span>/{aspect.total}</span>
+                  </button>
+                ))}
+              </div>
+              {aspectPhrase.aspectId && <Button type="button" variant="secondary" onClick={() => { assignPhrase(aspectPhrase.id, undefined); setAspectPhraseId(undefined); }}>Retirer l’attribution</Button>}
+            </Card>
+          </div>
+        )}
       </Card>
     </div>
   );

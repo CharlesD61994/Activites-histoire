@@ -16,7 +16,11 @@ type Props = {
   tokenStatus?: Record<string, AspectMinitestTokenStatus>;
   earnedByAspect?: Record<string, number>;
   interactiveCorrection?: boolean;
+  editableBank?: boolean;
   onAssign?: (phraseId: string, aspectId?: string) => void;
+  onPhraseChange?: (phraseId: string, text: string) => void;
+  onInsertPhraseAfter?: (phraseId: string) => void;
+  onSelectPhraseAspect?: (phraseId: string) => void;
   className?: string;
 };
 
@@ -161,7 +165,11 @@ export function AspectMinitestSheet({
   tokenStatus = {},
   earnedByAspect = {},
   interactiveCorrection = false,
+  editableBank = false,
   onAssign,
+  onPhraseChange,
+  onInsertPhraseAfter,
+  onSelectPhraseAspect,
   className = ""
 }: Props) {
   const answerPlacements = variant === "answer"
@@ -170,8 +178,7 @@ export function AspectMinitestSheet({
   const unassigned = data.phrases
     .map((phrase, index) => ({ phrase, number: index + 1 }))
     .filter(({ phrase }) => phrase.text.trim() && !answerPlacements[phrase.id]);
-  const bankPhrases = data.phrases
-    .filter((phrase) => phrase.text.trim())
+  const bankPhrases = (editableBank ? data.phrases : data.phrases.filter((phrase) => phrase.text.trim()))
     .map((phrase, index) => ({ phrase, number: index + 1 }));
   const bankColumnBreak = Math.ceil(bankPhrases.length / 2);
 
@@ -185,8 +192,7 @@ export function AspectMinitestSheet({
             <p>{data.instructions}</p>
           </div>
           <aside className="aspect-minitest-tip">
-            <strong>{data.tipTitle}</strong>
-            <p>{data.tipText}</p>
+            <span className="aspect-minitest-tip-copy"><strong>{data.tipTitle}</strong> {data.tipText}</span>
           </aside>
         </div>
 
@@ -232,7 +238,33 @@ export function AspectMinitestSheet({
           {[bankPhrases.slice(0, bankColumnBreak), bankPhrases.slice(bankColumnBreak)].map((column, columnIndex) => (
             <div key={columnIndex}>
               {column.map(({ phrase, number }) => (
-                <p key={phrase.id}><strong>{number}</strong><span>{phrase.text}</span></p>
+                <p key={phrase.id} className={editableBank ? "is-editable" : ""}>
+                  <button
+                    type="button"
+                    className={`aspect-minitest-bank-number ${phrase.aspectId ? "is-assigned" : ""}`}
+                    onDoubleClick={() => onSelectPhraseAspect?.(phrase.id)}
+                    aria-label={`Attribuer un aspect à la phrase ${number}`}
+                    title="Double-cliquer pour attribuer un aspect"
+                  >
+                    {number}
+                  </button>
+                  {editableBank ? (
+                    <textarea
+                      data-minitest-bank-phrase-id={phrase.id}
+                      value={phrase.text}
+                      onChange={(event) => onPhraseChange?.(phrase.id, event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          onInsertPhraseAfter?.(phrase.id);
+                        }
+                      }}
+                      rows={1}
+                      placeholder="Écris la phrase..."
+                      aria-label={`Phrase ${number}`}
+                    />
+                  ) : <span>{phrase.text}</span>}
+                </p>
               ))}
             </div>
           ))}
