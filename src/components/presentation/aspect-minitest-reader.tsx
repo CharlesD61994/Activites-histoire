@@ -54,6 +54,7 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
   const totalEarned = Object.values(earned).reduce((sum, points) => sum + points, 0);
   const maxScore = data.aspects.reduce((sum, aspect) => sum + aspect.total, 0);
   const unplaced = phrases.filter((phrase) => !placements[phrase.id]);
+  const correctionRevealed = Object.values(status).some((value) => value === "revealed");
   const earnedByAspect = Object.fromEntries(data.aspects.map((aspect) => [
     aspect.id,
     phrases
@@ -274,11 +275,12 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
                         <div className="aspect-minitest-reader-aspect-tokens">
                           {placed.map((phrase) => {
                             const tokenState = status[phrase.id];
+                            const visibleTokenState = correctionRevealed && tokenState === "correct" ? undefined : tokenState;
                             return (
                               <button
                                 key={phrase.id}
                                 type="button"
-                                className={`aspect-minitest-token ${tokenState ? `is-${tokenState}` : ""}`}
+                                className={`aspect-minitest-token ${visibleTokenState ? `is-${visibleTokenState}` : ""}`}
                                 draggable={!locked(phrase.id) && stage === "placing"}
                                 onDragStart={(event) => startPhraseDrag(event, phrase.id)}
                                 onDragEnd={() => setDraggedPhraseId(undefined)}
