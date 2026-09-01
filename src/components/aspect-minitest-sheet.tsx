@@ -35,13 +35,21 @@ export function AspectIllustration({ aspectKey }: { aspectKey: AspectMinitestAsp
 
 function MinitestHeader({ data, corrected }: { data: AspectMinitestData; corrected: boolean }) {
   const total = data.aspects.reduce((sum, aspect) => sum + aspect.total, 0);
+  const useOriginalLabels = data.nameLabel === "NOM" && data.groupLabel === "GROUPE";
   return (
     <>
       <div className="aspect-minitest-sheet-header">
-        <span className="aspect-minitest-name-line"><strong>{data.nameLabel}</strong><i /></span>
+        <i className="aspect-minitest-header-rule" />
+        {useOriginalLabels ? (
+          <img className="aspect-minitest-header-labels" src="/aspect-minitest/header-labels.png" alt="NOM, GROUPE" />
+        ) : (
+          <>
+            <strong className="aspect-minitest-name-label">{data.nameLabel}</strong>
+            <strong className="aspect-minitest-group-label">{data.groupLabel}</strong>
+          </>
+        )}
         <span className={`aspect-minitest-corrected-label ${corrected ? "is-visible" : ""}`}>{data.headerLabel}</span>
-        <span className="aspect-minitest-group-line"><i /><strong>{data.groupLabel}</strong></span>
-        {data.dateLabel && <span className="aspect-minitest-date-line">{data.dateLabel}<i /></span>}
+        {data.dateLabel && <span className="aspect-minitest-date-line">{data.dateLabel}</span>}
         <span className="aspect-minitest-chapter-label">{data.chapterLabel ?? ""}</span>
         <span className="aspect-minitest-sheet-total">/{total}</span>
       </div>
@@ -162,6 +170,10 @@ export function AspectMinitestSheet({
   const unassigned = data.phrases
     .map((phrase, index) => ({ phrase, number: index + 1 }))
     .filter(({ phrase }) => phrase.text.trim() && !answerPlacements[phrase.id]);
+  const bankPhrases = data.phrases
+    .filter((phrase) => phrase.text.trim())
+    .map((phrase, index) => ({ phrase, number: index + 1 }));
+  const bankColumnBreak = Math.ceil(bankPhrases.length / 2);
 
   return (
     <div className={`aspect-minitest-print-set ${className}`}>
@@ -211,16 +223,21 @@ export function AspectMinitestSheet({
             />
           ))}
         </div>
+        <span className="aspect-minitest-page-number">1</span>
       </section>
 
       <section className="aspect-minitest-paper aspect-minitest-bank-page">
-        <MinitestHeader data={data} corrected={variant === "answer"} />
         <h2>{data.bankTitle}</h2>
         <div className="aspect-minitest-phrase-list">
-          {data.phrases.filter((phrase) => phrase.text.trim()).map((phrase, index) => (
-            <p key={phrase.id}><strong>{index + 1})</strong><span>{phrase.text}</span></p>
+          {[bankPhrases.slice(0, bankColumnBreak), bankPhrases.slice(bankColumnBreak)].map((column, columnIndex) => (
+            <div key={columnIndex}>
+              {column.map(({ phrase, number }) => (
+                <p key={phrase.id}><strong>{number}</strong><span>{phrase.text}</span></p>
+              ))}
+            </div>
           ))}
         </div>
+        <span className="aspect-minitest-page-number">2</span>
       </section>
     </div>
   );
