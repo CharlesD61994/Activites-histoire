@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { CheckCircle2, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { AspectIllustration, type AspectMinitestTokenStatus } from "@/components/aspect-minitest-sheet";
+import { ReaderChromePortal } from "@/components/presentation/reader-chrome";
 import { Button } from "@/components/ui/button";
 import type { AspectMinitestData, AspectMinitestPhrase, Sentence } from "@/types";
 
@@ -185,131 +186,127 @@ export function AspectMinitestReader({ sentence, onPoint, onCompleteChange }: Pr
           : "Glisse chaque phrase dans le bon aspect de société.";
 
   return (
-    <div className="aspect-minitest-reader">
-      <header className="aspect-minitest-reader-heading">
-        <div><span>{data.headerLabel}</span><h1>{data.bannerTitle}</h1><p>{data.instructions}</p></div>
-        {hasValidated && <div className="aspect-minitest-reader-total"><span>Total</span><strong>{totalEarned} / {maxScore}</strong></div>}
-      </header>
+    <>
+      <ReaderChromePortal slot="viewTools">
+        <div className="aspect-minitest-reader-zoom is-header" aria-label="Zoom du tableau">
+          <button type="button" onClick={() => setBoardZoom((value) => Math.max(80, value - 10))} disabled={boardZoom === 80} aria-label="Réduire le tableau" title="Réduire le tableau"><ZoomOut size={18} /></button>
+          <button type="button" onClick={() => setBoardZoom(100)} aria-label="Rétablir le zoom à 100 %" title="Rétablir le zoom">{boardZoom}%</button>
+          <button type="button" onClick={() => setBoardZoom((value) => Math.min(130, value + 10))} disabled={boardZoom === 130} aria-label="Agrandir le tableau" title="Agrandir le tableau"><ZoomIn size={18} /></button>
+        </div>
+      </ReaderChromePortal>
 
-      <div className="aspect-minitest-reader-layout">
-        <aside
-          className={`aspect-minitest-reader-bank ${draggedPhraseId ? "is-dragging" : ""}`}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            const phraseId = event.dataTransfer.getData("text/aspect-phrase");
-            if (phraseId) assign(phraseId, undefined);
-            setDraggedPhraseId(undefined);
-          }}
-        >
-          <div className="aspect-minitest-reader-bank-title">
-            <div>
-              <span className="eyebrow">{data.bankTitle}</span>
-              <strong>{unplaced.length} phrase{unplaced.length > 1 ? "s" : ""} à placer</strong>
+      <div className="aspect-minitest-reader">
+        <div className="aspect-minitest-reader-layout">
+          <aside
+            className={`aspect-minitest-reader-bank ${draggedPhraseId ? "is-dragging" : ""}`}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              const phraseId = event.dataTransfer.getData("text/aspect-phrase");
+              if (phraseId) assign(phraseId, undefined);
+              setDraggedPhraseId(undefined);
+            }}
+          >
+            <div className="aspect-minitest-reader-bank-title">
+              <div>
+                <span className="eyebrow">{data.bankTitle}</span>
+                <strong>{unplaced.length} phrase{unplaced.length > 1 ? "s" : ""} à placer</strong>
+              </div>
+              <Button type="button" variant="secondary" onClick={restart} aria-label="Recommencer" title="Recommencer"><RotateCcw size={17} /></Button>
             </div>
-            <Button type="button" variant="secondary" onClick={restart} aria-label="Recommencer" title="Recommencer"><RotateCcw size={17} /></Button>
-          </div>
-          <div className="aspect-minitest-reader-phrases" role="list" onDragOver={keepDragAreaScrolling}>
-            {unplaced.map((phrase) => {
-              const number = phraseNumber(data, phrase.id);
-              return (
-                <button
-                  key={phrase.id}
-                  type="button"
-                  role="listitem"
-                  className={`aspect-minitest-reader-phrase ${selectedPhraseId === phrase.id ? "is-selected" : ""} ${draggedPhraseId === phrase.id ? "is-dragging" : ""}`}
-                  draggable={stage === "placing"}
-                  onDragStart={(event) => startPhraseDrag(event, phrase.id)}
-                  onDragEnd={() => setDraggedPhraseId(undefined)}
-                  onClick={() => setSelectedPhraseId((current) => current === phrase.id ? undefined : phrase.id)}
-                >
-                  <strong className="aspect-minitest-bank-number">{number}</strong>
-                  <span>{phrase.text}</span>
-                </button>
-              );
-            })}
-            {!unplaced.length && <span className="aspect-minitest-reader-bank-empty">Toutes les phrases sont placées.</span>}
-          </div>
-        </aside>
+            <div className="aspect-minitest-reader-phrases" role="list" onDragOver={keepDragAreaScrolling}>
+              {unplaced.map((phrase) => {
+                const number = phraseNumber(data, phrase.id);
+                return (
+                  <button
+                    key={phrase.id}
+                    type="button"
+                    role="listitem"
+                    className={`aspect-minitest-reader-phrase ${selectedPhraseId === phrase.id ? "is-selected" : ""} ${draggedPhraseId === phrase.id ? "is-dragging" : ""}`}
+                    draggable={stage === "placing"}
+                    onDragStart={(event) => startPhraseDrag(event, phrase.id)}
+                    onDragEnd={() => setDraggedPhraseId(undefined)}
+                    onClick={() => setSelectedPhraseId((current) => current === phrase.id ? undefined : phrase.id)}
+                  >
+                    <strong className="aspect-minitest-bank-number">{number}</strong>
+                    <span>{phrase.text}</span>
+                  </button>
+                );
+              })}
+              {!unplaced.length && <span className="aspect-minitest-reader-bank-empty">Toutes les phrases sont placées.</span>}
+            </div>
+          </aside>
 
-        <main className="aspect-minitest-reader-board">
-          <div className="aspect-minitest-reader-board-toolbar">
-            <div className="aspect-minitest-reader-tip"><strong>{data.tipTitle}</strong><span>{data.tipText}</span></div>
-            <div className="aspect-minitest-reader-zoom" aria-label="Zoom du tableau">
-              <button type="button" onClick={() => setBoardZoom((value) => Math.max(80, value - 10))} disabled={boardZoom === 80} aria-label="Réduire le tableau" title="Réduire le tableau"><ZoomOut size={18} /></button>
-              <button type="button" onClick={() => setBoardZoom(100)} aria-label="Rétablir le zoom à 100 %" title="Rétablir le zoom">{boardZoom}%</button>
-              <button type="button" onClick={() => setBoardZoom((value) => Math.min(130, value + 10))} disabled={boardZoom === 130} aria-label="Agrandir le tableau" title="Agrandir le tableau"><ZoomIn size={18} /></button>
-            </div>
-          </div>
-          <div className="aspect-minitest-reader-board-viewport" onDragOver={keepDragAreaScrolling}>
-            <div
-              className="aspect-minitest-reader-board-stage"
-              style={{
-                width: `${boardZoom}%`,
-                height: `${boardZoom}%`,
-                minWidth: `${7.2 * boardZoom}px`,
-                minHeight: `${5.12 * boardZoom}px`
-              }}
-            >
+          <main className="aspect-minitest-reader-board">
+            <div className="aspect-minitest-reader-board-viewport" onDragOver={keepDragAreaScrolling}>
               <div
-                className="aspect-minitest-reader-aspects"
+                className="aspect-minitest-reader-board-stage"
                 style={{
-                  width: `${10000 / boardZoom}%`,
-                  height: `${10000 / boardZoom}%`,
-                  transform: `scale(${boardZoom / 100})`
+                  width: `${boardZoom}%`,
+                  minWidth: `${6.78 * boardZoom}px`
                 }}
               >
-                {data.aspects.map((aspect) => {
-                  const placed = phrases.filter((phrase) => placements[phrase.id] === aspect.id);
-                  return (
-                    <div
-                      key={aspect.id}
-                      className={`aspect-minitest-reader-aspect ${selectedPhraseId || draggedPhraseId ? "is-drop-ready" : ""}`}
-                      onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
-                      onDrop={(event) => dropOnAspect(event, aspect.id)}
-                      onClick={() => { if (selectedPhraseId) assign(selectedPhraseId, aspect.id); }}
-                    >
-                      <div className="aspect-minitest-reader-aspect-heading">
-                        <strong>{aspect.label}</strong>
-                        <span>{hasValidated ? earnedByAspect[aspect.id] : "___"} / {aspect.total}</span>
+                <div
+                  className="aspect-minitest-reader-aspects"
+                  style={{
+                    width: `${10000 / boardZoom}%`,
+                    height: `${10000 / boardZoom}%`,
+                    transform: `scale(${boardZoom / 100})`
+                  }}
+                >
+                  {data.aspects.map((aspect) => {
+                    const placed = phrases.filter((phrase) => placements[phrase.id] === aspect.id);
+                    return (
+                      <div
+                        key={aspect.id}
+                        className={`aspect-minitest-reader-aspect ${selectedPhraseId || draggedPhraseId ? "is-drop-ready" : ""}`}
+                        onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
+                        onDrop={(event) => dropOnAspect(event, aspect.id)}
+                        onClick={() => { if (selectedPhraseId) assign(selectedPhraseId, aspect.id); }}
+                      >
+                        <div className="aspect-minitest-reader-aspect-heading">
+                          <strong>{aspect.label}</strong>
+                          <span>{hasValidated ? earnedByAspect[aspect.id] : "___"} / {aspect.total}</span>
+                        </div>
+                        <div className="aspect-minitest-reader-aspect-tokens">
+                          {placed.map((phrase) => {
+                            const tokenState = status[phrase.id];
+                            return (
+                              <button
+                                key={phrase.id}
+                                type="button"
+                                className={`aspect-minitest-token ${tokenState ? `is-${tokenState}` : ""}`}
+                                draggable={!locked(phrase.id) && stage === "placing"}
+                                onDragStart={(event) => startPhraseDrag(event, phrase.id)}
+                                onDragEnd={() => setDraggedPhraseId(undefined)}
+                                onClick={(event) => { event.stopPropagation(); assign(phrase.id, undefined); }}
+                              >
+                                {phraseNumber(data, phrase.id)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className={`aspect-minitest-reader-aspect-art is-${aspect.key}`}><AspectIllustration aspectKey={aspect.key} /></div>
                       </div>
-                      <div className="aspect-minitest-reader-aspect-tokens">
-                        {placed.map((phrase) => {
-                          const tokenState = status[phrase.id];
-                          return (
-                            <button
-                              key={phrase.id}
-                              type="button"
-                              className={`aspect-minitest-token ${tokenState ? `is-${tokenState}` : ""}`}
-                              draggable={!locked(phrase.id) && stage === "placing"}
-                              onDragStart={(event) => startPhraseDrag(event, phrase.id)}
-                              onDragEnd={() => setDraggedPhraseId(undefined)}
-                              onClick={(event) => { event.stopPropagation(); assign(phrase.id, undefined); }}
-                            >
-                              {phraseNumber(data, phrase.id)}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className={`aspect-minitest-reader-aspect-art is-${aspect.key}`}><AspectIllustration aspectKey={aspect.key} /></div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        </main>
-      </div>
+          </main>
+        </div>
 
-      <footer className="aspect-minitest-reader-actions">
-        <p>{feedback}</p>
-        <Button
-          type="button"
-          disabled={(stage === "placing" && !allPlaced) || stage === "complete"}
-          onClick={stage === "first-result" ? retry : stage === "second-result" ? reveal : validate}
-        >
-          {stage === "complete" && <CheckCircle2 size={18} />}{actionLabel}
-        </Button>
-      </footer>
-    </div>
+        <footer className="aspect-minitest-reader-actions">
+          <p>{feedback}</p>
+          {hasValidated && <strong className="aspect-minitest-reader-score">{totalEarned} / {maxScore}</strong>}
+          <Button
+            type="button"
+            disabled={(stage === "placing" && !allPlaced) || stage === "complete"}
+            onClick={stage === "first-result" ? retry : stage === "second-result" ? reveal : validate}
+          >
+            {stage === "complete" && <CheckCircle2 size={18} />}{actionLabel}
+          </Button>
+        </footer>
+      </div>
+    </>
   );
 }
