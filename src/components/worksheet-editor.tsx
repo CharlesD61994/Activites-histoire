@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { AlignCenter, AlignJustify, AlignLeft, ArrowDown, ArrowUp, Bold, Check, ChevronDown, ChevronUp, Grid3X3, ImagePlus, Merge, Plus, Printer, Save, Split, X } from "lucide-react";
+import { AlignCenter, AlignJustify, AlignLeft, ArrowDown, ArrowUp, Bold, Check, ChevronDown, ChevronUp, FileQuestion, FileText, Grid3X3, ImagePlus, ListChecks, MoreHorizontal, Merge, Plus, Printer, Save, Split, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { SchoolLevel, Sentence, SentenceDifficulty, TreeAnalysisDocumentPage, TreeAnalysisQuestionBadge, TreeAnalysisScoreBox, TreeAnalysisTable, TreeAnalysisTableCell, TreeAnalysisTextBox, WorksheetAnswerLines, WorksheetCheckboxMark, WorksheetDimensionBand, WorksheetImage } from "@/types";
@@ -17,10 +17,21 @@ type DragKind = MovableKind | "text-resize" | "lines-resize" | "score-resize" | 
 type DragState = { kind: DragKind; id: string; offsetX: number; offsetY: number } | null;
 type SelectedItem = { kind: MovableKind; id: string };
 type MarqueeState = { startX: number; startY: number; x: number; y: number };
-type TableDialogState = { kind: WorksheetTableTemplate; rows: number; columns: number; maxPoints: number; dimension: WorksheetDimensionBand["dimension"] };
+type TableDialogState = { kind: WorksheetTableTemplate; rows: number; columns: number; maxPoints: number; dimension: string };
+type WorksheetPreset = "evaluation" | "study" | "exercise";
 
 const W = 1056;
 const H = 816;
+const historyOperations = [
+  "Établir des faits",
+  "Établir des liens de causalité",
+  "Situer dans le temps",
+  "Situer dans l’espace",
+  "Mettre en relation des faits",
+  "Déterminer des causes et des conséquences",
+  "Dégager des différences et des similitudes",
+  "Déterminer des changements et des continuités"
+];
 const defaultPage = (id = crypto.randomUUID()): TreeAnalysisDocumentPage => ({
   id,
   orientation: "portrait",
@@ -29,7 +40,7 @@ const defaultPage = (id = crypto.randomUUID()): TreeAnalysisDocumentPage => ({
   margins: { top: 68, right: 121, bottom: 50, left: 121 },
   header: { nameX: 121, nameY: 25, groupX: 650, groupY: 25, fontSize: 11, lineWidth: 250, activityType: "EXERCICES", activityTitle: "Feuille d’activité", showPageBadge: true },
   mainTitle: { enabled: true, prefix: "Exercices", title: "Feuille d’activité", subtitle: "Activité" },
-  taskCallout: { enabled: false, text: "Lis le texte narratif suivant, puis réponds aux questions des 4 dimensions de la lecture." }
+  taskCallout: { enabled: false, text: "" }
 });
 const difficultyLabels: Record<SentenceDifficulty, string> = { easy: "Facile", medium: "Moyenne", hard: "Difficile" };
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -185,6 +196,8 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
   const [selectedCells, setSelectedCells] = useState<number[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [headerControlsOpen, setHeaderControlsOpen] = useState(false);
+  const [moreToolsOpen, setMoreToolsOpen] = useState(false);
+  const [flowOpen, setFlowOpen] = useState(false);
   const [textSelection, setTextSelection] = useState<SharedTextRange | null>(null);
   const textSelectionRef = useRef<SharedTextRange | null>(null);
   const drag = useRef<DragState>(null);
@@ -241,10 +254,80 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
     setPages((current) => current.map((page) => page.id === activePageId ? { ...page, ...patch, orientation: "portrait", template: "teaching_document" } : page));
   }
 
+  function applyPreset(preset: WorksheetPreset) {
+    const currentTitle = title.trim() || activePage.mainTitle?.title || "Les premières civilisations";
+    const presets: Record<WorksheetPreset, Pick<TreeAnalysisDocumentPage, "header" | "mainTitle" | "taskCallout">> = {
+      evaluation: {
+        header: { ...activePage.header!, activityType: "ÉVALUATION", activityTitle: currentTitle },
+        mainTitle: { enabled: true, prefix: "Évaluation", title: currentTitle, subtitle: "Section A – Questions de connaissances", scoreTotal: activePage.mainTitle?.scoreTotal ?? 30 },
+        taskCallout: { enabled: false, text: "" }
+      },
+      study: {
+        header: { ...activePage.header!, activityType: "DOCUMENT D’ÉTUDE", activityTitle: currentTitle },
+        mainTitle: { enabled: true, prefix: "Document d’étude", title: currentTitle, subtitle: "Questions et documents" },
+        taskCallout: { enabled: false, text: "" }
+      },
+      exercise: {
+        header: { ...activePage.header!, activityType: "EXERCICES", activityTitle: currentTitle },
+        mainTitle: { enabled: true, prefix: "Exercices", title: currentTitle, subtitle: "Feuille d’activité" },
+        taskCallout: { enabled: false, text: "" }
+      }
+    };
+    updatePage(presets[preset]);
+  }
+
+  function nextBlockY(height: number) {
+    const lowest = movableItems().reduce((bottom, item) => Math.max(bottom, item.y + item.height), activePage.mainTitle?.enabled ? 170 : 110);
+    return clamp(lowest + 22, 190, H - height - 38);
+  }
+
   function addPage() { const page = defaultPage(); setPages((current) => [...current, page]); setActivePageId(page.id); }
   function addText() {
     const box: TreeAnalysisTextBox = { id: crypto.randomUUID(), pageId: activePageId, x: 145, y: 190, width: 780, height: 220, text: "Écris ton texte ici.", fontSize: 20, textAlign: "left", annotations: [] };
     setTextBoxes((current) => [...current, box]); setSelected({ kind: "text", id: box.id });
+  }
+  function addQuestionBlock() {
+    const y = nextBlockY(112);
+    const number = badges.filter((badge) => badge.pageId === activePageId).reduce((highest, badge) => Math.max(highest, badge.number), 0) + 1;
+    const badge: TreeAnalysisQuestionBadge = { id: crypto.randomUUID(), pageId: activePageId, x: 121, y: y + 2, number };
+    const prompt: TreeAnalysisTextBox = { id: crypto.randomUUID(), pageId: activePageId, x: 170, y, width: 640, height: 48, text: "Écris la question ici.", fontSize: 18, textAlign: "left", bold: true, annotations: [] };
+    const score: TreeAnalysisScoreBox = { id: crypto.randomUUID(), pageId: activePageId, x: 835, y, total: 1, size: "normal", width: 100, height: 36 };
+    const lines: WorksheetAnswerLines = { id: crypto.randomUUID(), pageId: activePageId, x: 170, y: y + 54, width: 765, lineCount: 2, lineSpacing: 20, answer: "", answerFontSize: 18, answerTextAlign: "left" };
+    setBadges((current) => [...current, badge]);
+    setTextBoxes((current) => [...current, prompt]);
+    setScoreBoxes((current) => [...current, score]);
+    setAnswerLines((current) => [...current, lines]);
+    setSelected({ kind: "text", id: prompt.id });
+  }
+  function addSectionBlock() {
+    const y = nextBlockY(42);
+    const table: TreeAnalysisTable = {
+      id: crypto.randomUUID(), pageId: activePageId, x: 121, y, width: 814, kind: "free", rows: 1, columns: 2,
+      columnWidths: [650, 164], rowHeights: [42],
+      cells: [
+        { text: "Section A – Questions de connaissances", isCorrect: false, role: "text", background: "gray", textColor: "black", textAlign: "left", verticalAlign: "center", fontSize: 18, bold: true, borderWidth: 1 },
+        { text: "Total : /10", isCorrect: false, role: "text", background: "gray", textColor: "black", textAlign: "right", verticalAlign: "center", fontSize: 16, bold: true, borderWidth: 1 }
+      ]
+    };
+    setTables((current) => [...current, table]);
+    setSelected({ kind: "table", id: table.id });
+    setSelectedCells([0]);
+  }
+  function addDocumentBlock() {
+    const count = tables.filter((table) => table.pageId === activePageId && table.cells[0]?.text.startsWith("Document ")).length + 1;
+    const y = nextBlockY(198);
+    const table: TreeAnalysisTable = {
+      id: crypto.randomUUID(), pageId: activePageId, x: 121, y, width: 814, kind: "free", rows: 3, columns: 1,
+      columnWidths: [814], rowHeights: [42, 120, 36],
+      cells: [
+        { text: `Document ${count} – Titre du document`, isCorrect: false, role: "text", background: "black", textColor: "white", textAlign: "left", verticalAlign: "center", fontSize: 18, bold: true, borderWidth: 1 },
+        { text: "Ajoute une image ou colle le texte du document.", isCorrect: false, role: "text", background: "white", textColor: "black", textAlign: "left", verticalAlign: "top", fontSize: 17, borderWidth: 1 },
+        { text: "Source :", isCorrect: false, role: "text", background: "white", textColor: "black", textAlign: "left", verticalAlign: "center", fontSize: 13, borderWidth: 1 }
+      ]
+    };
+    setTables((current) => [...current, table]);
+    setSelected({ kind: "table", id: table.id });
+    setSelectedCells([0]);
   }
   function addScore() {
     const total = Math.max(1, Math.round(Number(window.prompt("Total de points", "10")) || 10));
@@ -257,10 +340,10 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
     setBadges((current) => [...current, badge]); setSelected({ kind: "badge", id: badge.id });
   }
   function openTableDialog() {
-    setTableDialog({ kind: "free", rows: 2, columns: 3, maxPoints: 3, dimension: "Compréhension" });
+    setTableDialog({ kind: "free", rows: 2, columns: 3, maxPoints: 3, dimension: historyOperations[0] });
   }
   function openRubricDialog() {
-    setTableDialog({ kind: "rubric", rows: 2, columns: 4, maxPoints: 3, dimension: "Compréhension" });
+    setTableDialog({ kind: "rubric", rows: 2, columns: 4, maxPoints: 3, dimension: historyOperations[0] });
   }
   function addTable() {
     if (!tableDialog) return;
@@ -641,7 +724,9 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
   return <div className="worksheet-editor tree-analysis-editor">
     <Card className="tree-analysis-builder-card">
       <div className="worksheet-topbar"><div className="worksheet-title-zone"><div className="worksheet-page-tabs">{pages.map((page,index) => <button key={page.id} type="button" className={page.id === activePageId ? "active" : ""} onClick={() => setActivePageId(page.id)}>Page {index + 1}</button>)}<button type="button" onClick={addPage}><Plus size={15}/> Page</button></div></div><div className="tree-analysis-builder-tools"><Button type="button" variant="secondary" onClick={() => setPrintMode("student")} aria-pressed={printMode === "student"}>Aperçu élève</Button><Button type="button" variant="secondary" onClick={() => setPrintMode("answer")} aria-pressed={printMode === "answer"}><Check size={17}/> Corrigé</Button><Button type="button" variant="secondary" onClick={printDocument}><Printer size={17}/> Imprimer</Button><Button type="button" onClick={save}><Save size={17}/> Enregistrer</Button></div></div>
-      <div className="tree-analysis-quick-add"><Button type="button" onClick={addText}><span className="tree-analysis-add-icon">T</span> Texte</Button><Button type="button" variant="secondary" onClick={addScore}><span className="tree-analysis-add-icon">/x</span> Points</Button><Button type="button" variant="secondary" onClick={openTableDialog}><Grid3X3 size={17}/> Tableau</Button><Button type="button" variant="secondary" onClick={openRubricDialog}><Grid3X3 size={17}/> Grille de notation</Button><Button type="button" variant="secondary" onClick={addBadge}><span className="tree-analysis-add-icon">1</span> Numéro</Button><Button type="button" variant="secondary" onClick={addLines}><span className="tree-analysis-add-icon">━</span> Lignes de réponse</Button><Button type="button" variant="secondary" onClick={()=>setBandDialog("Compréhension")}><span className="tree-analysis-add-icon worksheet-band-icon">C</span> Bandeau de lecture</Button><Button type="button" variant="secondary" onClick={()=>imageInputRef.current?.click()}><ImagePlus size={17}/> Image</Button><input ref={imageInputRef} className="worksheet-image-input" type="file" accept="image/*" onChange={(event)=>{importImage(event.target.files?.[0]);event.target.value="";}}/></div>
+      <div className="worksheet-preset-bar" aria-label="Modèle de page"><span>Modèle</span><button type="button" onClick={()=>applyPreset("evaluation")}><ListChecks size={16}/> Évaluation</button><button type="button" onClick={()=>applyPreset("study")}><FileText size={16}/> Document d’étude</button><button type="button" onClick={()=>applyPreset("exercise")}><Grid3X3 size={16}/> Feuille d’exercices</button></div>
+      <div className="tree-analysis-quick-add worksheet-primary-tools"><Button type="button" onClick={addQuestionBlock}><FileQuestion size={17}/> Question</Button><Button type="button" variant="secondary" onClick={addSectionBlock}><ListChecks size={17}/> Section</Button><Button type="button" variant="secondary" onClick={addDocumentBlock}><FileText size={17}/> Document</Button><Button type="button" variant="secondary" onClick={openTableDialog}><Grid3X3 size={17}/> Tableau</Button><Button type="button" variant="secondary" onClick={()=>imageInputRef.current?.click()}><ImagePlus size={17}/> Image</Button><Button type="button" variant="secondary" aria-expanded={moreToolsOpen} onClick={()=>setMoreToolsOpen((value)=>!value)}><MoreHorizontal size={17}/> Plus d’outils</Button><input ref={imageInputRef} className="worksheet-image-input" type="file" accept="image/*" onChange={(event)=>{importImage(event.target.files?.[0]);event.target.value="";}}/></div>
+      {moreToolsOpen&&<div className="worksheet-secondary-tools"><Button type="button" variant="secondary" onClick={addText}><span className="tree-analysis-add-icon">T</span> Texte libre</Button><Button type="button" variant="secondary" onClick={addLines}><span className="tree-analysis-add-icon">━</span> Lignes de réponse</Button><Button type="button" variant="secondary" onClick={openRubricDialog}><Grid3X3 size={17}/> Grille d’opération</Button><Button type="button" variant="secondary" onClick={addScore}><span className="tree-analysis-add-icon">/x</span> Pointage libre</Button><Button type="button" variant="secondary" onClick={addBadge}><span className="tree-analysis-add-icon">1</span> Numéro libre</Button></div>}
       <button type="button" className="worksheet-settings-toggle" onClick={() => setSettingsOpen((value) => !value)} aria-expanded={settingsOpen}><span>Paramètres de la feuille</span><small>{levelId ? levels.find((level)=>level.id===levelId)?.name : "Niveau"} · {difficultyLabels[difficulty]} · {tags.length} tag{tags.length>1?"s":""}</small>{settingsOpen?<ChevronUp size={18}/>:<ChevronDown size={18}/>}</button>
       {settingsOpen&&<div className="worksheet-settings-panel"><div className="tree-analysis-builder-meta worksheet-meta-grid"><label>Titre<input value={title} onChange={(event) => setTitle(event.target.value)} /></label><label>Niveau<select value={levelId} onChange={(event) => setLevelId(event.target.value)}>{levels.map((level) => <option key={level.id} value={level.id}>{level.name}</option>)}</select></label><label>Difficulté<select value={difficulty} onChange={(event) => setDifficulty(event.target.value as SentenceDifficulty)}>{Object.entries(difficultyLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label><div className="worksheet-tag-editor"><label>Tags<input value={tagInput} onChange={(event)=>setTagInput(event.target.value)} onKeyDown={(event)=>{if(event.key==="Enter"){event.preventDefault();addTag();}}} placeholder="Ex. Test sur les inférences"/></label><Button type="button" variant="secondary" onClick={addTag}>Ajouter</Button></div></div><div className="worksheet-tag-list">{tags.map((tag)=><button type="button" key={tag} onClick={()=>setTags((current)=>current.filter((item)=>item!==tag))}>{tag}<X size={13}/></button>)}</div></div>}
       <button type="button" className="worksheet-header-controls-toggle" onClick={() => setHeaderControlsOpen((value) => !value)} aria-expanded={headerControlsOpen}><span>Présentation de la page</span>{headerControlsOpen?<ChevronUp size={18}/>:<ChevronDown size={18}/>}</button>
@@ -649,7 +734,6 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
         <section><h4>Entête</h4><label>Type d’activité<input value={activePage.header?.activityType ?? "EXERCICES"} onChange={(event) => updatePage({ header: { ...activePage.header!, activityType: event.target.value } })}/></label><label>Titre dans l’entête<input value={activePage.header?.activityTitle ?? title} onChange={(event) => updatePage({ header: { ...activePage.header!, activityTitle: event.target.value } })}/></label></section>
         <section><h4>Grand bandeau</h4><label className="tree-analysis-main-title-toggle"><input type="checkbox" checked={activePage.mainTitle?.enabled ?? true} onChange={(event) => updatePage({ mainTitle: { ...(activePage.mainTitle ?? { prefix:"Exercices", title:"Feuille d’activité", subtitle:"Activité" }), enabled:event.target.checked } })}/> Afficher le grand bandeau</label>{activePage.mainTitle?.enabled && <><label>Première partie<input value={activePage.mainTitle.prefix} onChange={(event) => updatePage({ mainTitle:{...activePage.mainTitle!,prefix:event.target.value} })}/></label><label>Deuxième partie<input value={activePage.mainTitle.title} onChange={(event) => updatePage({ mainTitle:{...activePage.mainTitle!,title:event.target.value} })}/></label><label>Barre noire<input value={activePage.mainTitle.subtitle ?? ""} onChange={(event) => updatePage({ mainTitle:{...activePage.mainTitle!,subtitle:event.target.value} })}/></label></>}</section>
         <section><h4>Total</h4><label className="tree-analysis-main-title-toggle"><input type="checkbox" checked={activePage.mainTitle?.scoreTotal !== undefined} onChange={(event)=>updatePage({mainTitle:{...(activePage.mainTitle ?? { enabled:true, prefix:"Exercices", title:"Feuille d’activité", subtitle:"Activité" }),scoreTotal:event.target.checked ? (activePage.mainTitle?.scoreTotal ?? 30) : undefined}})}/> Afficher le total dans le bandeau</label>{activePage.mainTitle?.scoreTotal !== undefined && <label>Total sur<input type="number" min="0" value={activePage.mainTitle.scoreTotal} onChange={(event)=>updatePage({mainTitle:{...activePage.mainTitle!,scoreTotal:Math.max(0,Number(event.target.value)||0)}})}/></label>}</section>
-        <section><h4>Ta tâche</h4><label className="tree-analysis-main-title-toggle"><input type="checkbox" checked={activePage.taskCallout?.enabled ?? false} onChange={(event)=>updatePage({taskCallout:{...(activePage.taskCallout ?? {text:"Lis le texte narratif suivant, puis réponds aux questions des 4 dimensions de la lecture."}),enabled:event.target.checked}})}/> Afficher le bloc Ta tâche</label>{activePage.taskCallout?.enabled && <label>Consigne<textarea value={activePage.taskCallout.text} onChange={(event)=>updatePage({taskCallout:{...activePage.taskCallout!,text:event.target.value}})}/></label>}</section>
       </div>}
       {selectedText && <div className="tree-analysis-text-toolbar" onMouseDown={(event)=>{if((event.target as HTMLElement).closest("button"))event.preventDefault();}}>
         <label>Taille<input type="number" min="10" max="72" step="0.5" value={Math.round(selectedText.fontSize*selectedInlineStyle.fontScale*10)/10} onChange={(event) => {const next=Number(event.target.value);if(next>0)applyTextFormat(selectedText,{fontScale:next/selectedText.fontSize});}}/></label>
@@ -677,7 +761,7 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
         </div>
         {selectedCells.length>0&&<div className="worksheet-cell-toolbar"><label>Fond<select value={selectedTable.cells[selectedCells[0]]?.background??"white"} onChange={(event)=>updateSelectedCells({background:event.target.value as "white"|"gray"|"black",textColor:event.target.value==="black"?"white":"black"})}><option value="white">Blanc</option><option value="gray">Gris</option><option value="black">Noir</option></select></label><label>Alignement<select value={selectedTable.cells[selectedCells[0]]?.textAlign??"center"} onChange={(event)=>updateSelectedCells({textAlign:event.target.value as "left"|"center"|"right"})}><option value="left">Gauche</option><option value="center">Centre</option><option value="right">Droite</option></select></label><label>Vertical<select value={selectedTable.cells[selectedCells[0]]?.verticalAlign??"center"} onChange={(event)=>updateSelectedCells({verticalAlign:event.target.value as "top"|"center"|"bottom"})}><option value="top">Haut</option><option value="center">Centre</option><option value="bottom">Bas</option></select></label><label>Bordure<select value={selectedTable.cells[selectedCells[0]]?.borderWidth??1} onChange={(event)=>updateSelectedCells({borderWidth:Number(event.target.value) as 0|1|2|3})}><option value="0">Aucune</option><option value="1">Normale</option><option value="2">Épaisse</option><option value="3">Très épaisse</option></select></label><label>Taille<input type="number" min="9" max="32" value={selectedTable.cells[selectedCells[0]]?.fontSize??17} onChange={(event)=>updateSelectedCells({fontSize:Number(event.target.value)})}/></label><label className="worksheet-checkbox"><input type="checkbox" checked={selectedTable.cells[selectedCells[0]]?.bold??false} onChange={(event)=>updateSelectedCells({bold:event.target.checked})}/> Gras</label></div>}
       </div>}
-      {tableDialog&&<div className="worksheet-dialog-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setTableDialog(null);}}><div className="worksheet-dialog" role="dialog" aria-modal="true" aria-labelledby="worksheet-table-title"><div className="worksheet-dialog-heading"><div><span className="eyebrow">Ajouter à la page</span><h3 id="worksheet-table-title">{["compact_rubric","rubric"].includes(tableDialog.kind)?"Créer une grille de notation":"Créer un tableau pédagogique"}</h3></div><button type="button" onClick={()=>setTableDialog(null)} aria-label="Fermer"><X size={20}/></button></div><label>Modèle<select value={tableDialog.kind} onChange={(event)=>setTableDialog((current)=>current?{...current,kind:event.target.value as WorksheetTableTemplate}:current)}>{((["compact_rubric","rubric"].includes(tableDialog.kind)?["compact_rubric","rubric"]:["free","structured","choice","sequence","association"]) as WorksheetTableTemplate[]).map((kind)=><option key={kind} value={kind}>{tableTemplateLabel(kind)}</option>)}</select></label>{!["choice","compact_rubric","rubric"].includes(tableDialog.kind)&&<label>Nombre de rangées<input type="number" min="1" max="12" value={tableDialog.rows} onChange={(event)=>setTableDialog((current)=>current?{...current,rows:Number(event.target.value)}:current)}/></label>}{!["structured","sequence","association","compact_rubric"].includes(tableDialog.kind)&&<label>{tableDialog.kind==="rubric"?"Nombre de niveaux":"Nombre de colonnes"}<input type="number" min="1" max="8" value={tableDialog.columns} onChange={(event)=>setTableDialog((current)=>current?{...current,columns:Number(event.target.value)}:current)}/></label>}{["compact_rubric","rubric"].includes(tableDialog.kind)&&<><label>Dimension<select value={tableDialog.dimension} onChange={(event)=>setTableDialog((current)=>current?{...current,dimension:event.target.value as WorksheetDimensionBand["dimension"]}:current)}>{["Compréhension","Interprétation","Réaction","Appréciation"].map((item)=><option key={item}>{item}</option>)}</select></label><label>Maximum de points<input type="number" min="1" max="20" value={tableDialog.maxPoints} onChange={(event)=>setTableDialog((current)=>current?{...current,maxPoints:Number(event.target.value)}:current)}/></label></>}<p>{["compact_rubric","rubric"].includes(tableDialog.kind)?"La grille reprend les dimensions fixes du document de référence; seul son contenu est modifiable.":"Le modèle sera entièrement modifiable après son insertion."}</p><div className="worksheet-dialog-actions"><Button type="button" variant="secondary" onClick={()=>setTableDialog(null)}>Annuler</Button><Button type="button" onClick={addTable}><Grid3X3 size={17}/> Ajouter le tableau</Button></div></div></div>}
+      {tableDialog&&<div className="worksheet-dialog-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setTableDialog(null);}}><div className="worksheet-dialog" role="dialog" aria-modal="true" aria-labelledby="worksheet-table-title"><div className="worksheet-dialog-heading"><div><span className="eyebrow">Ajouter à la page</span><h3 id="worksheet-table-title">{["compact_rubric","rubric"].includes(tableDialog.kind)?"Créer une grille d’opération":"Créer un tableau pédagogique"}</h3></div><button type="button" onClick={()=>setTableDialog(null)} aria-label="Fermer"><X size={20}/></button></div><label>Modèle<select value={tableDialog.kind} onChange={(event)=>setTableDialog((current)=>current?{...current,kind:event.target.value as WorksheetTableTemplate}:current)}>{((["compact_rubric","rubric"].includes(tableDialog.kind)?["compact_rubric","rubric"]:["free","structured","choice","sequence","association"]) as WorksheetTableTemplate[]).map((kind)=><option key={kind} value={kind}>{tableTemplateLabel(kind)}</option>)}</select></label>{!["choice","compact_rubric","rubric"].includes(tableDialog.kind)&&<label>Nombre de rangées<input type="number" min="1" max="12" value={tableDialog.rows} onChange={(event)=>setTableDialog((current)=>current?{...current,rows:Number(event.target.value)}:current)}/></label>}{!["structured","sequence","association","compact_rubric"].includes(tableDialog.kind)&&<label>{tableDialog.kind==="rubric"?"Nombre de niveaux":"Nombre de colonnes"}<input type="number" min="1" max="8" value={tableDialog.columns} onChange={(event)=>setTableDialog((current)=>current?{...current,columns:Number(event.target.value)}:current)}/></label>}{["compact_rubric","rubric"].includes(tableDialog.kind)&&<><label>Opération intellectuelle<select value={tableDialog.dimension} onChange={(event)=>setTableDialog((current)=>current?{...current,dimension:event.target.value}:current)}>{historyOperations.map((item)=><option key={item}>{item}</option>)}</select></label><label>Maximum de points<input type="number" min="1" max="20" value={tableDialog.maxPoints} onChange={(event)=>setTableDialog((current)=>current?{...current,maxPoints:Number(event.target.value)}:current)}/></label></>}<p>{["compact_rubric","rubric"].includes(tableDialog.kind)?"La grille affiche l’opération intellectuelle et le pointage; son contenu demeure modifiable.":"Le modèle sera entièrement modifiable après son insertion."}</p><div className="worksheet-dialog-actions"><Button type="button" variant="secondary" onClick={()=>setTableDialog(null)}>Annuler</Button><Button type="button" onClick={addTable}><Grid3X3 size={17}/> Ajouter le tableau</Button></div></div></div>}
       {bandDialog&&<div className="worksheet-dialog-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setBandDialog(null);}}><div className="worksheet-dialog worksheet-band-dialog" role="dialog" aria-modal="true" aria-labelledby="worksheet-band-title"><div className="worksheet-dialog-heading"><div><span className="eyebrow">Bandeau de lecture</span><h3 id="worksheet-band-title">Choisir la dimension</h3></div><button type="button" onClick={()=>setBandDialog(null)} aria-label="Fermer"><X size={20}/></button></div><div className="worksheet-band-choices">{(["Compréhension","Interprétation","Réaction","Appréciation"] as WorksheetDimensionBand["dimension"][]).map((dimension)=><button key={dimension} type="button" className={bandDialog===dimension?"active":""} onClick={()=>setBandDialog(dimension)}><Image src={worksheetDimensionAsset(dimension).src} alt={dimension} width={worksheetDimensionAsset(dimension).width} height={worksheetDimensionAsset(dimension).height} unoptimized/></button>)}</div><div className="worksheet-dialog-actions"><Button type="button" variant="secondary" onClick={()=>setBandDialog(null)}>Annuler</Button><Button type="button" onClick={addDimensionBand}>Ajouter le bandeau</Button></div></div></div>}
       <div className={`tree-analysis-workspace tree-print-${printMode}`}><div className="tree-analysis-page-shell builder"><div ref={canvasRef} className="tree-analysis-page tree-analysis-canvas portrait document-template worksheet-canvas" style={{"--page-margin-top":`${activePage.margins.top/H*100}%`,"--page-margin-right":`${activePage.margins.right/W*100}%`,"--page-margin-bottom":`${activePage.margins.bottom/H*100}%`,"--page-margin-left":`${activePage.margins.left/W*100}%`} as React.CSSProperties} onPointerDown={beginMarquee} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onClick={(event) => { if(suppressCanvasClickRef.current)return; if(event.target === event.currentTarget&&!marquee) {setSelected(null);setSelectedItems([]);} }}>
         {alignmentGuides.x !== undefined && <div className="tree-analysis-alignment-guide vertical" style={{left:`${alignmentGuides.x/W*100}%`}}/>}
@@ -697,6 +781,6 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
         {checkBoxes.filter((item) => item.pageId === activePageId).map((item) => <div key={item.id} role="button" tabIndex={0} className={`worksheet-checkbox-mark ${selected?.kind==="check"&&selected.id===item.id?"selected":""} ${printMode==="answer"&&item.checked?"checked":""}`} style={{left:`${item.x/W*100}%`,top:`${item.y/H*100}%`,width:`${item.size/W*100}%`,height:`${item.size/H*100}%`,fontSize:`${item.size/W*100}cqw`}} onPointerDown={(event)=>beginDrag(event,"check",item)} onClick={(event)=>{event.stopPropagation();setSelected({kind:"check",id:item.id});}} onDoubleClick={(event)=>{event.stopPropagation();setCheckBoxes((items)=>items.map((box)=>box.id===item.id?{...box,checked:!box.checked}:box));}} aria-label="Case à cocher">{selected?.kind==="check"&&selected.id===item.id&&<span className="tree-analysis-text-delete worksheet-checkbox-delete" onPointerDown={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setCheckBoxes((items)=>items.filter((box)=>box.id!==item.id));setSelected(null);}}><X size={10}/></span>}</div>)}
       </div></div></div>
     </Card>
-    <Card className="tree-analysis-flow-panel worksheet-flow-panel"><div><span className="eyebrow">Déroulement du lecteur</span><h3>Ordre de révélation</h3></div><p>Les lignes de réponse interactives deviennent des étapes. Les lignes et cases ajoutées dans les tableaux restent des repères visuels.</p><div className="tree-analysis-phase-list">{pageSteps.map((id,index) => <div className="tree-analysis-phase" key={id}><div className="tree-analysis-phase-heading"><span>{index+1}</span><strong>Afficher une réponse sur les lignes</strong><button type="button" onClick={() => moveStep(id,-1)} disabled={index===0}><ArrowUp size={15}/></button><button type="button" onClick={() => moveStep(id,1)} disabled={index===pageSteps.length-1}><ArrowDown size={15}/></button></div></div>)}</div>{!pageSteps.length&&<p>Ajoute des lignes de réponse interactives si tu veux révéler une réponse dans le lecteur.</p>}</Card>
+    <Card className="tree-analysis-flow-panel worksheet-flow-panel"><button type="button" className="worksheet-flow-toggle" onClick={()=>setFlowOpen((value)=>!value)} aria-expanded={flowOpen}><span><small>Options avancées</small><strong>Déroulement du lecteur</strong></span>{flowOpen?<ChevronUp size={18}/>:<ChevronDown size={18}/>}</button>{flowOpen&&<div className="worksheet-flow-content"><p>Les lignes de réponse interactives deviennent des étapes. Les lignes et cases ajoutées dans les tableaux restent des repères visuels.</p><div className="tree-analysis-phase-list">{pageSteps.map((id,index) => <div className="tree-analysis-phase" key={id}><div className="tree-analysis-phase-heading"><span>{index+1}</span><strong>Afficher une réponse sur les lignes</strong><button type="button" onClick={() => moveStep(id,-1)} disabled={index===0}><ArrowUp size={15}/></button><button type="button" onClick={() => moveStep(id,1)} disabled={index===pageSteps.length-1}><ArrowDown size={15}/></button></div></div>)}</div>{!pageSteps.length&&<p>Ajoute des lignes de réponse interactives si tu veux révéler une réponse dans le lecteur.</p>}</div>}</Card>
   </div>;
 }

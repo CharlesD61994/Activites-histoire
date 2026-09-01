@@ -12989,6 +12989,13 @@ textarea {
 .worksheet-settings-toggle small { color: var(--muted-foreground); font-weight: 800; white-space: nowrap; }
 .worksheet-settings-panel { display: grid; gap: 10px; margin-top: 8px; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: color-mix(in srgb, var(--secondary) 55%, #fff); }
 .worksheet-editor .tree-analysis-quick-add { position: sticky; top: 66px; z-index: 65; margin-top: 4px; margin-bottom: 4px; background: #fff; box-shadow: 0 8px 18px rgba(238,245,250,.86), var(--shadow-sm); }
+.worksheet-preset-bar { display: flex; min-height: 48px; margin-top: 8px; padding: 6px 10px; align-items: center; gap: 6px; overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--secondary) 48%, #fff); }
+.worksheet-preset-bar > span { padding: 0 7px; color: var(--muted-foreground); font-size: .78rem; font-weight: 900; text-transform: uppercase; }
+.worksheet-preset-bar button { display: inline-flex; min-height: 34px; padding: 6px 10px; align-items: center; gap: 6px; border: 1px solid #d5e1ea; border-radius: 8px; background: #fff; color: var(--foreground); font: inherit; font-size: .84rem; font-weight: 850; white-space: nowrap; cursor: pointer; }
+.worksheet-preset-bar button:hover { border-color: color-mix(in srgb, var(--primary) 38%, var(--border)); color: var(--primary); }
+.worksheet-editor .worksheet-primary-tools { justify-content: flex-start; }
+.worksheet-secondary-tools { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 8px; padding: 9px 12px; border: 1px solid #dfe8f1; border-radius: 12px; background: #f7fafc; }
+.worksheet-secondary-tools .button { min-height: 38px; }
 .worksheet-meta-grid { grid-template-columns: minmax(220px, 1fr) minmax(150px, .55fr) minmax(140px, .48fr) minmax(280px, 1.25fr); align-items: end; }
 .worksheet-tag-editor { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; min-width: 0; }
 .worksheet-tag-editor > label { min-width: 0; }
@@ -13066,7 +13073,12 @@ textarea {
   top: -10px !important;
   right: -10px !important;
 }
-.worksheet-flow-panel { margin-top: 0; }
+.worksheet-flow-panel { margin-top: 0; padding: 0; overflow: hidden; }
+.worksheet-flow-toggle { display: flex; width: 100%; min-height: 62px; padding: 12px 18px; align-items: center; justify-content: space-between; border: 0; background: var(--surface); color: var(--foreground); font: inherit; text-align: left; cursor: pointer; }
+.worksheet-flow-toggle > span { display: grid; gap: 2px; }
+.worksheet-flow-toggle small { color: var(--muted-foreground); font-size: .72rem; font-weight: 850; text-transform: uppercase; }
+.worksheet-flow-toggle strong { font-size: 1rem; }
+.worksheet-flow-content { display: grid; gap: 12px; padding: 0 18px 18px; border-top: 1px solid var(--border); }
 .worksheet-page-navigation { display: flex; align-items: center; gap: 8px; }
 .worksheet-page-navigation button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
 .worksheet-reader-dock { display: none; }
