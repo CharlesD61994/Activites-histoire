@@ -8812,6 +8812,10 @@ textarea {
   font-family: Arial, sans-serif;
 }
 
+.aspect-minitest-table-page {
+  padding-top: 10px;
+}
+
 .aspect-minitest-sheet-header {
   position: relative;
   left: -8px;
@@ -9017,7 +9021,7 @@ textarea {
 .aspect-minitest-correction-bank {
   position: absolute;
   z-index: 5;
-  top: 270px;
+  top: 280px;
   left: 77px;
   right: 61px;
   display: grid;
@@ -9219,7 +9223,7 @@ textarea {
   min-height: 0;
   margin: 0 0 13px;
   break-inside: avoid;
-  font-size: 17px;
+  font-size: 18px;
   line-height: 1.38;
 }
 
@@ -9235,12 +9239,12 @@ textarea {
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 6px;
   margin-bottom: 2px;
-  font-size: 17px;
-  line-height: 1.1;
+  font-size: 18px;
+  line-height: 1.05;
 }
 
 .aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list textarea {
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
 .aspect-minitest-bank-number {
