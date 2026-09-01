@@ -8823,7 +8823,7 @@ textarea {
 
 .aspect-minitest-header-rule {
   position: absolute;
-  top: 44px;
+  top: 54px;
   left: 33px;
   right: 143px;
   border-top: 1px solid #000;
@@ -8832,7 +8832,7 @@ textarea {
 .aspect-minitest-header-labels {
   position: absolute;
   z-index: 2;
-  top: 31px;
+  top: 41px;
   left: 58px;
   width: 326px;
   height: auto;
@@ -8842,7 +8842,7 @@ textarea {
 .aspect-minitest-group-label {
   position: absolute;
   z-index: 2;
-  top: 29px;
+  top: 39px;
   font-family: "Comic Sans MS", cursive;
   font-size: 13px;
   font-weight: 700;
@@ -8859,7 +8859,7 @@ textarea {
 .aspect-minitest-corrected-label {
   position: absolute;
   z-index: 3;
-  top: 14px;
+  top: 24px;
   left: 139px;
   display: grid;
   width: 151px;
@@ -8883,12 +8883,12 @@ textarea {
 .aspect-minitest-date-line {
   position: absolute;
   left: 0;
-  top: 72px;
+  top: 82px;
 }
 
 .aspect-minitest-chapter-label {
   position: absolute;
-  top: 51px;
+  top: 61px;
   right: 154px;
   font-family: Arial, sans-serif;
   font-size: 8px;
@@ -8899,7 +8899,7 @@ textarea {
 
 .aspect-minitest-sheet-total {
   position: absolute;
-  top: 19px;
+  top: 29px;
   right: 14px;
   display: grid;
   width: 129px;
@@ -8990,7 +8990,7 @@ textarea {
   content: "";
   position: absolute;
   left: -10px;
-  bottom: 19px;
+  top: 18px;
   width: 18px;
   height: 18px;
   border-left: 1px solid #555;
@@ -9192,7 +9192,7 @@ textarea {
   display: grid;
   min-height: 61px;
   width: 651px;
-  margin: 37px 0 25px;
+  margin: 53px 0 25px;
   padding: 0 10px;
   place-items: center start;
   border: 0;
@@ -9224,6 +9224,22 @@ textarea {
 
 .aspect-minitest-bank-page .aspect-minitest-phrase-list p {
   color: #000;
+}
+
+.aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list {
+  gap: 24px;
+}
+
+.aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list p {
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 6px;
+  margin-bottom: 7px;
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list textarea {
+  line-height: 1.25;
 }
 
 .aspect-minitest-bank-number {

@@ -232,7 +232,7 @@ export function AspectMinitestSheet({
         <span className="aspect-minitest-page-number">1</span>
       </section>
 
-      <section className="aspect-minitest-paper aspect-minitest-bank-page">
+      <section className={`aspect-minitest-paper aspect-minitest-bank-page ${bankPhrases.length >= 17 ? "is-dense" : ""}`}>
         <h2>{data.bankTitle}</h2>
         <div className="aspect-minitest-phrase-list">
           {[bankPhrases.slice(0, bankColumnBreak), bankPhrases.slice(bankColumnBreak)].map((column, columnIndex) => (
