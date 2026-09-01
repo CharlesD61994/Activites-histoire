@@ -163,10 +163,6 @@ export function AspectMinitestEditor({ initialSentence, levels, onSave }: Props)
           <section>
             <h3>Entête et bandeau</h3>
             <div className="aspect-minitest-form-grid">
-              <label>Type<input value={data.headerLabel} onChange={(event) => patchData({ headerLabel: event.target.value })} /></label>
-              <label>Nom<input value={data.nameLabel} onChange={(event) => patchData({ nameLabel: event.target.value })} /></label>
-              <label>Groupe<input value={data.groupLabel} onChange={(event) => patchData({ groupLabel: event.target.value })} /></label>
-              <label>Date<input value={data.dateLabel} onChange={(event) => patchData({ dateLabel: event.target.value })} /></label>
               <label className="wide">Chapitre<input value={data.chapterLabel ?? ""} onChange={(event) => patchData({ chapterLabel: event.target.value })} /></label>
               <label className="wide">Titre du bandeau<input value={data.bannerTitle} onChange={(event) => patchData({ bannerTitle: event.target.value })} /></label>
               <label className="wide">Sous-titre du tableau<input value={data.sectionTitle ?? ""} onChange={(event) => patchData({ sectionTitle: event.target.value })} /></label>

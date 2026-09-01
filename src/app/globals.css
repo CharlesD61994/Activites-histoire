@@ -8823,7 +8823,7 @@ textarea {
 
 .aspect-minitest-header-rule {
   position: absolute;
-  top: 54px;
+  top: 58px;
   left: 33px;
   right: 143px;
   border-top: 1px solid #000;
@@ -8832,7 +8832,7 @@ textarea {
 .aspect-minitest-header-labels {
   position: absolute;
   z-index: 2;
-  top: 41px;
+  top: 45px;
   left: 58px;
   width: 326px;
   height: auto;
@@ -8842,7 +8842,7 @@ textarea {
 .aspect-minitest-group-label {
   position: absolute;
   z-index: 2;
-  top: 39px;
+  top: 43px;
   font-family: "Comic Sans MS", cursive;
   font-size: 13px;
   font-weight: 700;
@@ -8859,7 +8859,7 @@ textarea {
 .aspect-minitest-corrected-label {
   position: absolute;
   z-index: 3;
-  top: 24px;
+  top: 28px;
   left: 139px;
   display: grid;
   width: 151px;
@@ -8883,12 +8883,12 @@ textarea {
 .aspect-minitest-date-line {
   position: absolute;
   left: 0;
-  top: 82px;
+  top: 86px;
 }
 
 .aspect-minitest-chapter-label {
   position: absolute;
-  top: 61px;
+  top: 65px;
   right: 154px;
   font-family: Arial, sans-serif;
   font-size: 8px;
@@ -8899,7 +8899,7 @@ textarea {
 
 .aspect-minitest-sheet-total {
   position: absolute;
-  top: 29px;
+  top: 33px;
   right: 14px;
   display: grid;
   width: 129px;
@@ -9005,6 +9005,7 @@ textarea {
   margin: 0 auto;
   line-height: 1.25;
   text-align: center;
+  transform: translateY(-4px);
 }
 
 .aspect-minitest-tip-copy strong {
@@ -9233,13 +9234,13 @@ textarea {
 .aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list p {
   grid-template-columns: 34px minmax(0, 1fr);
   gap: 6px;
-  margin-bottom: 7px;
-  font-size: 15px;
-  line-height: 1.25;
+  margin-bottom: 2px;
+  font-size: 17px;
+  line-height: 1.1;
 }
 
 .aspect-minitest-bank-page.is-dense .aspect-minitest-phrase-list textarea {
-  line-height: 1.25;
+  line-height: 1.1;
 }
 
 .aspect-minitest-bank-number {
