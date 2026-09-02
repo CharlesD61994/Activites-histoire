@@ -13196,6 +13196,9 @@ textarea {
 .worksheet-document-block .worksheet-table-resize,
 .worksheet-score-resize { border-color: #fff; background: #111; box-shadow: 0 0 0 1px #111; }
 .worksheet-canvas-resize-side { position: absolute; z-index: 45; display: block; border: 2px solid #fff; border-radius: 3px; background: #111; box-shadow: 0 0 0 1px #111; touch-action: none; }
+.worksheet-canvas-resize-side::before,
+.worksheet-document-block .worksheet-table-resize::before,
+.worksheet-score-resize::before { content: ""; position: absolute; inset: -7px; }
 .worksheet-canvas-resize-side.side-right { width: 10px; height: 32px; transform: translate(-50%, -50%); cursor: ew-resize; }
 .worksheet-canvas-resize-side.side-bottom { width: 32px; height: 10px; transform: translate(-50%, -50%); cursor: ns-resize; }
 .worksheet-text-move-edge { position: absolute; z-index: 5; display: block; cursor: move; }
