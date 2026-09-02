@@ -669,7 +669,7 @@ export type TreeAnalysisTable = {
   width?: number;
   rowHeights?: number[];
   columnWidths?: number[];
-  kind?: "free" | "structured" | "choice" | "sequence" | "association" | "compact_rubric" | "rubric" | "section" | "document";
+  kind?: "free" | "structured" | "choice" | "sequence" | "association" | "compact_rubric" | "rubric" | "section" | "document" | "page_reference";
   pageId?: string;
 };
 

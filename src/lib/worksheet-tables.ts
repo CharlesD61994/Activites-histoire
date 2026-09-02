@@ -38,7 +38,8 @@ export function tableTemplateLabel(kind: WorksheetTableTemplate) {
     compact_rubric: "Points par bonne réponse",
     rubric: "Grille de notation",
     section: "Section",
-    document: "Document"
+    document: "Document",
+    page_reference: "Repère de pages"
   }[kind];
 }
 
