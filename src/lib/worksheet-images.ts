@@ -1,4 +1,21 @@
-import type { TreeAnalysisTextBox, WorksheetImage } from "@/types";
+import type { TreeAnalysisTable, TreeAnalysisTextBox, WorksheetImage } from "@/types";
+import { normalizedRowHeights, worksheetTableWidth } from "./worksheet-tables";
+
+// Rows use width-based units; page positions retain the legacy 1056 x 816 grid.
+export const WORKSHEET_ROW_TO_PAGE_Y = 816 / 1056 * 8.5 / 11;
+
+export function fitWorksheetDocumentImage(image: WorksheetImage, tables: TreeAnalysisTable[]): WorksheetImage {
+  const table = tables.find((item) => item.id === image.documentTableId && item.kind === "document");
+  if (!table) return image;
+  const rows = normalizedRowHeights(table);
+  return {
+    ...image,
+    x: table.x,
+    y: table.y + (rows[0] ?? 42) * WORKSHEET_ROW_TO_PAGE_Y,
+    width: worksheetTableWidth(table),
+    height: (rows[1] ?? 120) * WORKSHEET_ROW_TO_PAGE_Y
+  };
+}
 
 export type WorksheetTextWrap = {
   side: "left" | "right";

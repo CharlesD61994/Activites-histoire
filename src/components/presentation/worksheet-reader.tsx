@@ -9,7 +9,7 @@ import { ReaderChromePortal } from "@/components/presentation/reader-chrome";
 import type { Sentence, TreeAnalysisTable, TreeAnalysisTableCell, TreeAnalysisTextBox, WorksheetAnswerLines } from "@/types";
 import { isFixedWorksheetTable, normalizedColumnWidths, normalizedRowHeights, worksheetTableWidth } from "@/lib/worksheet-tables";
 import { worksheetDimensionAsset } from "@/lib/worksheet-dimensions";
-import { worksheetTextWrap } from "@/lib/worksheet-images";
+import { fitWorksheetDocumentImage, worksheetTextWrap } from "@/lib/worksheet-images";
 import { renderSharedAnnotatedText } from "@/components/grammar/shared-annotated-text";
 
 type Props = {
@@ -70,7 +70,7 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
   const lines = useMemo(() => sentence.worksheetAnswerLines ?? [], [sentence.worksheetAnswerLines]);
   const checkBoxes = useMemo(() => sentence.worksheetCheckBoxes ?? [], [sentence.worksheetCheckBoxes]);
   const bands = useMemo(() => sentence.worksheetDimensionBands ?? [], [sentence.worksheetDimensionBands]);
-  const images = useMemo(() => sentence.worksheetImages ?? [], [sentence.worksheetImages]);
+  const images = useMemo(() => (sentence.worksheetImages ?? []).map((image) => fitWorksheetDocumentImage(image, tables)), [sentence.worksheetImages, tables]);
   const availableSteps = useMemo(() => lines.filter((item) => item.interactive !== false || Boolean(item.answer.trim())).map((item) => `lines:${item.id}`), [lines]);
   const steps = useMemo(() => [...(sentence.worksheetReaderOrder ?? []).filter((id) => availableSteps.includes(id)), ...availableSteps.filter((id) => !(sentence.worksheetReaderOrder ?? []).includes(id))], [availableSteps, sentence.worksheetReaderOrder]);
   const [completed, setCompleted] = useState<string[]>([]);
