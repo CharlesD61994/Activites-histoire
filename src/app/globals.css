@@ -13496,9 +13496,9 @@ textarea {
   top: 0;
   z-index: 65;
   display: grid;
-  gap: 8px;
+  gap: 0;
   min-width: 0;
-  padding: 8px 0;
+  padding: 4px 10px;
   background: #fff;
   box-shadow: 0 5px 12px rgb(16 48 74 / 8%);
 }
@@ -13506,6 +13506,7 @@ textarea {
   position: static;
   width: 100%;
   min-width: 0;
+  min-height: 0;
   margin: 0;
   border: 0;
   border-radius: 0;
@@ -13513,15 +13514,22 @@ textarea {
   box-shadow: none;
   backdrop-filter: none;
 }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar { padding-top: 0; gap: 10px; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row { justify-content: center; flex-wrap: wrap; gap: 7px; overflow: visible; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; background: #f4f7fa; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > label { flex: 1 1 100px; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > .worksheet-checkbox { flex: 0 0 auto; }
-.worksheet-editor .worksheet-cell-borders { min-width: 0; margin: 0; padding: 0; border: 0; }
-.worksheet-editor .worksheet-cell-borders legend { margin-bottom: 4px; font-size: .74rem; font-weight: 800; }
-.worksheet-editor .worksheet-cell-borders > div { display: flex; flex-wrap: wrap; gap: 9px; min-height: 32px; align-items: center; }
-.worksheet-editor .worksheet-cell-borders label { display: inline-flex; align-items: center; gap: 4px; min-width: 0; cursor: pointer; }
+.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add { justify-content: center; flex-wrap: wrap; gap: 5px; padding: 5px 0; overflow: visible; }
+.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .button { min-height: 34px; padding: 5px 7px; border-radius: 8px; font-size: .78rem; box-shadow: none; }
+.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .button > svg { width: 18px; height: 18px; }
+.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .tree-analysis-add-icon { width: 18px; height: 18px; flex-basis: 18px; font-size: 1rem; }
+.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .worksheet-add-score { margin-left: 6px; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar { padding: 5px 0 0; gap: 5px; align-items: center; border-top: 1px solid #e4eaf0; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row { justify-content: center; flex-wrap: wrap; gap: 5px; overflow: visible; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row button { min-height: 28px; padding: 4px 5px; gap: 4px; border-radius: 6px; font-size: .72rem; box-shadow: none; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 5px 0; border-radius: 0; background: #fff; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > label { display: flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar select { width: auto; max-width: 120px; min-height: 28px; padding: 3px 5px; font-size: .74rem; border-radius: 5px; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar input[type="number"] { width: 52px; min-height: 28px; padding: 3px 5px; font-size: .74rem; border-radius: 5px; }
+.worksheet-editor .worksheet-cell-borders { position: relative; min-width: 0; margin: 0; padding: 0 0 0 65px; border: 0; }
+.worksheet-editor .worksheet-cell-borders legend { position: absolute; left: 0; top: 50%; transform: translateY(-50%); margin: 0; padding: 0; font-size: .74rem; font-weight: 800; }
+.worksheet-editor .worksheet-cell-borders > div { display: flex; flex-wrap: wrap; gap: 7px; min-height: 28px; align-items: center; }
+.worksheet-editor .worksheet-cell-borders label { display: inline-flex; align-items: center; gap: 3px; min-width: 0; cursor: pointer; }
 .worksheet-editor .worksheet-cell-borders input { width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: var(--primary); }
 
 .worksheet-editor .worksheet-settings-toggle:hover,
