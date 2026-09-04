@@ -13515,17 +13515,19 @@ textarea {
   backdrop-filter: none;
 }
 .worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add { justify-content: center; flex-wrap: wrap; gap: 5px; padding: 5px 0; overflow: visible; }
-.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .button { min-height: 34px; padding: 5px 7px; border-radius: 8px; font-size: .78rem; box-shadow: none; }
+.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .button { flex: 1 0 auto; min-height: 40px; padding: 7px; border-radius: 8px; font-size: .78rem; box-shadow: none; }
 .worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .button > svg { width: 18px; height: 18px; }
 .worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .tree-analysis-add-icon { width: 18px; height: 18px; flex-basis: 18px; font-size: 1rem; }
-.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .worksheet-add-score { margin-left: 6px; }
+.worksheet-editor .worksheet-toolbar-stack .tree-analysis-quick-add .worksheet-add-score { flex: 0 0 40px; margin-left: 0; }
 .worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar { padding: 5px 0 0; gap: 5px; align-items: center; border-top: 1px solid #e4eaf0; }
 .worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row { justify-content: center; flex-wrap: wrap; gap: 5px; overflow: visible; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row button { min-height: 28px; padding: 4px 5px; gap: 4px; border-radius: 6px; font-size: .72rem; box-shadow: none; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row button { flex: 1 0 auto; min-height: 34px; padding: 6px 5px; gap: 4px; border-radius: 6px; font-size: .72rem; box-shadow: none; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row button[aria-label] { flex: 0 0 34px; }
 .worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding: 5px 0; border-radius: 0; background: #fff; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > label { display: flex; align-items: center; gap: 5px; flex: 0 1 auto; min-width: 0; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar select { width: auto; max-width: 120px; min-height: 28px; padding: 3px 5px; font-size: .74rem; border-radius: 5px; }
-.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar input[type="number"] { width: 52px; min-height: 28px; padding: 3px 5px; font-size: .74rem; border-radius: 5px; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > label { display: flex; align-items: center; gap: 5px; flex: 1 0 auto; min-width: 0; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > .worksheet-checkbox { flex: 0 0 auto; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar select { flex: 1; width: auto; min-height: 34px; padding: 5px; font-size: .74rem; border-radius: 5px; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar input[type="number"] { flex: 1; width: 52px; min-height: 34px; padding: 5px; font-size: .74rem; border-radius: 5px; }
 .worksheet-editor .worksheet-cell-borders { position: relative; min-width: 0; margin: 0; padding: 0 0 0 65px; border: 0; }
 .worksheet-editor .worksheet-cell-borders legend { position: absolute; left: 0; top: 50%; transform: translateY(-50%); margin: 0; padding: 0; font-size: .74rem; font-weight: 800; }
 .worksheet-editor .worksheet-cell-borders > div { display: flex; flex-wrap: wrap; gap: 7px; min-height: 28px; align-items: center; }
