@@ -550,6 +550,10 @@ export type TreeAnalysisTableCell = {
   fontSize?: number;
   bold?: boolean;
   borderWidth?: 0 | 1 | 2 | 3;
+  borderTop?: 0 | 1 | 2 | 3;
+  borderRight?: 0 | 1 | 2 | 3;
+  borderBottom?: 0 | 1 | 2 | 3;
+  borderLeft?: 0 | 1 | 2 | 3;
 };
 
 export type TreeAnalysisPhrase = {
