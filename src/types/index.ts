@@ -728,7 +728,8 @@ export type WorksheetImage = {
   wrapText: boolean;
   layoutMode?: "wrap" | "front" | "behind";
   documentTableId?: string;
-  objectFit?: "contain" | "cover";
+  // "cover" remains accepted for previously saved documents; it now renders as "fill".
+  objectFit?: "contain" | "fill" | "cover";
 };
 
 export type SentenceCorrection = {

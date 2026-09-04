@@ -13231,7 +13231,7 @@ textarea {
 .worksheet-score-box.selected { z-index: 10; outline: 2px dashed #3976bf; outline-offset: 4px; }
 .worksheet-score-delete, .worksheet-band-delete { top: -28px !important; right: -11px !important; z-index: 70; }
 .worksheet-activity-table.selected { z-index: 9; }
-.worksheet-document-cell-image { object-fit: cover; pointer-events: none; }
+.worksheet-document-cell-image { object-fit: fill; pointer-events: none; }
 .worksheet-text-box.selected { z-index: 10; }
 .worksheet-text-box > .tree-analysis-text-delete { top: -28px; z-index: 70; }
 .worksheet-band-resize, .worksheet-table-resize { right: -6px; bottom: -6px; }
