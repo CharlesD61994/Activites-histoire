@@ -13551,6 +13551,11 @@ textarea {
   color: var(--primary);
 }
 
+.worksheet-editor .worksheet-toolbar-stack button,
+.worksheet-editor .worksheet-toolbar-stack button:is(:hover, :active, :focus-visible, [aria-pressed="true"], .active) {
+  border-color: #000;
+}
+
 .worksheet-editor input,
 .worksheet-editor select,
 .worksheet-editor textarea {
