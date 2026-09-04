@@ -12972,7 +12972,7 @@ textarea {
 }
 .worksheet-editor { display: grid; gap: 10px; }
 .worksheet-canvas .tree-analysis-document-header,
-.worksheet-reader-page .tree-analysis-document-header { grid-template-rows: 2.7cqw 1.7cqw; }
+.worksheet-reader-page .tree-analysis-document-header { grid-template-rows: 2.7cqw 1.7cqw; transform: translateY(1.1cqw); }
 .worksheet-canvas .tree-analysis-document-header .tree-analysis-page-badge,
 .worksheet-reader-page .tree-analysis-document-header .tree-analysis-page-badge { bottom: -1.3cqw; }
 .worksheet-editor .tree-analysis-builder-card { overflow: visible; background: linear-gradient(180deg, #f4f8fb 0, #eef5fa 220px, var(--surface) 360px); }
@@ -13231,7 +13231,9 @@ textarea {
 .worksheet-score-box.selected { z-index: 10; outline: 2px dashed #3976bf; outline-offset: 4px; }
 .worksheet-score-delete, .worksheet-band-delete { top: -28px !important; right: -11px !important; z-index: 70; }
 .worksheet-activity-table.selected { z-index: 9; }
-.worksheet-document-cell-image { object-fit: contain; pointer-events: none; padding: 1px; }
+.worksheet-document-cell-image { object-fit: cover; pointer-events: none; }
+.worksheet-text-box.selected { z-index: 10; }
+.worksheet-text-box > .tree-analysis-text-delete { top: -28px; z-index: 70; }
 .worksheet-band-resize, .worksheet-table-resize { right: -6px; bottom: -6px; }
 .worksheet-dimension-band { position: absolute; z-index: 4; display: block; box-sizing: border-box; padding: 0; border: 0; background: transparent; cursor: grab; }
 .worksheet-dimension-band img { display: block; width: 100%; height: 100%; object-fit: fill; pointer-events: none; }

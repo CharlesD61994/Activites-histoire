@@ -520,6 +520,7 @@ export type TreeAnalysisScoreBox = {
   /** Worksheet-only geometry. Kept optional for legacy tree activities. */
   width?: number;
   height?: number;
+  fontSize?: number;
   pageId?: string;
 };
 
@@ -727,6 +728,7 @@ export type WorksheetImage = {
   wrapText: boolean;
   layoutMode?: "wrap" | "front" | "behind";
   documentTableId?: string;
+  objectFit?: "contain" | "cover";
 };
 
 export type SentenceCorrection = {
