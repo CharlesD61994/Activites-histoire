@@ -79,7 +79,6 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
   const [pageIndex, setPageIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [hydrated, setHydrated] = useState(false);
-  const readerRef = useRef<HTMLDivElement>(null);
   const page = pages[pageIndex] ?? pages[0];
   const pageId = page?.id;
   const currentStep = steps.find((id) => !completed.includes(id));
@@ -107,22 +106,6 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
     onCompleteChange?.(completed.length >= steps.length);
   }, [completed.length, hydrated, onCompleteChange, steps.length]);
 
-  useLayoutEffect(() => {
-    const root = readerRef.current;
-    if (!root) return;
-    const pageTables = tables.filter((item) => (item.pageId ?? pages[0]?.id) === pageId);
-    const elements = Array.from(root.querySelectorAll<HTMLElement>(".worksheet-reader-table"));
-    pageTables.forEach((table, tableIndex) => {
-      const cells = Array.from(elements[tableIndex]?.querySelectorAll<HTMLElement>("button") ?? []);
-      let visibleIndex = 0;
-      table.cells.forEach((cell, index) => {
-        if (cell.columnSpan === 0) return;
-        Object.assign(cells[visibleIndex]?.style ?? {}, worksheetCellBorderStyle(table, index));
-        visibleIndex += 1;
-      });
-    });
-  }, [pageId, pages, tables]);
-
   function toggleStep(id: string) { setCompleted((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]); }
   function toggleCell(table: TreeAnalysisTable, index: number) {
     const cell = table.cells[index];
@@ -144,7 +127,7 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
     if (persistenceKey && typeof window !== "undefined") window.sessionStorage.removeItem(persistenceKey);
   }
 
-  return <div ref={readerRef} className="worksheet-reader tree-reader">
+  return <div className="worksheet-reader tree-reader">
     <ReaderChromePortal slot="instruction"><div className="worksheet-reader-top-tools"><Button type="button" variant="secondary" onClick={restart}><RotateCcw size={18}/> Recommencer</Button><div className="tree-reader-zoom"><button type="button" onClick={() => setZoom((value) => Math.max(.6, Number((value - .1).toFixed(1))))}><Minus size={17}/></button><button type="button" onClick={() => setZoom(1)}>{Math.round(zoom * 100)} %</button><button type="button" onClick={() => setZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))}><Plus size={17}/></button></div>{pages.length > 1 && <div className="worksheet-page-navigation"><button type="button" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => value - 1)}><ChevronLeft size={17}/></button><strong>Page {pageIndex + 1} / {pages.length}</strong><button type="button" disabled={pageIndex >= pages.length - 1} onClick={() => setPageIndex((value) => value + 1)}><ChevronRight size={17}/></button></div>}{completed.length >= steps.length ? finishControl : null}</div></ReaderChromePortal>
     {page && <div className="tree-reader-page-viewport"><div className="tree-reader-page portrait document-template worksheet-reader-page" style={{ aspectRatio: "8.5 / 11", zoom }}>
       <div className="tree-analysis-document-header" style={{ left: `${page.margins.left / W * 100}%`, right: `${page.margins.right / W * 100}%`, top: `${(page.header?.nameY ?? 25) / H * 100}%` }}><div className="tree-analysis-document-header-top"><div className="tree-analysis-student-fields"><span>NOM</span><span>GROUPE</span></div><div className="tree-analysis-page-cell"><div className="tree-analysis-page-badge">{pageIndex + 1}</div></div></div><div className="tree-analysis-document-header-bottom"><div>{page.header?.activityType || "EXERCICES"}</div><div>{page.header?.activityTitle || sentence.title}</div></div></div>
@@ -158,7 +141,7 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
       {tables.filter((item) => (item.pageId ?? pages[0]?.id) === pageId).map((table) => {
         const stepId = `table:${table.id}`; const interactive = table.cells.some((cell) => cell.isCorrect || Boolean(cell.answer?.trim())); const width = worksheetTableWidth(table);
         return <div key={table.id} className={`tree-reader-table worksheet-reader-table ${isFixedWorksheetTable(table) ? "fixed-format" : ""} ${table.kind === "section" ? "worksheet-section-block" : ""} ${table.kind === "page_reference" ? "worksheet-page-reference-block" : ""} ${interactive && currentStep === stepId ? "active" : ""}`} style={{ left: `${table.x / W * 100}%`, top: `${table.y / H * 100}%`, width: `${width / W * 100}%`, gridTemplateColumns: normalizedColumnWidths(table).map((value) => `${value / width}fr`).join(" "), gridTemplateRows: normalizedRowHeights(table).map((value) => `${value / W * 100}cqw`).join(" ") }}>
-          {table.cells.map((cell, index) => { if (cell.columnSpan === 0) return null; const revealed = revealedCells.includes(`${table.id}:${index}`); const cellInteractive = Boolean(cell.isCorrect || cell.answer?.trim()); return <button key={index} type="button" className={`${revealed && cell.isCorrect ? "selected-correct" : ""} role-${cell.role ?? "text"} background-${cell.background ?? "white"}`} style={{ gridColumn: cell.columnSpan && cell.columnSpan > 1 ? `span ${cell.columnSpan}` : undefined, gridRow: cell.rowSpan && cell.rowSpan > 1 ? `span ${cell.rowSpan}` : undefined, color: cell.textColor ?? (cell.background === "black" ? "white" : "black"), fontSize: `${(cell.fontSize ?? 17) / W * 100}cqw`, fontWeight: cell.bold ? 800 : 500, textAlign: cell.textAlign ?? "center", justifyContent: cell.textAlign === "left" ? "flex-start" : cell.textAlign === "right" ? "flex-end" : "center", alignItems: cell.verticalAlign === "top" ? "flex-start" : cell.verticalAlign === "bottom" ? "flex-end" : "center", borderRightWidth: cell.borderWidth ?? 1, borderBottomWidth: cell.borderWidth ?? 1 }} disabled={!cellInteractive} onClick={() => toggleCell(table, index)}><ReaderCell cell={cell}/></button>; })}
+          {table.cells.map((cell, index) => { if (cell.columnSpan === 0) return null; const revealed = revealedCells.includes(`${table.id}:${index}`); const cellInteractive = Boolean(cell.isCorrect || cell.answer?.trim()); return <button key={index} type="button" className={`${revealed && cell.isCorrect ? "selected-correct" : ""} role-${cell.role ?? "text"} background-${cell.background ?? "white"}`} style={{ gridColumn: cell.columnSpan && cell.columnSpan > 1 ? `span ${cell.columnSpan}` : undefined, gridRow: cell.rowSpan && cell.rowSpan > 1 ? `span ${cell.rowSpan}` : undefined, color: cell.textColor ?? (cell.background === "black" ? "white" : "black"), fontSize: `${(cell.fontSize ?? 17) / W * 100}cqw`, fontWeight: cell.bold ? 800 : 500, textAlign: cell.textAlign ?? "center", justifyContent: cell.textAlign === "left" ? "flex-start" : cell.textAlign === "right" ? "flex-end" : "center", alignItems: cell.verticalAlign === "top" ? "flex-start" : cell.verticalAlign === "bottom" ? "flex-end" : "center", ...worksheetCellBorderStyle(table, index) }} disabled={!cellInteractive} onClick={() => toggleCell(table, index)}><ReaderCell cell={cell}/></button>; })}
         </div>;
       })}
       {lines.filter((item) => item.pageId === pageId).map((item) => { const stepId = `lines:${item.id}`; const revealed = completed.includes(stepId); const staticLine = item.interactive === false && !item.answer.trim(); const style = { left: `${item.x / W * 100}%`, top: `${item.y / H * 100}%`, width: `${item.width / W * 100}%`, height: `${item.lineCount * item.lineSpacing / H * 100}%` }; const rules = Array.from({ length: item.lineCount }, (_, index) => <span key={index} style={{ top: `${(index + 1) / item.lineCount * 100}%` }}/>); if (staticLine) return <div key={item.id} className="worksheet-answer-lines reader static" style={style}>{rules}</div>; return <button key={item.id} type="button" className="worksheet-answer-lines reader" style={style} onClick={() => toggleStep(stepId)}>{rules}{revealed && <div className="worksheet-answer-copy" style={{ fontSize: `${item.answerFontSize / W * 100}cqw`, lineHeight: answerLineHeight(item), fontWeight: item.answerBold ? 800 : 400, textAlign: item.answerTextAlign ?? "left" }}>{item.answer}</div>}</button>; })}

@@ -17,6 +17,14 @@ describe("worksheet cell borders", () => {
   it("keeps the outer bottom border independently editable", () => {
     const updated = setWorksheetCellBorder(table(), [2], "bottom", false);
     expect(worksheetCellBorderStyle(updated, 2).borderBottomWidth).toBe(0);
-    expect(worksheetCellBorderStyle(updated, 0).borderBottomWidth).toBe(1);
+    expect(worksheetCellBorderStyle(updated, 2).borderTopWidth).toBe(1);
+  });
+
+  it("draws an interior edge once and restores a previously borderless cell", () => {
+    const original = table();
+    expect(worksheetCellBorderStyle(original, 0).borderRightWidth + worksheetCellBorderStyle(original, 1).borderLeftWidth).toBe(1);
+    original.cells[1].borderWidth = 0;
+    const restored = setWorksheetCellBorder(original, [0], "right", true);
+    expect(worksheetCellBorderStyle(restored, 1).borderLeftWidth).toBe(1);
   });
 });

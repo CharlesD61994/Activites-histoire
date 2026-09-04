@@ -13179,11 +13179,6 @@ textarea {
 .worksheet-table-toolbar label, .worksheet-score-toolbar label, .worksheet-band-toolbar label { display: grid; gap: 3px; font-size: .74rem; font-weight: 800; }
 .worksheet-table-toolbar input, .worksheet-table-toolbar select, .worksheet-score-toolbar input, .worksheet-band-toolbar input, .worksheet-band-toolbar select { min-height: 32px; padding: 4px 7px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--foreground); }
 .worksheet-cell-toolbar { display: grid; grid-template-columns: minmax(82px,.9fr) minmax(100px,1fr) minmax(92px,.9fr) minmax(96px,.9fr) minmax(68px,.62fr) auto; align-items: end; gap: 6px; min-width: 0; padding: 7px; border-radius: 10px; background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
-.worksheet-cell-toolbar > label:nth-child(4) { display: none; }
-.worksheet-border-toolbar { display: inline-flex; width: fit-content; max-width: 100%; margin: 0 auto; align-items: center; gap: 9px; padding: 6px 10px; border: 1px solid #c7d8e7; border-radius: 9px; background: #fff; color: #173f5f; font-size: .78rem; font-weight: 800; }
-.worksheet-border-toolbar > span { margin-right: 2px; }
-.worksheet-border-toolbar label { display: inline-flex; min-width: auto; align-items: center; gap: 4px; cursor: pointer; }
-.worksheet-border-toolbar input { width: 15px; height: 15px; margin: 0; accent-color: var(--primary); }
 .worksheet-cell-toolbar label { min-width: 0; }
 .worksheet-cell-toolbar select, .worksheet-cell-toolbar input[type="number"] { width: 100%; min-width: 0; }
 .worksheet-cell-toolbar .worksheet-checkbox { display: flex; flex-direction: row; align-items: center; gap: 6px; min-height: 32px; }
@@ -13267,7 +13262,7 @@ textarea {
 .worksheet-activity-table.worksheet-section-block,
 .worksheet-reader-table.worksheet-section-block { border: 1px solid #202020 !important; }
 .worksheet-activity-table.worksheet-section-block > .worksheet-table-cell,
-.worksheet-reader-table.worksheet-section-block > button { border-right: 0 !important; border-bottom: 0 !important; }
+.worksheet-reader-table.worksheet-section-block > button { border-width: 0 !important; }
 .worksheet-activity-table.worksheet-section-block > .worksheet-table-cell:first-child,
 .worksheet-reader-table.worksheet-section-block > button:first-child { border-right: 1px solid #202020 !important; }
 .worksheet-table-cell.background-gray, .worksheet-reader-table .background-gray { background: #d9d9d9; }
@@ -13495,6 +13490,39 @@ textarea {
   border-color: #dfe8f1;
   background: color-mix(in srgb, var(--secondary) 44%, #fff);
 }
+
+.worksheet-editor .worksheet-toolbar-stack {
+  position: sticky;
+  top: 0;
+  z-index: 65;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 0;
+  background: #fff;
+  box-shadow: 0 5px 12px rgb(16 48 74 / 8%);
+}
+.worksheet-editor .worksheet-toolbar-stack > :is(.tree-analysis-quick-add, .tree-analysis-text-toolbar, .worksheet-lines-toolbar, .worksheet-table-toolbar) {
+  position: static;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar { padding-top: 0; gap: 10px; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-table-toolbar-row { justify-content: center; flex-wrap: wrap; gap: 7px; overflow: visible; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; background: #f4f7fa; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > label { flex: 1 1 100px; }
+.worksheet-editor .worksheet-toolbar-stack .worksheet-cell-toolbar > .worksheet-checkbox { flex: 0 0 auto; }
+.worksheet-editor .worksheet-cell-borders { min-width: 0; margin: 0; padding: 0; border: 0; }
+.worksheet-editor .worksheet-cell-borders legend { margin-bottom: 4px; font-size: .74rem; font-weight: 800; }
+.worksheet-editor .worksheet-cell-borders > div { display: flex; flex-wrap: wrap; gap: 9px; min-height: 32px; align-items: center; }
+.worksheet-editor .worksheet-cell-borders label { display: inline-flex; align-items: center; gap: 4px; min-width: 0; cursor: pointer; }
+.worksheet-editor .worksheet-cell-borders input { width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: var(--primary); }
 
 .worksheet-editor .worksheet-settings-toggle:hover,
 .worksheet-editor .worksheet-header-controls-toggle:hover,
