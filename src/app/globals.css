@@ -13232,6 +13232,8 @@ textarea {
 .worksheet-score-delete, .worksheet-band-delete { top: -28px !important; right: -11px !important; z-index: 70; }
 .worksheet-activity-table.selected { z-index: 9; }
 .worksheet-document-cell-image { object-fit: fill; pointer-events: none; }
+.worksheet-document-row-resize { position: absolute; z-index: 56; left: -7px; right: -7px; height: 14px; transform: translateY(-50%); cursor: ns-resize; touch-action: none; }
+.worksheet-document-row-resize::after { content: ""; position: absolute; top: 50%; right: 0; left: 0; border-top: 2px solid #3976bf; opacity: .72; }
 .worksheet-text-box.selected { z-index: 10; }
 .worksheet-text-box > .tree-analysis-text-delete { top: -28px; z-index: 70; }
 .worksheet-band-resize, .worksheet-table-resize { right: -6px; bottom: -6px; }
@@ -13615,7 +13617,8 @@ textarea {
   .worksheet-editor .worksheet-checkbox-delete,
   .worksheet-editor .tree-analysis-delete-table,
   .worksheet-editor .worksheet-table-move-edge,
-  .worksheet-editor .worksheet-resize-handle { display: none !important; }
+  .worksheet-editor .worksheet-resize-handle,
+  .worksheet-editor .worksheet-document-row-resize { display: none !important; }
 }
 
 /* Full-screen document viewer. Keep this final block after legacy reader rules. */
