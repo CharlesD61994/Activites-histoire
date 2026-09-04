@@ -11,6 +11,7 @@ import { worksheetDimensionAsset } from "@/lib/worksheet-dimensions";
 import { fitWorksheetDocumentImage, WORKSHEET_ROW_TO_PAGE_Y, worksheetTextWrap } from "@/lib/worksheet-images";
 import { setWorksheetCellBorder, worksheetCellBorderStyle, worksheetCellBorderWidth, type WorksheetCellBorderSide } from "@/lib/worksheet-cell-borders";
 import { resizeWorksheetText } from "@/lib/worksheet-text-resize";
+import { addWorksheetPrintBorders } from "@/lib/worksheet-print-borders";
 import { captureSharedTextSelection, rebaseSharedTextRange, renderSharedAnnotatedText, type SharedTextRange } from "@/components/grammar/shared-annotated-text";
 
 type Props = { initialSentence?: Sentence; levels: SchoolLevel[]; onSave: (sentence: Sentence) => void; controlledTitle?: string; onTitleChange?: (title: string) => void };
@@ -891,10 +892,12 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
         ".worksheet-image-delete",
         ".worksheet-image-resize",
         ".worksheet-document-image-button",
+        ".worksheet-document-row-resize",
         ".worksheet-band-delete",
         ".worksheet-score-delete",
         ".worksheet-resize-handle"
       ].join(",")).forEach((element) => element.remove());
+      addWorksheetPrintBorders(clone);
     };
     document.querySelector(".worksheet-print-root")?.remove();
     document.querySelector("#worksheet-print-page-style")?.remove();
@@ -954,15 +957,15 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
       </div>}
       <div className="worksheet-toolbar-stack">
       {!selectedText && <div className="tree-analysis-quick-add" role="toolbar" aria-label="Ajouter un objet">
+        <Button type="button" variant="secondary" onClick={addSectionBlock}><ListChecks/> Section</Button>
         <Button type="button" variant="secondary" onClick={addBadge}><span className="tree-analysis-add-icon">1</span> Numéro</Button>
         <Button type="button" variant="secondary" onClick={addText}><span className="tree-analysis-add-icon">T</span> Texte</Button>
         <Button type="button" variant="secondary" onClick={addLines}><span className="tree-analysis-add-icon">━</span> Lignes de réponses</Button>
+        <Button type="button" variant="secondary" className="worksheet-add-score" title="Ajouter une boîte de points" aria-label="Ajouter une boîte de points" onClick={addScore}><span className="tree-analysis-add-icon">/x</span></Button>
         <Button type="button" variant="secondary" onClick={openTableDialog}><Grid3X3/> Tableau</Button>
-        <Button type="button" variant="secondary" onClick={addSectionBlock}><ListChecks/> Section</Button>
         <Button type="button" variant="secondary" onClick={addDocumentBlock}><FileText/> Document</Button>
         <Button type="button" variant="secondary" onClick={addPageReferenceBlock}><BookOpenText/> Pages</Button>
         <Button type="button" variant="secondary" onClick={() => { documentImageTargetRef.current = null; imageInputRef.current?.click(); }}><ImagePlus/> Images</Button>
-        <Button type="button" variant="secondary" className="worksheet-add-score" title="Ajouter une boîte de points" aria-label="Ajouter une boîte de points" onClick={addScore}><span className="tree-analysis-add-icon">/x</span></Button>
         <input ref={imageInputRef} className="worksheet-image-input" type="file" accept="image/*" onChange={(event)=>{importImage(event.target.files?.[0]);event.target.value="";}}/><input ref={documentImageInputRef} className="worksheet-image-input" type="file" accept="image/*" onChange={(event)=>{importImage(event.target.files?.[0]);event.target.value="";}}/>
       </div>}
       {selectedText && <div className="tree-analysis-text-toolbar worksheet-text-edit-toolbar" onMouseDown={(event)=>{if((event.target as HTMLElement).closest("button"))event.preventDefault();}}>
