@@ -1402,7 +1402,8 @@ function HistoryInteractionEditor({
   }
 
   if (question.action === "document_hotspot") {
-    const document = documents.find((item) => question.documentIds.includes(item.id) && item.src);
+    const document = documents.find((item) => item.id === question.hotspot?.documentId && item.src)
+      ?? documents.find((item) => question.documentIds.includes(item.id) && item.src);
     return withCanvasActions(document?.src ? <button type="button" className="history-hotspot-reader"><img src={document.src} alt={document.title} /></button> : <p>Cette action demande un document image ou une carte.</p>);
   }
 

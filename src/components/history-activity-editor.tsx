@@ -279,7 +279,48 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   }
 
   function setHotspot(patch: Partial<HistoryHotspot>) {
-    updateQuestion({ hotspot: { documentId: imageDocuments[0]?.id ?? "", x: 50, y: 50, radius: 10, ...question.hotspot, ...patch } });
+    const hotspot = { documentId: imageDocuments[0]?.id ?? "", x: 50, y: 50, radius: 10, ...question.hotspot, ...patch };
+    updateQuestion({
+      hotspot,
+      // The canvas preview reads linked documents. Keep the selected image linked
+      // so the author can resize the same document they are configuring.
+      documentIds: hotspot.documentId ? [hotspot.documentId] : []
+    });
+  }
+
+  function setTableFillAnswer(promptId: string, text: string) {
+    const prompt = question.matchingPrompts?.find((item) => item.id === promptId);
+    if (!prompt) return;
+    const target = question.matchingTargets?.find((item) => item.id === prompt.correctTargetId);
+    if (target) {
+      updateQuestion({ matchingTargets: question.matchingTargets?.map((item) => item.id === target.id ? { ...item, text } : item) });
+      return;
+    }
+    const targetId = crypto.randomUUID();
+    updateQuestion({
+      matchingTargets: [...(question.matchingTargets ?? []), { id: targetId, text }],
+      matchingPrompts: question.matchingPrompts?.map((item) => item.id === promptId ? { ...item, correctTargetId: targetId } : item)
+    });
+  }
+
+  function addTableFillRow() {
+    const targetId = crypto.randomUUID();
+    updateQuestion({
+      matchingTargets: [...(question.matchingTargets ?? []), { id: targetId, text: "Réponse attendue" }],
+      matchingPrompts: [...(question.matchingPrompts ?? []), { id: crypto.randomUUID(), prompt: "Libellé de la ligne", correctTargetId: targetId }]
+    });
+  }
+
+  function removeTableFillRow(promptId: string) {
+    const prompt = question.matchingPrompts?.find((item) => item.id === promptId);
+    const remainingPrompts = (question.matchingPrompts ?? []).filter((item) => item.id !== promptId);
+    updateQuestion({
+      matchingPrompts: remainingPrompts,
+      matchingTargets: (question.matchingTargets ?? []).filter((target) => {
+        if (target.id !== prompt?.correctTargetId) return true;
+        return remainingPrompts.some((item) => item.correctTargetId === target.id);
+      })
+    });
   }
 
   const activeHotspotDocument = imageDocuments.find((document) => document.id === (question.hotspot?.documentId ?? imageDocuments[0]?.id));
@@ -356,27 +397,56 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
       );
     }
 
-    if (question.action === "matching" || question.action === "table_fill") {
+    if (question.action === "table_fill") {
+      return (
+        <section className="history-editor-panel history-table-fill-authoring">
+          <div>
+            <h3>Tableau à compléter</h3>
+            <p>Chaque ligne correspond à une case du tableau : écris son libellé, puis la réponse attendue.</p>
+          </div>
+          <div className="history-table-fill-authoring-headings" aria-hidden="true">
+            <span>Libellé dans le tableau</span>
+            <span>Réponse attendue</span>
+          </div>
+          <div className="history-table-fill-authoring-rows">
+            {(question.matchingPrompts ?? []).map((prompt, index) => {
+              const target = question.matchingTargets?.find((item) => item.id === prompt.correctTargetId);
+              return (
+                <div className="history-table-fill-authoring-row" key={prompt.id}>
+                  <span className="history-table-fill-authoring-index">{index + 1}</span>
+                  <input value={prompt.prompt} onChange={(event) => setMatchingPrompt(prompt.id, { prompt: event.target.value })} placeholder="Ex. Société" aria-label={`Libellé de la ligne ${index + 1}`} />
+                  <input value={target?.text ?? ""} onChange={(event) => setTableFillAnswer(prompt.id, event.target.value)} placeholder="Ex. Sédentaire" aria-label={`Réponse attendue pour la ligne ${index + 1}`} />
+                  <button type="button" onClick={() => removeTableFillRow(prompt.id)} aria-label={`Supprimer la ligne ${index + 1}`}><Trash2 size={16} /></button>
+                </div>
+              );
+            })}
+          </div>
+          <Button type="button" variant="secondary" onClick={addTableFillRow}><Plus size={16} /> Ajouter une ligne</Button>
+        </section>
+      );
+    }
+
+    if (question.action === "matching") {
       return (
         <section className="history-editor-panel">
-          <h3>{question.action === "table_fill" ? "Tableau à compléter" : "Associations"}</h3>
+          <h3>Associations</h3>
           <div className="history-two-columns">
             <div>
-              <h4>{question.action === "table_fill" ? "Réponses attendues" : "Réponses possibles"}</h4>
+              <h4>Réponses possibles</h4>
               {(question.matchingTargets ?? []).map((target) => <input key={target.id} value={target.text} onChange={(event) => setMatchingTarget(target.id, event.target.value)} />)}
               <Button type="button" variant="secondary" onClick={() => updateQuestion({ matchingTargets: [...(question.matchingTargets ?? []), { id: crypto.randomUUID(), text: "Nouvelle réponse" }] })}><Plus size={16} /> Ajouter</Button>
             </div>
             <div>
-              <h4>{question.action === "table_fill" ? "Lignes du tableau" : "Éléments à associer"}</h4>
+              <h4>Éléments à associer</h4>
               {(question.matchingPrompts ?? []).map((prompt) => (
                 <div className="history-inline-row" key={prompt.id}>
-                  <input value={prompt.prompt} onChange={(event) => setMatchingPrompt(prompt.id, { prompt: event.target.value })} placeholder={question.action === "table_fill" ? "Libellé de la ligne" : "Élément de départ"} />
+                  <input value={prompt.prompt} onChange={(event) => setMatchingPrompt(prompt.id, { prompt: event.target.value })} placeholder="Élément de départ" />
                   <select value={prompt.correctTargetId} onChange={(event) => setMatchingPrompt(prompt.id, { correctTargetId: event.target.value })}>
                     {(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}
                   </select>
                 </div>
               ))}
-              <Button type="button" variant="secondary" onClick={() => updateQuestion({ matchingPrompts: [...(question.matchingPrompts ?? []), { id: crypto.randomUUID(), prompt: question.action === "table_fill" ? "Nouvelle ligne" : "Nouvel élément", correctTargetId: question.matchingTargets?.[0]?.id ?? "" }] })}><Plus size={16} /> Ajouter</Button>
+              <Button type="button" variant="secondary" onClick={() => updateQuestion({ matchingPrompts: [...(question.matchingPrompts ?? []), { id: crypto.randomUUID(), prompt: "Nouvel élément", correctTargetId: question.matchingTargets?.[0]?.id ?? "" }] })}><Plus size={16} /> Ajouter</Button>
             </div>
           </div>
         </section>
