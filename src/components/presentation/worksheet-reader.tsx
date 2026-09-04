@@ -10,6 +10,7 @@ import type { Sentence, TreeAnalysisTable, TreeAnalysisTableCell, TreeAnalysisTe
 import { isFixedWorksheetTable, normalizedColumnWidths, normalizedRowHeights, worksheetTableWidth } from "@/lib/worksheet-tables";
 import { worksheetDimensionAsset } from "@/lib/worksheet-dimensions";
 import { fitWorksheetDocumentImage, worksheetTextWrap } from "@/lib/worksheet-images";
+import { worksheetCellBorderStyle } from "@/lib/worksheet-cell-borders";
 import { renderSharedAnnotatedText } from "@/components/grammar/shared-annotated-text";
 
 type Props = {
@@ -78,6 +79,7 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
   const [pageIndex, setPageIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [hydrated, setHydrated] = useState(false);
+  const readerRef = useRef<HTMLDivElement>(null);
   const page = pages[pageIndex] ?? pages[0];
   const pageId = page?.id;
   const currentStep = steps.find((id) => !completed.includes(id));
@@ -105,6 +107,22 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
     onCompleteChange?.(completed.length >= steps.length);
   }, [completed.length, hydrated, onCompleteChange, steps.length]);
 
+  useLayoutEffect(() => {
+    const root = readerRef.current;
+    if (!root) return;
+    const pageTables = tables.filter((item) => (item.pageId ?? pages[0]?.id) === pageId);
+    const elements = Array.from(root.querySelectorAll<HTMLElement>(".worksheet-reader-table"));
+    pageTables.forEach((table, tableIndex) => {
+      const cells = Array.from(elements[tableIndex]?.querySelectorAll<HTMLElement>("button") ?? []);
+      let visibleIndex = 0;
+      table.cells.forEach((cell, index) => {
+        if (cell.columnSpan === 0) return;
+        Object.assign(cells[visibleIndex]?.style ?? {}, worksheetCellBorderStyle(table, index));
+        visibleIndex += 1;
+      });
+    });
+  }, [pageId, pages, tables]);
+
   function toggleStep(id: string) { setCompleted((items) => items.includes(id) ? items.filter((item) => item !== id) : [...items, id]); }
   function toggleCell(table: TreeAnalysisTable, index: number) {
     const cell = table.cells[index];
@@ -126,7 +144,7 @@ export function WorksheetReader({ sentence, persistenceKey, finishControl, onCom
     if (persistenceKey && typeof window !== "undefined") window.sessionStorage.removeItem(persistenceKey);
   }
 
-  return <div className="worksheet-reader tree-reader">
+  return <div ref={readerRef} className="worksheet-reader tree-reader">
     <ReaderChromePortal slot="instruction"><div className="worksheet-reader-top-tools"><Button type="button" variant="secondary" onClick={restart}><RotateCcw size={18}/> Recommencer</Button><div className="tree-reader-zoom"><button type="button" onClick={() => setZoom((value) => Math.max(.6, Number((value - .1).toFixed(1))))}><Minus size={17}/></button><button type="button" onClick={() => setZoom(1)}>{Math.round(zoom * 100)} %</button><button type="button" onClick={() => setZoom((value) => Math.min(1.5, Number((value + .1).toFixed(1))))}><Plus size={17}/></button></div>{pages.length > 1 && <div className="worksheet-page-navigation"><button type="button" disabled={pageIndex === 0} onClick={() => setPageIndex((value) => value - 1)}><ChevronLeft size={17}/></button><strong>Page {pageIndex + 1} / {pages.length}</strong><button type="button" disabled={pageIndex >= pages.length - 1} onClick={() => setPageIndex((value) => value + 1)}><ChevronRight size={17}/></button></div>}{completed.length >= steps.length ? finishControl : null}</div></ReaderChromePortal>
     {page && <div className="tree-reader-page-viewport"><div className="tree-reader-page portrait document-template worksheet-reader-page" style={{ aspectRatio: "8.5 / 11", zoom }}>
       <div className="tree-analysis-document-header" style={{ left: `${page.margins.left / W * 100}%`, right: `${page.margins.right / W * 100}%`, top: `${(page.header?.nameY ?? 25) / H * 100}%` }}><div className="tree-analysis-document-header-top"><div className="tree-analysis-student-fields"><span>NOM</span><span>GROUPE</span></div><div className="tree-analysis-page-cell"><div className="tree-analysis-page-badge">{pageIndex + 1}</div></div></div><div className="tree-analysis-document-header-bottom"><div>{page.header?.activityType || "EXERCICES"}</div><div>{page.header?.activityTitle || sentence.title}</div></div></div>
