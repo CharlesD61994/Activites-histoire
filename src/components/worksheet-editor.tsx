@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { AlignCenter, AlignJustify, AlignLeft, ArrowDown, ArrowUp, Bold, BookOpenText, Check, ChevronDown, ChevronUp, FileText, Grid3X3, ImagePlus, ListChecks, Merge, Plus, Printer, Save, Split, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,17 @@ type DragState = { kind: DragKind; id: string; offsetX: number; offsetY: number;
 type SelectedItem = { kind: MovableKind; id: string };
 type MarqueeState = { startX: number; startY: number; x: number; y: number };
 type TableDialogState = { kind: WorksheetTableTemplate; rows: number; columns: number; maxPoints: number; dimension: string };
+type WorksheetClipboard = {
+  textBoxes: TreeAnalysisTextBox[];
+  scoreBoxes: TreeAnalysisScoreBox[];
+  tables: TreeAnalysisTable[];
+  badges: TreeAnalysisQuestionBadge[];
+  answerLines: WorksheetAnswerLines[];
+  checkBoxes: WorksheetCheckboxMark[];
+  dimensionBands: WorksheetDimensionBand[];
+  images: WorksheetImage[];
+};
+type WorksheetContextMenu = { x: number; y: number } | null;
 
 const W = 1056;
 const H = 816;
@@ -208,11 +219,13 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
   const marqueeRef = useRef<MarqueeState | null>(null);
   const groupOrigins = useRef<Record<string, { x: number; y: number }>>({});
   const suppressCanvasClickRef = useRef(false);
+  const clipboardRef = useRef<WorksheetClipboard | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentImageInputRef = useRef<HTMLInputElement>(null);
   const documentImageTargetRef = useRef<string | null>(null);
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0];
+  const [contextMenu, setContextMenu] = useState<WorksheetContextMenu>(null);
 
   function updateTextSelection(range: SharedTextRange | null) {
     textSelectionRef.current = range;
@@ -416,6 +429,113 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
       ...images.filter((item) => item.pageId === activePageId).map((item) => ({ kind: "image" as const, id: item.id, x: item.x, y: item.y, width: item.width, height: item.height }))
     ];
   }
+
+  function selectedObjects() {
+    if (selected && selectedItems.some((item) => item.kind === selected.kind && item.id === selected.id)) return selectedItems;
+    return selected ? [selected] : [];
+  }
+
+  function copySelectedObjects() {
+    const targets = selectedObjects();
+    if (!targets.length) return;
+    const ids = new Map<MovableKind, Set<string>>();
+    for (const target of targets) {
+      const bucket = ids.get(target.kind) ?? new Set<string>();
+      bucket.add(target.id);
+      ids.set(target.kind, bucket);
+    }
+    const has = (kind: MovableKind, id: string) => ids.get(kind)?.has(id) ?? false;
+    const copiedTables = tables.filter((item) => has("table", item.id));
+    const copiedTableIds = new Set(copiedTables.map((item) => item.id));
+    clipboardRef.current = {
+      textBoxes: textBoxes.filter((item) => has("text", item.id)).map((item) => ({ ...item, annotations: item.annotations.map((annotation) => ({ ...annotation })) })),
+      scoreBoxes: scoreBoxes.filter((item) => has("score", item.id)).map((item) => ({ ...item })),
+      tables: copiedTables.map((item) => ({ ...item, cells: item.cells.map((cell) => ({ ...cell })), rowHeights: item.rowHeights ? [...item.rowHeights] : undefined, columnWidths: item.columnWidths ? [...item.columnWidths] : undefined })),
+      badges: badges.filter((item) => has("badge", item.id)).map((item) => ({ ...item })),
+      answerLines: answerLines.filter((item) => has("lines", item.id)).map((item) => ({ ...item })),
+      checkBoxes: checkBoxes.filter((item) => has("check", item.id)).map((item) => ({ ...item })),
+      dimensionBands: dimensionBands.filter((item) => has("band", item.id)).map((item) => ({ ...item })),
+      images: images.filter((item) => has("image", item.id) || Boolean(item.documentTableId && copiedTableIds.has(item.documentTableId))).map((item) => ({ ...item }))
+    };
+  }
+
+  function deleteSelectedObjects() {
+    const targets = selectedObjects();
+    if (!targets.length) return;
+    const ids = new Map<MovableKind, Set<string>>();
+    for (const target of targets) {
+      const bucket = ids.get(target.kind) ?? new Set<string>();
+      bucket.add(target.id);
+      ids.set(target.kind, bucket);
+    }
+    const has = (kind: MovableKind, id: string) => ids.get(kind)?.has(id) ?? false;
+    const deletedTableIds = ids.get("table") ?? new Set<string>();
+    setTextBoxes((items) => items.filter((item) => !has("text", item.id)));
+    setScoreBoxes((items) => items.filter((item) => !has("score", item.id)));
+    setTables((items) => items.filter((item) => !has("table", item.id)));
+    setBadges((items) => items.filter((item) => !has("badge", item.id)));
+    setAnswerLines((items) => items.filter((item) => !has("lines", item.id)));
+    setCheckBoxes((items) => items.filter((item) => !has("check", item.id)));
+    setDimensionBands((items) => items.filter((item) => !has("band", item.id)));
+    setImages((items) => items.filter((item) => !has("image", item.id) && !(item.documentTableId && deletedTableIds.has(item.documentTableId))));
+    setSelected(null);
+    setSelectedItems([]);
+    setSelectedCells([]);
+  }
+
+  function pasteObjects() {
+    const copied = clipboardRef.current;
+    if (!copied) return;
+    const offset = 24;
+    const move = <T extends { x: number; y: number; pageId?: string }>(item: T) => ({ ...item, x: clamp(item.x + offset, 0, W - 32), y: clamp(item.y + offset, 0, H - 24), pageId: activePageId });
+    const tableIdMap = new Map(copied.tables.map((item) => [item.id, crypto.randomUUID()]));
+    const nextTables = copied.tables.map((item) => ({ ...move(item), id: tableIdMap.get(item.id)!, cells: item.cells.map((cell) => ({ ...cell })), rowHeights: item.rowHeights ? [...item.rowHeights] : undefined, columnWidths: item.columnWidths ? [...item.columnWidths] : undefined }));
+    const nextTextBoxes = copied.textBoxes.map((item) => ({ ...move(item), id: crypto.randomUUID(), annotations: item.annotations.map((annotation) => ({ ...annotation, id: crypto.randomUUID() })) }));
+    const nextScoreBoxes = copied.scoreBoxes.map((item) => ({ ...move(item), id: crypto.randomUUID() }));
+    const nextBadges = copied.badges.map((item) => ({ ...move(item), id: crypto.randomUUID() }));
+    const nextLines = copied.answerLines.map((item) => ({ ...move(item), id: crypto.randomUUID() }));
+    const nextChecks = copied.checkBoxes.map((item) => ({ ...move(item), id: crypto.randomUUID() }));
+    const nextBands = copied.dimensionBands.map((item) => ({ ...move(item), id: crypto.randomUUID() }));
+    const nextImages = copied.images.flatMap((item) => {
+      if (item.documentTableId && !tableIdMap.has(item.documentTableId)) return [];
+      return [{ ...move(item), id: crypto.randomUUID(), documentTableId: item.documentTableId ? tableIdMap.get(item.documentTableId) : undefined }];
+    });
+    setTextBoxes((items) => [...items, ...nextTextBoxes]);
+    setScoreBoxes((items) => [...items, ...nextScoreBoxes]);
+    setTables((items) => [...items, ...nextTables]);
+    setBadges((items) => [...items, ...nextBadges]);
+    setAnswerLines((items) => [...items, ...nextLines]);
+    setCheckBoxes((items) => [...items, ...nextChecks]);
+    setDimensionBands((items) => [...items, ...nextBands]);
+    setImages((items) => [...items, ...nextImages]);
+    const nextSelection: SelectedItem[] = [
+      ...nextTextBoxes.map((item) => ({ kind: "text" as const, id: item.id })), ...nextScoreBoxes.map((item) => ({ kind: "score" as const, id: item.id })),
+      ...nextTables.map((item) => ({ kind: "table" as const, id: item.id })), ...nextBadges.map((item) => ({ kind: "badge" as const, id: item.id })),
+      ...nextLines.map((item) => ({ kind: "lines" as const, id: item.id })), ...nextChecks.map((item) => ({ kind: "check" as const, id: item.id })),
+      ...nextBands.map((item) => ({ kind: "band" as const, id: item.id })), ...nextImages.filter((item) => !item.documentTableId).map((item) => ({ kind: "image" as const, id: item.id }))
+    ];
+    setSelectedItems(nextSelection);
+    setSelected(nextSelection[0] ?? null);
+    setSelectedCells([]);
+  }
+
+  function openContextMenu(event: React.MouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setContextMenu({ x: clamp(event.clientX, 8, window.innerWidth - 170), y: clamp(event.clientY, 8, window.innerHeight - 180) });
+  }
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, [contenteditable=true]")) return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "c") { event.preventDefault(); copySelectedObjects(); return; }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x") { event.preventDefault(); copySelectedObjects(); deleteSelectedObjects(); return; }
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") { event.preventDefault(); pasteObjects(); return; }
+      if (event.key === "Delete") { event.preventDefault(); deleteSelectedObjects(); }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   function beginMarquee(event: React.PointerEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget) return;
@@ -856,7 +976,7 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
         {selectedCells.length>0&&<div className="worksheet-cell-toolbar"><label>Fond<select value={selectedTable.cells[selectedCells[0]]?.background??"white"} onChange={(event)=>updateSelectedCells({background:event.target.value as "white"|"gray"|"black",textColor:event.target.value==="black"?"white":"black"})}><option value="white">Blanc</option><option value="gray">Gris</option><option value="black">Noir</option></select></label><label>Alignement<select value={selectedTable.cells[selectedCells[0]]?.textAlign??"center"} onChange={(event)=>updateSelectedCells({textAlign:event.target.value as "left"|"center"|"right"})}><option value="left">Gauche</option><option value="center">Centre</option><option value="right">Droite</option></select></label><label>Vertical<select value={selectedTable.cells[selectedCells[0]]?.verticalAlign??"center"} onChange={(event)=>updateSelectedCells({verticalAlign:event.target.value as "top"|"center"|"bottom"})}><option value="top">Haut</option><option value="center">Centre</option><option value="bottom">Bas</option></select></label><label>Bordure<select value={selectedTable.cells[selectedCells[0]]?.borderWidth??1} onChange={(event)=>updateSelectedCells({borderWidth:Number(event.target.value) as 0|1|2|3})}><option value="0">Aucune</option><option value="1">Normale</option><option value="2">Épaisse</option><option value="3">Très épaisse</option></select></label><label>Taille<input type="number" min="9" max="32" value={selectedTable.cells[selectedCells[0]]?.fontSize??17} onChange={(event)=>updateSelectedCells({fontSize:Number(event.target.value)})}/></label><label className="worksheet-checkbox"><input type="checkbox" checked={selectedTable.cells[selectedCells[0]]?.bold??false} onChange={(event)=>updateSelectedCells({bold:event.target.checked})}/> Gras</label></div>}
       </div>}
       {tableDialog&&<div className="worksheet-dialog-backdrop" role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setTableDialog(null);}}><div className="worksheet-dialog" role="dialog" aria-modal="true" aria-labelledby="worksheet-table-title"><div className="worksheet-dialog-heading"><div><span className="eyebrow">Ajouter à la page</span><h3 id="worksheet-table-title">{["compact_rubric","rubric"].includes(tableDialog.kind)?"Créer une grille d’opération":"Créer un tableau pédagogique"}</h3></div><button type="button" onClick={()=>setTableDialog(null)} aria-label="Fermer"><X size={20}/></button></div><label>Modèle<select value={tableDialog.kind} onChange={(event)=>setTableDialog((current)=>current?{...current,kind:event.target.value as WorksheetTableTemplate}:current)}>{((["compact_rubric","rubric"].includes(tableDialog.kind)?["compact_rubric","rubric"]:["free","structured","choice","sequence","association"]) as WorksheetTableTemplate[]).map((kind)=><option key={kind} value={kind}>{tableTemplateLabel(kind)}</option>)}</select></label>{!["choice","compact_rubric","rubric"].includes(tableDialog.kind)&&<label>Nombre de rangées<input type="number" min="1" max="12" value={tableDialog.rows} onChange={(event)=>setTableDialog((current)=>current?{...current,rows:Number(event.target.value)}:current)}/></label>}{!["structured","sequence","association","compact_rubric"].includes(tableDialog.kind)&&<label>{tableDialog.kind==="rubric"?"Nombre de niveaux":"Nombre de colonnes"}<input type="number" min="1" max="8" value={tableDialog.columns} onChange={(event)=>setTableDialog((current)=>current?{...current,columns:Number(event.target.value)}:current)}/></label>}{["compact_rubric","rubric"].includes(tableDialog.kind)&&<><label>Opération intellectuelle<select value={tableDialog.dimension} onChange={(event)=>setTableDialog((current)=>current?{...current,dimension:event.target.value}:current)}>{historyOperations.map((item)=><option key={item}>{item}</option>)}</select></label><label>Maximum de points<input type="number" min="1" max="20" value={tableDialog.maxPoints} onChange={(event)=>setTableDialog((current)=>current?{...current,maxPoints:Number(event.target.value)}:current)}/></label></>}<p>{["compact_rubric","rubric"].includes(tableDialog.kind)?"La grille affiche l’opération intellectuelle et le pointage; son contenu demeure modifiable.":"Le modèle sera entièrement modifiable après son insertion."}</p><div className="worksheet-dialog-actions"><Button type="button" variant="secondary" onClick={()=>setTableDialog(null)}>Annuler</Button><Button type="button" onClick={addTable}><Grid3X3 size={17}/> Ajouter le tableau</Button></div></div></div>}
-      <div className={`tree-analysis-workspace tree-print-${printMode}`}><div className="tree-analysis-page-shell builder"><div ref={canvasRef} className="tree-analysis-page tree-analysis-canvas portrait document-template worksheet-canvas" style={{"--page-margin-top":`${activePage.margins.top/H*100}%`,"--page-margin-right":`${activePage.margins.right/W*100}%`,"--page-margin-bottom":`${activePage.margins.bottom/H*100}%`,"--page-margin-left":`${activePage.margins.left/W*100}%`} as React.CSSProperties} onPointerDown={beginMarquee} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onClick={(event) => { if(suppressCanvasClickRef.current)return; if(event.target === event.currentTarget&&!marquee) {setSelected(null);setSelectedItems([]);} }}>
+      <div className={`tree-analysis-workspace tree-print-${printMode}`}><div className="tree-analysis-page-shell builder"><div ref={canvasRef} className="tree-analysis-page tree-analysis-canvas portrait document-template worksheet-canvas" style={{"--page-margin-top":`${activePage.margins.top/H*100}%`,"--page-margin-right":`${activePage.margins.right/W*100}%`,"--page-margin-bottom":`${activePage.margins.bottom/H*100}%`,"--page-margin-left":`${activePage.margins.left/W*100}%`} as React.CSSProperties} onPointerDown={beginMarquee} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={endDrag} onContextMenu={openContextMenu} onClick={(event) => { setContextMenu(null); if(suppressCanvasClickRef.current)return; if(event.target === event.currentTarget&&!marquee) {setSelected(null);setSelectedItems([]);} }}>
         {alignmentGuides.x !== undefined && <div className="tree-analysis-alignment-guide vertical" style={{left:`${alignmentGuides.x/W*100}%`}}/>}
         {alignmentGuides.y !== undefined && <div className="tree-analysis-alignment-guide horizontal" style={{top:`${alignmentGuides.y/H*100}%`}}/>}
         {marquee&&<div className="worksheet-selection-marquee" style={{left:`${Math.min(marquee.startX,marquee.x)/W*100}%`,top:`${Math.min(marquee.startY,marquee.y)/H*100}%`,width:`${Math.abs(marquee.x-marquee.startX)/W*100}%`,height:`${Math.abs(marquee.y-marquee.startY)/H*100}%`}}/>}
@@ -873,6 +993,13 @@ export function WorksheetEditor({ initialSentence, levels, onSave, controlledTit
         {answerLines.filter((item) => item.pageId === activePageId).map((item) => <div key={item.id} className={`worksheet-answer-lines ${item.interactive===false&&!item.answer.trim()?"static":""} ${selected?.kind === "lines" && selected.id === item.id ? "selected" : ""}`} style={{left:`${item.x/W*100}%`,top:`${item.y/H*100}%`,width:`${item.width/W*100}%`,height:`${item.lineCount*item.lineSpacing/H*100}%`}} onPointerDown={(event) => beginDrag(event,"lines",item)} onClick={() => setSelected({kind:"lines",id:item.id})}>{Array.from({length:item.lineCount},(_,index)=><span key={index} style={{top:`${(index+1)/item.lineCount*100}%`}}/>)}{printMode==="answer"&&<WorksheetAnswerLinesEditor item={item} onSelect={()=>setSelected({kind:"lines",id:item.id})} onCommit={(patch)=>setAnswerLines((items)=>items.map((line)=>line.id===item.id?{...line,...patch,interactive:patch.answer?.trim()?true:line.interactive}:line))}/>} {selected?.kind==="lines"&&selected.id===item.id&&<><button type="button" className="tree-analysis-text-delete worksheet-lines-delete" aria-label="Supprimer les lignes" onClick={(event)=>{event.stopPropagation();setAnswerLines((items)=>items.filter((line)=>line.id!==item.id));setSelected(null);}}><X size={14}/></button><span className="tree-analysis-text-resize worksheet-lines-resize" onPointerDown={(event)=>beginResize(event,"lines-resize",item)}/></>}</div>)}
         {checkBoxes.filter((item) => item.pageId === activePageId).map((item) => <div key={item.id} role="button" tabIndex={0} className={`worksheet-checkbox-mark ${selected?.kind==="check"&&selected.id===item.id?"selected":""} ${printMode==="answer"&&item.checked?"checked":""}`} style={{left:`${item.x/W*100}%`,top:`${item.y/H*100}%`,width:`${item.size/W*100}%`,height:`${item.size/H*100}%`,fontSize:`${item.size/W*100}cqw`}} onPointerDown={(event)=>beginDrag(event,"check",item)} onClick={(event)=>{event.stopPropagation();setSelected({kind:"check",id:item.id});}} onDoubleClick={(event)=>{event.stopPropagation();setCheckBoxes((items)=>items.map((box)=>box.id===item.id?{...box,checked:!box.checked}:box));}} aria-label="Case à cocher">{selected?.kind==="check"&&selected.id===item.id&&<span className="tree-analysis-text-delete worksheet-checkbox-delete" onPointerDown={(event)=>event.stopPropagation()} onClick={(event)=>{event.stopPropagation();setCheckBoxes((items)=>items.filter((box)=>box.id!==item.id));setSelected(null);}}><X size={10}/></span>}</div>)}
       </div></div></div>
+      {contextMenu && <div className="worksheet-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} role="menu" onPointerDown={(event) => event.stopPropagation()}>
+        <button type="button" role="menuitem" disabled={!selectedObjects().length} onClick={() => { copySelectedObjects(); setContextMenu(null); }}>Copier</button>
+        <button type="button" role="menuitem" disabled={!selectedObjects().length} onClick={() => { copySelectedObjects(); deleteSelectedObjects(); setContextMenu(null); }}>Couper</button>
+        <button type="button" role="menuitem" disabled={!clipboardRef.current} onClick={() => { pasteObjects(); setContextMenu(null); }}>Coller</button>
+        <span aria-hidden />
+        <button type="button" role="menuitem" className="danger" disabled={!selectedObjects().length} onClick={() => { deleteSelectedObjects(); setContextMenu(null); }}>Supprimer</button>
+      </div>}
     </Card>
     <Card className="tree-analysis-flow-panel worksheet-flow-panel"><button type="button" className="worksheet-flow-toggle" onClick={()=>setFlowOpen((value)=>!value)} aria-expanded={flowOpen}><span><small>Options avancées</small><strong>Déroulement du lecteur</strong></span>{flowOpen?<ChevronUp size={18}/>:<ChevronDown size={18}/>}</button>{flowOpen&&<div className="worksheet-flow-content"><p>Les lignes de réponse interactives deviennent des étapes. Les lignes et cases ajoutées dans les tableaux restent des repères visuels.</p><div className="tree-analysis-phase-list">{pageSteps.map((id,index) => <div className="tree-analysis-phase" key={id}><div className="tree-analysis-phase-heading"><span>{index+1}</span><strong>Afficher une réponse sur les lignes</strong><button type="button" onClick={() => moveStep(id,-1)} disabled={index===0}><ArrowUp size={15}/></button><button type="button" onClick={() => moveStep(id,1)} disabled={index===pageSteps.length-1}><ArrowDown size={15}/></button></div></div>)}</div>{!pageSteps.length&&<p>Ajoute des lignes de réponse interactives si tu veux révéler une réponse dans le lecteur.</p>}</div>}</Card>
   </div>;
