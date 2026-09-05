@@ -41,7 +41,7 @@ describe("interactionBlockSize", () => {
     ["choice_single", 680, 120],
     ["choice_multiple", 680, 120],
     ["reference_point", 680, 132],
-    ["image_selection", 780, 360],
+    ["image_selection", 732, 344],
     ["classification", 720, 126],
     ["sort_categories", 720, 126],
     ["matching", 720, 126],

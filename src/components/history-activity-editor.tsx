@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { HistoryCanvasEditor, createDefaultHistoryCanvas } from "@/components/history-canvas-editor";
 import { HistoryClozeAuthoringEditor } from "@/components/history-cloze-authoring-editor";
+import { useHistoryMediaLayout } from "@/components/use-history-media-layout";
+import { normalizeHistoryChoiceLabels } from "@/lib/history-media-layout";
 import { normalizeHistoryCanvasLayout, resizeHistoryInteractionBlocks } from "@/lib/history-canvas";
 import { historyQuestionMaxPoints } from "@/lib/history-scoring";
 import {
@@ -53,7 +55,7 @@ function makeChoice(text: string, isCorrect = false): HistoryChoiceOption {
 
 function defaultChoices(action: HistoryInteractiveAction, count = 3): HistoryChoiceOption[] {
   if (action === "true_false") return [makeChoice("Vrai", true), makeChoice("Faux")];
-  if (action === "image_selection") return Array.from({ length: Math.max(2, count) }, (_, index) => makeChoice(`Image ${index + 1}`, index === 0));
+  if (action === "image_selection") return Array.from({ length: Math.max(2, count) }, (_, index) => makeChoice(`Choix #${index + 1}`, index === 0));
   if (action === "choice_single" || action === "choice_multiple") return Array.from({ length: count }, (_, index) => makeChoice(`Choix #${index + 1}`, index === 0));
   return Array.from({ length: count }, (_, index) => makeChoice(`Réponse ${String.fromCharCode(65 + index)}`, index === 0));
 }
@@ -97,7 +99,7 @@ function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractive
   const next = { ...defaultQuestion(action), ...question, action };
   if (!next.choices?.length) next.choices = defaultChoices(action, 2);
   if ((action === "choice_single" || action === "choice_multiple") && question.action === "true_false") {
-    next.choices = defaultChoices(action, next.choices.length);
+    next.choices = next.choices.map((choice, index) => ({ ...choice, text: `Choix #${index + 1}` }));
   }
   if (action === "true_false") {
     next.choices = [
@@ -126,7 +128,7 @@ function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractive
     next.clozeDistractors = [...new Set((question.clozeBlanks ?? []).flatMap((blank) => blank.options.filter((option) => !option.isCorrect).map((option) => option.text.trim())).filter(Boolean))];
   }
   if (!next.acceptedTextAnswers?.length) next.acceptedTextAnswers = ["réponse acceptée"];
-  return next;
+  return normalizeHistoryChoiceLabels(next);
 }
 
 export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props) {
@@ -155,7 +157,8 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   });
   const [activeQuestionId, setActiveQuestionId] = useState(questions[0]?.id ?? "");
   const activeQuestionIndex = Math.max(0, questions.findIndex((item) => item.id === activeQuestionId));
-  const question = questions[activeQuestionIndex] ?? questions[0];
+  const storedQuestion = questions[activeQuestionIndex] ?? questions[0];
+  const question = useHistoryMediaLayout(storedQuestion, documents);
   const canvas = question.canvas ?? createDefaultHistoryCanvas(question, documents);
 
   const questionOperation = question.operation ?? operation;
@@ -166,6 +169,10 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   const replaceQuestion = useCallback((nextQuestion: HistoryQuestion) => {
     setQuestions((items) => items.map((item) => item.id === nextQuestion.id ? nextQuestion : item));
   }, []);
+
+  useEffect(() => {
+    if (question !== storedQuestion) replaceQuestion(question);
+  }, [question, storedQuestion, replaceQuestion]);
 
   useEffect(() => {
     if (!allowedActions.includes(question.action)) {
@@ -353,10 +360,14 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
             <div className="history-inline-row" key={choice.id}>
               <input value={choice.text} disabled={question.action === "true_false"} onChange={(event) => setChoice(choice.id, { text: event.target.value })} />
               {imageSelection && (
+                <>
                 <select value={choice.documentId ?? ""} onChange={(event) => setChoice(choice.id, { documentId: event.target.value })}>
                   <option value="">Choisir une image</option>
                   {imageDocuments.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}
                 </select>
+                <label>Largeur<input type="number" min={120} max={720} value={choice.imageWidth ?? 360} onChange={(event) => setChoice(choice.id, { imageWidth: Math.max(120, Math.min(720, Number(event.target.value))) })} /></label>
+                <label>Hauteur<input type="number" min={120} max={1100} placeholder="Automatique" value={choice.imageHeight ?? ""} onChange={(event) => setChoice(choice.id, { imageHeight: event.target.value ? Math.max(120, Math.min(1100, Number(event.target.value))) : undefined })} /></label>
+                </>
               )}
               <label className="history-check">
                 <input
@@ -376,7 +387,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
               {question.action !== "true_false" && <button type="button" onClick={() => updateQuestion({ choices: question.choices?.filter((item) => item.id !== choice.id) })} aria-label="Supprimer"><Trash2 size={16} /></button>}
             </div>
           ))}
-          {!singleChoice && <Button type="button" variant="secondary" onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice(imageSelection ? `Image ${(question.choices?.length ?? 0) + 1}` : `Choix #${(question.choices?.length ?? 0) + 1}`)] })}><Plus size={16} /> Ajouter une réponse</Button>}
+          {question.action !== "true_false" && !referencePoint && <Button type="button" variant="secondary" onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice(`Choix #${(question.choices?.length ?? 0) + 1}`)] })}><Plus size={16} /> Ajouter une réponse</Button>}
         </section>
       );
     }

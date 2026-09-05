@@ -10,7 +10,10 @@ import { HistoryResourceLibrary } from "@/components/history-resource-library";
 import { historyCanvasBackgroundStyle } from "@/components/history-canvas-background";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
-import { blockContentSize, blockScales, historyCanvasLayoutVersion, historyInteractionActionAreaHeight, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
+import { HistoryScaledBlock } from "@/components/history-scaled-block";
+import { HistoryImageResizeHandle } from "@/components/history-image-resize-handle";
+import { imageChoiceSize } from "@/lib/history-canvas";
+import { historyCanvasLayoutVersion, historyInteractionActionAreaHeight, interactionBlockSize, reorderHistoryCanvasBlock, resizeHistoryCanvasBlock, type HistoryLayerAction, type HistoryResizeHandle } from "@/lib/history-canvas";
 import { historyBoxShadow } from "@/lib/history-shadow";
 import { historyActionDescriptions, historyActionLabels } from "@/lib/history-activities";
 import { defaultHistoryTextStyle, historyTextStyleToCss } from "@/lib/history-text-style";
@@ -763,20 +766,7 @@ export function HistoryCanvasEditor({ canvas, documents, question, onChange, onQ
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
   if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
-    const scale = blockScales(block, question);
-    const contentSize = blockContentSize(block, question);
-    return (
-      <div
-        className={`history-canvas-scaled-content content-${block.type}`}
-        style={{
-          width: `${contentSize.width / block.width * 100}%`,
-          height: `${contentSize.height / block.height * 100}%`,
-          transform: `scale(${scale.x}, ${scale.y})`
-        }}
-      >
-        {renderBlock(block)}
-      </div>
-    );
+    return <HistoryScaledBlock block={block} question={question}>{renderBlock(block)}</HistoryScaledBlock>;
   }
 
   return (
@@ -1379,9 +1369,10 @@ function HistoryInteractionEditor({
       <div className={`${imageMode ? "history-image-choice-grid" : referenceMode ? "history-reference-choice-grid" : question.action === "true_false" ? "history-choice-grid history-true-false-grid" : "history-choice-grid"} history-canvas-choice-editor`}>
         {referenceMode && <strong className="history-reference-point-label">{question.acceptedTextAnswers?.[0] ?? "Repère"}</strong>}
         {(question.choices ?? []).map((choice) => (
-          <button type="button" key={choice.id}>
+          <button type="button" key={choice.id} style={imageMode ? imageChoiceSize(choice) : undefined}>
             {imageMode && <span className="history-image-choice-media">{documents.find((document) => document.id === choice.documentId)?.src ? <img src={documents.find((document) => document.id === choice.documentId)?.src} alt="" /> : <ImageIcon size={32} />}</span>}
             <span style={historyTextStyleToCss(choice.textStyle)} contentEditable suppressContentEditableWarning onPointerDown={(event) => activateTextEditing(event, { kind: "choice", id: choice.id, blockId })} onFocus={(event) => activateTextEditing(event, { kind: "choice", id: choice.id, blockId })} onBlur={(event) => updateChoice(choice.id, { text: event.currentTarget.innerText.replace(/\r\n?/g, "\n") })}>{choice.text}</span>
+            {imageMode && <HistoryImageResizeHandle choice={choice} onResize={(patch) => updateChoice(choice.id, patch)} />}
           </button>
         ))}
       </div>

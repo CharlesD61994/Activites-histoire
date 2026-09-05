@@ -11,7 +11,10 @@ import { historyCanvasBackgroundStyle } from "@/components/history-canvas-backgr
 import { historyBoxShadow } from "@/lib/history-shadow";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
-import { blockContentSize, blockScales, historyInteractionActionAreaHeight, interactionBlockSize, normalizeHistoryCanvasLayout } from "@/lib/history-canvas";
+import { HistoryScaledBlock } from "@/components/history-scaled-block";
+import { useHistoryMediaLayout } from "@/components/use-history-media-layout";
+import { imageChoiceSize } from "@/lib/history-canvas";
+import { historyInteractionActionAreaHeight, interactionBlockSize, normalizeHistoryCanvasLayout } from "@/lib/history-canvas";
 import { evaluateHistoryQuestion } from "@/lib/history-scoring";
 import { historyActionLabels, historyOperationLabels, historyOperationStyle } from "@/lib/history-activities";
 import { historyTextStyleToCss } from "@/lib/history-text-style";
@@ -27,9 +30,14 @@ type Validation = "idle" | "correct" | "incorrect";
 
 export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: Props) {
   const activity = sentence.historyActivity;
-  const questions = activity?.questions ?? [];
+  const questions = useMemo(() => activity?.questions ?? [], [activity?.questions]);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
-  const question = questions[activeQuestionIndex] ?? questions[0];
+  const storedQuestion = useMemo(() => {
+    const current = questions[activeQuestionIndex] ?? questions[0];
+    const canvas = current?.canvas ?? activity?.canvas;
+    return current && canvas ? { ...current, canvas: normalizeHistoryCanvasLayout(canvas, current) } : current;
+  }, [questions, activeQuestionIndex, activity?.canvas]);
+  const question = useHistoryMediaLayout(storedQuestion, activity?.documents ?? []);
   const [selectedDocument, setSelectedDocument] = useState<HistorySourceDocument | null>(null);
   const [documentZoom, setDocumentZoom] = useState(1);
   const [documentNaturalSize, setDocumentNaturalSize] = useState({ width: 0, height: 0 });
@@ -86,7 +94,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     setSelectedChoices([]);
     setClassificationAnswers({});
     setMatchingAnswers({});
-    setEventOrder(question?.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
+    setEventOrder(storedQuestion?.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
     setHotspotAnswer(null);
     setClozeAnswers({});
     setShortTextAnswer("");
@@ -98,7 +106,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     setAwaitingRetry(false);
     setRevealed(false);
     onCompleteChange?.(false);
-  }, [onCompleteChange, question]);
+  }, [onCompleteChange, storedQuestion]);
 
   useEffect(() => {
     if (!selectedDocument) return;
@@ -622,20 +630,7 @@ function HistoryCanvasStage({
 
   function renderScaledBlock(block: HistoryCanvasBlock) {
     if (block.type === "text" || block.type === "shape" || block.type === "visual" || (block.type === "interaction" && question.action === "cloze_choice")) return renderBlock(block);
-    const scale = blockScales(block, question);
-    const contentSize = blockContentSize(block, question);
-    return (
-      <div
-        className={`history-canvas-scaled-content content-${block.type}`}
-        style={{
-          width: `${contentSize.width / block.width * 100}%`,
-          height: `${contentSize.height / block.height * 100}%`,
-          transform: `scale(${scale.x}, ${scale.y})`
-        }}
-      >
-        {renderBlock(block)}
-      </div>
-    );
+    return <HistoryScaledBlock block={block} question={question}>{renderBlock(block)}</HistoryScaledBlock>;
   }
 
   return (
@@ -754,9 +749,9 @@ function HistoryQuestionInteraction({
       const wrong = selectedChoices.includes(choice.id) && (!correct || checkedWrong.has(`choice-wrong:${choice.id}`)) && Boolean(awaitingRetry || revealed);
       const document = documents.find((item) => item.id === choice.documentId);
       return (
-        <button key={choice.id} type="button" style={historyTextStyleToCss(choice.textStyle)} className={[selectedChoices.includes(choice.id) ? "selected" : "", good ? "earned" : "", wrong ? "wrong" : "", revealed && correct ? "revealed" : ""].filter(Boolean).join(" ")} disabled={Boolean(awaitingRetry) || (locked && !selectedChoices.includes(choice.id))} onClick={() => toggleChoice(choice.id)}>
+        <button key={choice.id} type="button" style={imageMode ? imageChoiceSize(choice) : undefined} className={[selectedChoices.includes(choice.id) ? "selected" : "", good ? "earned" : "", wrong ? "wrong" : "", revealed && correct ? "revealed" : ""].filter(Boolean).join(" ")} disabled={Boolean(awaitingRetry) || (locked && !selectedChoices.includes(choice.id))} onClick={() => toggleChoice(choice.id)}>
           {imageMode && <span className="history-image-choice-media">{document?.src ? <img src={document.src} alt="" /> : <FileText size={32} />}</span>}
-          <span>{choice.text}</span>
+          <span style={historyTextStyleToCss(choice.textStyle)}>{choice.text}</span>
         </button>
       );
         })}

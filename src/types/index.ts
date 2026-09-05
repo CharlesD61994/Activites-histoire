@@ -163,6 +163,9 @@ export type HistoryChoiceOption = {
   text: string;
   isCorrect: boolean;
   documentId?: string;
+  imageAspectRatio?: number;
+  imageWidth?: number;
+  imageHeight?: number;
   textStyle?: HistoryTextStyle;
 };
 

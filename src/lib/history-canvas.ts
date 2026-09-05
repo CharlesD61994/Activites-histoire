@@ -30,6 +30,11 @@ export function reorderHistoryCanvasBlock(
 
 export const historyInteractionActionAreaHeight = 56;
 
+export function imageChoiceSize(choice: NonNullable<HistoryQuestion["choices"]>[number]) {
+  const width = choice.imageWidth ?? 360;
+  return { width, height: choice.imageHeight ?? Math.round((width - 24) / (choice.imageAspectRatio ?? 1.5) + 64) };
+}
+
 function stackedInteractionHeight(itemCount: number, itemHeight: number, columns = 1, gap = 12) {
   const rows = Math.max(1, Math.ceil(itemCount / columns));
   return rows * itemHeight + Math.max(0, rows - 1) * gap + historyInteractionActionAreaHeight;
@@ -53,7 +58,16 @@ export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "document_hotspot") return { width: 760, height: 500 };
   if (question.action === "true_false") return { width: 360, height: 120 };
   if (question.action === "reference_point") return { width: 680, height: 132 };
-  if (question.action === "image_selection") return { width: 780, height: Math.max(360, stackedInteractionHeight(question.choices?.length ?? 2, 260, 2)) };
+  if (question.action === "image_selection") {
+    const sizes = (question.choices?.length ? question.choices : [{ id: "a", text: "", isCorrect: true }, { id: "b", text: "", isCorrect: false }]).map(imageChoiceSize);
+    const columns = [0, 0];
+    const rows: number[] = [];
+    sizes.forEach((size, index) => {
+      columns[index % 2] = Math.max(columns[index % 2], size.width);
+      rows[Math.floor(index / 2)] = Math.max(rows[Math.floor(index / 2)] ?? 0, size.height);
+    });
+    return { width: columns[0] + (sizes.length > 1 ? columns[1] + 12 : 0), height: rows.reduce((sum, height) => sum + height, 0) + (rows.length - 1) * 12 + historyInteractionActionAreaHeight };
+  }
   if (question.action === "choice_single" || question.action === "choice_multiple") {
     return { width: 680, height: stackedInteractionHeight(question.choices?.length ?? 2, 64, 2) };
   }
@@ -73,6 +87,9 @@ export function scalableBlockSize(block: HistoryCanvasBlock, question: HistoryQu
 }
 
 export function blockContentSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
+  if (block.type === "interaction" && question.action === "document_hotspot" && block.aspectRatio) {
+    return { width: (500 - historyInteractionActionAreaHeight) * block.aspectRatio, height: 500 };
+  }
   const scalableSize = scalableBlockSize(block, question);
   if (scalableSize) return scalableSize;
   return {
@@ -92,7 +109,7 @@ export function blockScales(block: HistoryCanvasBlock, question: HistoryQuestion
 function minimumBlockSize(block: HistoryCanvasBlock, question: HistoryQuestion) {
   if (block.type === "interaction") {
     if (question.action === "short_text") return { width: 320, height: 90 };
-    if (question.action === "document_hotspot") return { width: 360, height: 260 };
+    if (question.action === "document_hotspot") return { width: block.aspectRatio ? Math.max(160, 260 * (1 - historyInteractionActionAreaHeight / 500) * block.aspectRatio) : 360, height: 260 };
     if (question.action === "true_false") return { width: 320, height: 74 };
     if (question.action === "choice_single" || question.action === "choice_multiple" || question.action === "reference_point") return { width: 360, height: 90 };
     if (question.action === "image_selection") return { width: 360, height: 100 };
@@ -177,6 +194,7 @@ export function resizeHistoryInteractionBlocks(canvas: HistoryActivityCanvas, qu
     height: size.height,
     contentWidth: size.width,
     contentHeight: size.height,
+    aspectRatio: undefined,
     x: Math.min(interaction.x, canvas.width - size.width),
     y: Math.min(interaction.y, canvas.height - size.height)
   } : null;
