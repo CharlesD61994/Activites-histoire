@@ -41,7 +41,7 @@ describe("interactionBlockSize", () => {
     ["choice_single", 680, 120],
     ["choice_multiple", 680, 120],
     ["reference_point", 680, 132],
-    ["image_selection", 780, 216],
+    ["image_selection", 780, 360],
     ["classification", 720, 126],
     ["sort_categories", 720, 126],
     ["matching", 720, 126],
@@ -51,7 +51,7 @@ describe("interactionBlockSize", () => {
     ["arrange_order", 760, 198],
     ["document_hotspot", 760, 500],
     ["cloze_choice", 920, 300]
-  ] as const)("uses a compact content-to-actions ratio for %s", (action, width, height) => {
+  ] as const)("uses the expected default dimensions for %s", (action, width, height) => {
     expect(interactionBlockSize(interactionQuestion(action))).toEqual({ width, height });
   });
 });

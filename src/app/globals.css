@@ -605,7 +605,7 @@
 .history-document-card { display: grid; gap: 9px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--secondary) 34%, #fff); }
 .history-document-card img { width: 100%; max-height: 190px; object-fit: contain; border-radius: 8px; background: #fff; }
 .history-document-card button { min-height: 36px; border: 1px solid var(--border); border-radius: 10px; background: #fff; color: var(--danger); font-weight: 800; }
-.history-hotspot-editor, .history-hotspot-reader { position: relative; display: block; width: min(820px, 100%); padding: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.history-hotspot-editor, .history-hotspot-reader { position: relative; display: block; width: min(820px, 100%); padding: 0; overflow: hidden; border: 0; border-radius: 0; background: transparent; }
 .history-hotspot-editor img, .history-hotspot-reader img { display: block; width: 100%; max-height: 58vh; object-fit: contain; }
 .history-hotspot-editor span { position: absolute; border: 3px solid var(--danger); border-radius: 999px; transform: translate(-50%, -50%); pointer-events: none; }
 .history-hotspot-reader span { position: absolute; width: 24px; height: 24px; border: 4px solid var(--primary); border-radius: 999px; transform: translate(-50%, -50%); background: rgb(255 255 255 / 70%); pointer-events: none; }
@@ -786,7 +786,7 @@
 .history-image-choice-grid { display: grid; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .history-image-choice-grid button {
   display: grid;
-  min-height: 160px;
+  min-height: 0;
   grid-template-rows: minmax(0, 1fr) auto;
   gap: 10px;
   padding: 10px;
@@ -797,7 +797,7 @@
   font-weight: 900;
   text-align: left;
 }
-.history-image-choice-media { display: grid; min-height: 120px; place-items: center; overflow: hidden; border-radius: 10px; background: #f7fbfe; color: var(--primary); }
+.history-image-choice-media { display: grid; min-height: 0; place-items: center; overflow: hidden; border-radius: 10px; background: #f7fbfe; color: var(--primary); }
 .history-image-choice-media img { width: 100%; height: 100%; object-fit: contain; }
 .history-reference-choice-grid {
   display: grid;
@@ -832,13 +832,14 @@
   font-size: 1.12rem;
   text-align: center;
 }
-.history-table-fill-list { display: grid; gap: 0; border: 2px solid #163b5c; background: #163b5c; }
+.history-table-fill-list { display: grid; gap: 0; border: 1px solid #000; background: #000; }
 .history-table-fill-list label {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(160px, 32%);
-  gap: 2px;
-  background: #163b5c;
+  gap: 0;
+  background: #fff;
 }
+.history-table-fill-list label + label { border-top: 1px solid #000; }
 .history-table-fill-list label > span,
 .history-table-fill-list label > select {
   display: grid;
@@ -853,6 +854,7 @@
   line-height: 1.18;
   text-align: center;
 }
+.history-table-fill-list label > select { border-left: 1px solid #000; }
 .history-choice-grid button.selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, #fff); }
 .history-image-choice-grid button.selected,
 .history-reference-choice-grid button.selected { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, #fff); }
@@ -986,7 +988,7 @@
 .history-table-fill-list label.earned,
 .history-table-fill-list label.wrong {
   grid-template-columns: minmax(0, 1fr) minmax(160px, 32%) auto;
-  gap: 2px;
+  gap: 0;
 }
 .history-choice-grid button.earned::after,
 .history-image-choice-grid button.earned::after,
@@ -1006,6 +1008,8 @@
   content: "×";
   background: #c22a1f;
 }
+.history-table-fill-list label.earned::after,
+.history-table-fill-list label.wrong::after { border-left: 1px solid #000; }
 .history-choice-grid button.earned,
 .history-choice-grid button.wrong,
 .history-reference-choice-grid button.earned,
@@ -1015,14 +1019,8 @@
   align-items: center;
   gap: 12px;
 }
-.history-hotspot-reader.earned {
-  outline: 4px solid #16803d !important;
-  box-shadow: 0 0 0 5px rgb(22 128 61 / 16%) !important;
-}
-.history-hotspot-reader.wrong {
-  outline: 4px solid #c22a1f !important;
-  box-shadow: 0 0 0 5px rgb(194 42 31 / 16%) !important;
-}
+.history-hotspot-reader.earned,
+.history-hotspot-reader.wrong { outline: 0 !important; box-shadow: none !important; }
 .history-order-list { display: grid; gap: 10px; }
 .history-order-list > div {
   display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center;

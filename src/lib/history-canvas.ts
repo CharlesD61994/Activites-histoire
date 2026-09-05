@@ -53,7 +53,7 @@ export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "document_hotspot") return { width: 760, height: 500 };
   if (question.action === "true_false") return { width: 360, height: 120 };
   if (question.action === "reference_point") return { width: 680, height: 132 };
-  if (question.action === "image_selection") return { width: 780, height: stackedInteractionHeight(question.choices?.length ?? 2, 160, 2) };
+  if (question.action === "image_selection") return { width: 780, height: Math.max(360, stackedInteractionHeight(question.choices?.length ?? 2, 260, 2)) };
   if (question.action === "choice_single" || question.action === "choice_multiple") {
     return { width: 680, height: stackedInteractionHeight(question.choices?.length ?? 2, 64, 2) };
   }

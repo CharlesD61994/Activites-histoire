@@ -51,6 +51,13 @@ function makeChoice(text: string, isCorrect = false): HistoryChoiceOption {
   return { id: crypto.randomUUID(), text, isCorrect };
 }
 
+function defaultChoices(action: HistoryInteractiveAction, count = 3): HistoryChoiceOption[] {
+  if (action === "true_false") return [makeChoice("Vrai", true), makeChoice("Faux")];
+  if (action === "image_selection") return Array.from({ length: Math.max(2, count) }, (_, index) => makeChoice(`Image ${index + 1}`, index === 0));
+  if (action === "choice_single" || action === "choice_multiple") return Array.from({ length: count }, (_, index) => makeChoice(`Choix #${index + 1}`, index === 0));
+  return Array.from({ length: count }, (_, index) => makeChoice(`Réponse ${String.fromCharCode(65 + index)}`, index === 0));
+}
+
 function isChoiceAction(action: HistoryInteractiveAction) {
   return action === "choice_single" || action === "choice_multiple" || action === "true_false" || action === "image_selection" || action === "reference_point";
 }
@@ -68,7 +75,7 @@ function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
     action,
     documentIds: [],
     points: 1,
-    choices: [makeChoice("Réponse A", true), makeChoice("Réponse B"), makeChoice("Réponse C")],
+    choices: defaultChoices(action),
     categories: [
       { id: crypto.randomUUID(), label: "Catégorie 1" },
       { id: crypto.randomUUID(), label: "Catégorie 2" }
@@ -88,7 +95,10 @@ function defaultQuestion(action: HistoryInteractiveAction): HistoryQuestion {
 
 function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractiveAction): HistoryQuestion {
   const next = { ...defaultQuestion(action), ...question, action };
-  if (!next.choices?.length) next.choices = [makeChoice("Réponse A", true), makeChoice("Réponse B")];
+  if (!next.choices?.length) next.choices = defaultChoices(action, 2);
+  if ((action === "choice_single" || action === "choice_multiple") && question.action === "true_false") {
+    next.choices = defaultChoices(action, next.choices.length);
+  }
   if (action === "true_false") {
     next.choices = [
       { ...(next.choices[0] ?? makeChoice("Vrai", true)), text: "Vrai", isCorrect: next.choices?.[0]?.isCorrect ?? true },
@@ -366,7 +376,7 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
               {question.action !== "true_false" && <button type="button" onClick={() => updateQuestion({ choices: question.choices?.filter((item) => item.id !== choice.id) })} aria-label="Supprimer"><Trash2 size={16} /></button>}
             </div>
           ))}
-          {!singleChoice && <Button type="button" variant="secondary" onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice(imageSelection ? "Nouvelle image" : "Nouvelle réponse")] })}><Plus size={16} /> Ajouter une réponse</Button>}
+          {!singleChoice && <Button type="button" variant="secondary" onClick={() => updateQuestion({ choices: [...(question.choices ?? []), makeChoice(imageSelection ? `Image ${(question.choices?.length ?? 0) + 1}` : `Choix #${(question.choices?.length ?? 0) + 1}`)] })}><Plus size={16} /> Ajouter une réponse</Button>}
         </section>
       );
     }
