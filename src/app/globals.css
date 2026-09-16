@@ -13873,6 +13873,20 @@ textarea {
 /* Canvas controls use one layout in the editor and the reader. */
 .history-canvas-scaled-content .history-reader-interaction-stack { font-size: 16px; }
 .history-canvas-scaled-content .history-reader-actions .button { min-width: 104px; }
+.history-reader-interaction-stack:has(> .history-reader-interaction-body > :is(.history-table-fill-list, .history-image-choice-grid)) {
+  container-type: inline-size;
+}
+.history-reader-interaction-stack:has(> .history-reader-interaction-body > :is(.history-table-fill-list, .history-image-choice-grid)) .history-reader-actions .button {
+  width: 32%;
+  min-width: min(160px, 65%);
+  max-width: calc(100% - 60px);
+  font-size: clamp(16px, 3cqw, 24px);
+  line-height: 1.15;
+  border-radius: 12px;
+}
+.history-canvas-proportional-interaction:has(> .history-reader-interaction-body > :is(.history-table-fill-list, .history-image-choice-grid)) .history-reader-actions {
+  height: calc(100% - 8px);
+}
 .history-canvas-scaled-content .history-image-choice-grid {
   grid-template-columns: repeat(2, max-content);
   grid-auto-rows: max-content;
