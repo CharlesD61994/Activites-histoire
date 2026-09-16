@@ -9,6 +9,7 @@ import { HistoryCanvasVisual, type HistoryVisualLibraryItem } from "@/components
 import { HistoryResourceLibrary } from "@/components/history-resource-library";
 import { historyCanvasBackgroundStyle } from "@/components/history-canvas-background";
 import { HistoryDocumentContent } from "@/components/history-document-content";
+import { HistoryChronologyInteraction } from "@/components/history-chronology-interaction";
 import { HistoryOrderInteraction } from "@/components/history-order-interaction";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { HistoryScaledBlock } from "@/components/history-scaled-block";
@@ -1390,10 +1391,14 @@ function HistoryInteractionEditor({
   }
 
   if (question.action === "chronological_order") {
+    return withCanvasActions(<HistoryChronologyInteraction preview events={question.timelineEvents ?? []} order={(question.timelineEvents ?? []).map(() => "")} />);
+  }
+
+  if (question.action === "arrange_order") {
     return withCanvasActions(<HistoryOrderInteraction preview events={question.timelineEvents ?? []} order={[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id)} />);
   }
 
-  if (question.action === "timeline" || question.action === "arrange_order") {
+  if (question.action === "timeline") {
     return withCanvasActions(<div className="history-order-list">{[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => <div key={event.id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onPointerDown={stopEditingPointer}>Monter</button><button type="button" onPointerDown={stopEditingPointer}>Descendre</button></div>)}</div>);
   }
 

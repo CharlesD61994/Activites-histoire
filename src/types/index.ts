@@ -201,6 +201,7 @@ export type HistoryMatchingTarget = {
 };
 
 export type HistoryTimelineEvent = {
+  documentNumber?: number;
   id: string;
   text: string;
   dateLabel?: string;

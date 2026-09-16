@@ -74,7 +74,8 @@ export function interactionBlockSize(question: HistoryQuestion) {
   if (question.action === "classification" || question.action === "sort_categories") return { width: 720, height: stackedInteractionHeight(question.classificationItems?.length ?? 1, 70) };
   if (question.action === "matching") return { width: 720, height: stackedInteractionHeight(question.matchingPrompts?.length ?? 1, 70) };
   if (question.action === "table_fill") return { width: 720, height: stackedInteractionHeight(question.matchingPrompts?.length ?? 1, 70) };
-  if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") return { width: 760, height: stackedInteractionHeight(question.timelineEvents?.length ?? 2, 66, 1, 10) };
+  if (question.action === "chronological_order") return { width: 760, height: 300 + Math.max(0, Math.ceil((question.timelineEvents?.length ?? 3) / 9) - 1) * 78 };
+  if (question.action === "timeline" || question.action === "arrange_order") return { width: 760, height: stackedInteractionHeight(question.timelineEvents?.length ?? 2, 66, 1, 10) };
   return { width: 920, height: Math.max(300, 190 + Math.ceil(((question.clozeBlanks?.length ?? 1) + (question.clozeDistractors?.length ?? 0)) / 4) * 62) };
 }
 

@@ -46,7 +46,7 @@ describe("interactionBlockSize", () => {
     ["sort_categories", 720, 126],
     ["matching", 720, 126],
     ["table_fill", 720, 126],
-    ["chronological_order", 760, 198],
+    ["chronological_order", 760, 300],
     ["timeline", 760, 198],
     ["arrange_order", 760, 198],
     ["document_hotspot", 760, 500],

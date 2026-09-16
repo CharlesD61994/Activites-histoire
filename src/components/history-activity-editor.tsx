@@ -122,6 +122,7 @@ function normalizeQuestion(question: HistoryQuestion, action: HistoryInteractive
   }
   if (!next.matchingTargets?.length) next.matchingTargets = [{ id: crypto.randomUUID(), text: "Réponse associée" }];
   if (!next.matchingPrompts?.length) next.matchingPrompts = [{ id: crypto.randomUUID(), prompt: "Élément de départ", correctTargetId: next.matchingTargets[0].id }];
+  if (action === "chronological_order" && !next.timelineEvents?.length) next.timelineEvents = Array.from({ length: 3 }, (_, index) => ({ id: crypto.randomUUID(), text: `Document ${index + 1}`, documentNumber: index + 1, correctOrder: index + 1 }));
   if (!next.timelineEvents?.length) next.timelineEvents = [{ id: crypto.randomUUID(), text: "Événement 1", correctOrder: 1 }, { id: crypto.randomUUID(), text: "Événement 2", correctOrder: 2 }];
   if (!next.clozeBlanks?.length) next.clozeBlanks = [{ id: crypto.randomUUID(), label: "1", options: [makeChoice("bon choix", true), makeChoice("autre choix")] }];
   if (question.clozeDistractors === undefined) {
@@ -191,7 +192,9 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   }
 
   function updateQuestion(patch: Partial<HistoryQuestion>) {
-    replaceQuestion({ ...question, ...patch });
+    const next = { ...question, ...patch };
+    if (next.action === "chronological_order" && patch.timelineEvents && patch.timelineEvents.length !== question.timelineEvents?.length) next.canvas = resizeHistoryInteractionBlocks(canvas, next);
+    replaceQuestion(next);
   }
 
   function updateQuestionCanvas(nextCanvas: HistoryActivityCanvas) {
@@ -237,6 +240,10 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
   }
 
   function save() {
+    if (questions.some((item) => item.action === "chronological_order" && new Set((item.timelineEvents ?? []).map((entry, index) => entry.documentNumber ?? index + 1)).size !== item.timelineEvents?.length)) {
+      window.alert("Chaque document de l’ordre chronologique doit avoir un numéro différent.");
+      return;
+    }
     const normalizedQuestions = questions.map((item) => {
       const normalizedQuestion = normalizeQuestion(item, item.action);
       normalizedQuestion.operation = item.operation ?? operation;
@@ -474,7 +481,46 @@ export function HistoryActivityEditor({ initialSentence, levels, onSave }: Props
       );
     }
 
-    if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") {
+    if (question.action === "chronological_order") {
+      const events = question.timelineEvents ?? [];
+      const ordered = [...events].sort((a, b) => a.correctOrder - b.correctOrder);
+      const docNumber = (id: string) => { const index = events.findIndex((item) => item.id === id); return events[index]?.documentNumber ?? index + 1; };
+      return <section className="history-editor-panel">
+        <h3>Documents à placer dans l’ordre chronologique</h3>
+        <div className="history-two-columns">
+          <label>Nombre de documents<input type="number" min={2} max={20} value={events.length} onChange={(input) => {
+            const count = Number(input.target.value);
+            if (!Number.isInteger(count) || count < 2 || count > 20) return;
+            const next = events.slice(0, count);
+            while (next.length < count) {
+              const num = Math.max(0, ...next.map((item, index) => item.documentNumber ?? index + 1)) + 1;
+              next.push({ id: crypto.randomUUID(), text: "Document " + num, documentNumber: num, correctOrder: next.length + 1 });
+            }
+            const ranks = [...next].sort((a, b) => a.correctOrder - b.correctOrder).map((item) => item.id);
+            updateQuestion({ timelineEvents: next.map((item) => ({ ...item, correctOrder: ranks.indexOf(item.id) + 1 })) });
+          }} /></label>
+          <label>Numéro du premier document<input type="number" min={1} value={events[0]?.documentNumber ?? 1} onChange={(input) => {
+            const start = Number(input.target.value);
+            if (Number.isInteger(start) && start > 0) updateQuestion({ timelineEvents: events.map((item, index) => ({ ...item, documentNumber: start + index })) });
+          }} /></label>
+        </div>
+        <h4>Numéros des documents</h4>
+        <p>Modifie les numéros au besoin, puis indique le corrigé ci-dessous.</p>
+        {events.map((item, index) => <label key={item.id}>Document {index + 1}<input type="number" min={1} value={item.documentNumber ?? index + 1} onChange={(input) => {
+          const num = Number(input.target.value);
+          if (Number.isInteger(num) && num > 0) setTimelineEvent(item.id, { documentNumber: num });
+        }} /></label>)}
+        {new Set(events.map((item) => docNumber(item.id))).size !== events.length && <p role="alert">Chaque document doit avoir un numéro différent.</p>}
+        <h4>Corrigé : du plus ancien au plus récent</h4>
+        {ordered.map((item, index) => <label key={index}>Rang {index + 1}<select value={item.id} onChange={(input) => {
+          const selectedId = input.target.value;
+          const previousRank = ordered.findIndex((entry) => entry.id === selectedId) + 1;
+          updateQuestion({ timelineEvents: events.map((entry) => ({ ...entry, correctOrder: entry.id === selectedId ? index + 1 : entry.id === item.id ? previousRank : ordered.findIndex((other) => other.id === entry.id) + 1 })) });
+        }}>{events.map((entry) => <option key={entry.id} value={entry.id}>Document {docNumber(entry.id)}</option>)}</select></label>)}
+      </section>;
+    }
+
+    if (question.action === "timeline" || question.action === "arrange_order") {
       return (
         <section className="history-editor-panel">
           <h3>{question.action === "arrange_order" ? "Cartes à ordonner" : "Événements"}</h3>

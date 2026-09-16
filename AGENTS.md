@@ -84,6 +84,9 @@ Le système d’interactions vise à couvrir les formats proches de Genially et 
 
 Pointage décidé :
 
+- `Cartes à ordonner` utilise des cartes glissables (et les flèches du clavier), avec les bonnes cartes verrouillées.
+- `Ordre chronologique` utilise des ronds vides reliés par des flèches et une banque de jetons numérotés. Les options règlent le nombre de documents, leurs numéros (à partir de 1 par défaut) et leur ordre correct. Les mauvais jetons retournent dans la banque au clic sur Réessayer.
+
 - Une question vaut généralement un point par élément à réussir.
 - Pour `Texte à compléter`, chaque mot/case caché vaut un point.
 - Pour les interactions à plusieurs éléments, chaque élément correct vaut un point.

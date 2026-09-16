@@ -11,7 +11,8 @@ import { historyCanvasBackgroundStyle } from "@/components/history-canvas-backgr
 import { historyBoxShadow } from "@/lib/history-shadow";
 import { HistoryDocumentContent } from "@/components/history-document-content";
 import { HistoryOrderInteraction } from "@/components/history-order-interaction";
-import { reorderHistoryEvents } from "@/lib/history-order";
+import { HistoryChronologyInteraction } from "@/components/history-chronology-interaction";
+import { initialHistoryEventOrder, placeHistoryDocument, reorderHistoryEvents } from "@/lib/history-order";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { HistoryScaledBlock } from "@/components/history-scaled-block";
 import { useHistoryMediaLayout } from "@/components/use-history-media-layout";
@@ -51,7 +52,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   const [selectedChoices, setSelectedChoices] = useState<string[]>([]);
   const [classificationAnswers, setClassificationAnswers] = useState<Record<string, string>>({});
   const [matchingAnswers, setMatchingAnswers] = useState<Record<string, string>>({});
-  const [eventOrder, setEventOrder] = useState<string[]>(() => question?.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
+  const [eventOrder, setEventOrder] = useState<string[]>(() => initialHistoryEventOrder(question));
   const [hotspotAnswer, setHotspotAnswer] = useState<{ x: number; y: number } | null>(null);
   const [clozeAnswers, setClozeAnswers] = useState<Record<string, string>>({});
   const [shortTextAnswer, setShortTextAnswer] = useState("");
@@ -96,7 +97,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     setSelectedChoices([]);
     setClassificationAnswers({});
     setMatchingAnswers({});
-    setEventOrder(storedQuestion?.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
+    setEventOrder(initialHistoryEventOrder(storedQuestion));
     setHotspotAnswer(null);
     setClozeAnswers({});
     setShortTextAnswer("");
@@ -200,11 +201,12 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     if (revealed || awaitingRetry || earnedItemSet.has(`timeline:${id}`)) return;
     setValidation("idle");
     setEventOrder((current) => {
+      if (question?.action === "chronological_order") return placeHistoryDocument(current, id, direction, new Set(current.filter((item) => earnedItemSet.has(`timeline:${item}`))));
       const index = current.indexOf(id);
       const target = index + direction;
       if (index < 0 || target < 0 || target >= current.length) return current;
       if (earnedItemSet.has(`timeline:${current[target]}`)) return current;
-      if (question?.action === "chronological_order") {
+      if (question?.action === "arrange_order") {
         return reorderHistoryEvents(current, id, current[target], new Set(current.filter((item) => earnedItemSet.has(`timeline:${item}`))));
       }
       const next = [...current];
@@ -266,6 +268,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
   function prepareRetry() {
     if (!question) return;
     const earned = new Set(earnedItemIds);
+    if (question.action === "chronological_order") setEventOrder((current) => current.map((id) => earned.has(`timeline:${id}`) ? id : ""));
     setSelectedChoices((current) => {
       if (question.action === "choice_single" || question.action === "true_false" || question.action === "reference_point") return earned.has("answer") ? current : [];
       if (question.action === "choice_multiple" || question.action === "image_selection") return current.filter((id) => earned.has(`choice:${id}`));
@@ -293,7 +296,7 @@ export function HistoryActivityReader({ sentence, onPoint, onCompleteChange }: P
     setSelectedChoices([]);
     setClassificationAnswers({});
     setMatchingAnswers({});
-    setEventOrder(question.timelineEvents?.slice().sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id).reverse() ?? []);
+    setEventOrder(initialHistoryEventOrder(question));
     setHotspotAnswer(null);
     setClozeAnswers({});
     setShortTextAnswer("");
@@ -787,8 +790,9 @@ function HistoryQuestionInteraction({
   if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") {
     const eventsById = new Map((question.timelineEvents ?? []).map((event) => [event.id, event]));
     const order = revealed ? [...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id) : eventOrder;
-    if (question.action === "chronological_order") {
+    if (question.action === "chronological_order" || question.action === "arrange_order") {
       const eventIds = (ids: string[] | undefined) => (ids ?? []).filter((id) => id.startsWith("timeline:")).map((id) => id.slice(9));
+      if (question.action === "chronological_order") return withReaderActions(<HistoryChronologyInteraction key={question.id} events={question.timelineEvents ?? []} order={order} lockedIds={eventIds(earnedItemIds)} correctIds={eventIds(checkedCorrectItemIds)} wrongIds={eventIds(checkedWrongItemIds)} disabled={awaitingRetry} revealed={revealed} onMove={moveEvent} />);
       return withReaderActions(<HistoryOrderInteraction events={question.timelineEvents ?? []} order={order} lockedIds={eventIds(earnedItemIds)} correctIds={eventIds(checkedCorrectItemIds)} wrongIds={eventIds(checkedWrongItemIds)} disabled={awaitingRetry} revealed={revealed} onMove={moveEvent} />);
     }
     return withReaderActions(<div className="history-order-list">{order.map((id) => {

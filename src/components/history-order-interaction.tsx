@@ -50,7 +50,7 @@ export function HistoryOrderInteraction({ events, order, lockedIds = [], correct
 
   return (
     <>
-      <div ref={listRef} className={`history-order-list history-draggable-order ${preview ? "is-preview" : ""}`} role="list" aria-label="Événements à classer du plus ancien au plus récent">
+      <div ref={listRef} className={`history-order-list history-draggable-order ${preview ? "is-preview" : ""}`} role="list" aria-label="Cartes à ordonner">
         {order.map((id, index) => {
           const item = events.find((event) => event.id === id);
           if (!item) return null;

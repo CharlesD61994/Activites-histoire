@@ -51,7 +51,7 @@ export const historyActionDescriptions: Record<HistoryInteractiveAction, string>
   sort_categories: "Des affirmations à trier dans les bonnes zones.",
   matching: "Des éléments à associer deux par deux.",
   table_fill: "Des cases de tableau à compléter avec la bonne réponse.",
-  chronological_order: "Des événements à remettre dans le bon ordre.",
+  chronological_order: "Des numéros de documents à glisser dans les ronds, du plus ancien au plus récent.",
   arrange_order: "Des cartes à placer dans un ordre logique.",
   timeline: "Des repères datés à placer ou ordonner.",
   document_hotspot: "Une image ou une carte à observer, puis une zone à cliquer.",
