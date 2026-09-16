@@ -1038,6 +1038,16 @@
 }
 .history-order-list button { min-height: 38px; padding: 0 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-elevated); color: var(--text); font-weight: 800; }
 .history-order-list small { display: inline-block; margin-right: 10px; color: var(--primary); font-weight: 900; }
+.history-order-list.history-draggable-order > div { grid-template-columns: 30px minmax(0, 1fr) 22px; position: relative; cursor: grab; touch-action: none; user-select: none; }
+.history-order-list.history-draggable-order > div > .history-order-position { width: 28px; height: 28px; border-radius: 50%; background: var(--surface-elevated); color: var(--primary); font-size: 14px; }
+.history-draggable-order > div > svg { color: var(--text-muted); }
+.history-draggable-order > div:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.history-draggable-order > div.is-dragging { z-index: 2; cursor: grabbing; box-shadow: 0 8px 24px #0003; opacity: .85; }
+.history-draggable-order > div.is-drop-target { outline: 3px dashed var(--primary); outline-offset: -3px; }
+.history-draggable-order > div.is-locked { cursor: default; touch-action: auto; }
+.history-draggable-order > div.earned::after, .history-draggable-order > div.wrong::after { position: absolute; right: 9px; top: calc(50% - 14px); }
+.history-draggable-order > div.earned > svg, .history-draggable-order > div.wrong > svg { visibility: hidden; }
+.history-canvas-scaled-content .history-order-list.history-draggable-order { overflow: visible; }
 .history-result { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 12px; }
 .history-result.correct { background: color-mix(in srgb, var(--success) 14%, #fff); color: var(--success); }
 .history-result.incorrect { background: color-mix(in srgb, var(--warning) 18%, #fff); color: var(--warning); }
@@ -13905,7 +13915,7 @@ textarea {
 .history-canvas-scaled-content .history-table-fill-list label.wrong > * { background: inherit; }
 .history-canvas-scaled-content .history-choice-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .history-canvas-scaled-content .history-answer-list label { grid-template-columns: minmax(0, 1fr) minmax(220px, 32%); }
-.history-canvas-scaled-content .history-order-list > div { grid-template-columns: minmax(0, 1fr) auto auto; }
+.history-canvas-scaled-content .history-order-list:not(.history-draggable-order) > div { grid-template-columns: minmax(0, 1fr) auto auto; }
 .history-canvas-scaled-content .history-hotspot-reader img { object-fit: fill; }
 .history-hotspot-editor img { max-height: none; height: auto; }
 .history-reader-interaction-body select,

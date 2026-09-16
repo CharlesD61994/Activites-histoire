@@ -9,6 +9,7 @@ import { HistoryCanvasVisual, type HistoryVisualLibraryItem } from "@/components
 import { HistoryResourceLibrary } from "@/components/history-resource-library";
 import { historyCanvasBackgroundStyle } from "@/components/history-canvas-background";
 import { HistoryDocumentContent } from "@/components/history-document-content";
+import { HistoryOrderInteraction } from "@/components/history-order-interaction";
 import { HistoryClozeInteraction } from "@/components/history-cloze-interaction";
 import { HistoryScaledBlock } from "@/components/history-scaled-block";
 import { HistoryImageResizeHandle } from "@/components/history-image-resize-handle";
@@ -1388,7 +1389,11 @@ function HistoryInteractionEditor({
     return withCanvasActions(<div className={tableMode ? "history-table-fill-list" : "history-answer-list"}>{(question.matchingPrompts ?? []).map((prompt) => <label key={prompt.id}><span>{prompt.prompt}</span><select value="" onPointerDown={stopEditingPointer} onChange={() => undefined}><option value="">{tableMode ? "Compléter" : "Associer à..."}</option>{(question.matchingTargets ?? []).map((target) => <option key={target.id} value={target.id}>{target.text}</option>)}</select></label>)}</div>);
   }
 
-  if (question.action === "chronological_order" || question.action === "timeline" || question.action === "arrange_order") {
+  if (question.action === "chronological_order") {
+    return withCanvasActions(<HistoryOrderInteraction preview events={question.timelineEvents ?? []} order={[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => event.id)} />);
+  }
+
+  if (question.action === "timeline" || question.action === "arrange_order") {
     return withCanvasActions(<div className="history-order-list">{[...(question.timelineEvents ?? [])].sort((a, b) => a.correctOrder - b.correctOrder).map((event) => <div key={event.id}><span>{event.dateLabel && <small>{event.dateLabel}</small>}{event.text}</span><button type="button" onPointerDown={stopEditingPointer}>Monter</button><button type="button" onPointerDown={stopEditingPointer}>Descendre</button></div>)}</div>);
   }
 
