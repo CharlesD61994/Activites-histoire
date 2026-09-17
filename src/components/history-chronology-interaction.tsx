@@ -100,10 +100,9 @@ export function HistoryChronologyInteraction({ events, order, lockedIds = [], co
         {order[index] ? token(order[index], index) : <button type="button" className="history-chronology-circle is-empty" aria-label={`Rang ${index + 1}, emplacement vide`} disabled={!preview && blocked} tabIndex={preview ? -1 : 0} onClick={() => { if (selected) place(selected, index); }} />}
       </div>)}
     </div>
-    <p className="history-chronology-instruction">Glisse les numéros dans les ronds, du plus ancien au plus récent.</p>
     <div className={`history-chronology-bank ${drag?.target === -1 ? "is-drop-target" : ""}`} aria-label="Banque de documents" onClick={(event) => { if (event.target === event.currentTarget && selected) place(selected, -1); }}>
       {events.filter((item) => !order.includes(item.id)).map((item) => token(item.id))}
-      {events.every((item) => order.includes(item.id)) && <span className="history-chronology-bank-empty">Tous les documents sont placés.</span>}
+      {events.every((item) => order.includes(item.id)) && <button type="button" className="history-chronology-return" aria-label="Remettre le numéro sélectionné dans la banque" disabled={blocked || !selected} onClick={() => { if (selected) place(selected, -1); }}>↶</button>}
     </div>
     <span className="sr-only" role="status">{message}</span>
   </div>;

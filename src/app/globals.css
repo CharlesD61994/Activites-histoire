@@ -1056,17 +1056,20 @@
 .history-chronology-circle.is-empty { cursor: pointer; }
 .history-chronology-circle:disabled { opacity: 1; cursor: default; touch-action: auto; }
 .history-chronology-circle.selected, .history-chronology-circle:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }
-.history-chronology .is-drop-target { background: #dceef8; border-radius: 12px; }
+.history-chronology-slot.is-drop-target > .history-chronology-circle:not(.is-dragging) { outline: 3px solid var(--primary); outline-offset: 4px; }
+.history-chronology-bank.is-drop-target .history-chronology-circle:not(.is-dragging), .history-chronology-bank.is-drop-target .history-chronology-return { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
 .history-chronology-circle.is-dragging { z-index: 5; cursor: grabbing; box-shadow: 3px 5px 12px #0003; pointer-events: none; }
 .history-chronology-circle.earned { border-color: #16803d; background: #e6f7ed; color: #126531; }
 .history-chronology-circle.wrong { border-color: #c22a1f; background: #fff0ee; color: #a62219; }
 .history-chronology-circle.revealed { border-color: #2563eb; background: #eff6ff; }
 .history-chronology-mark { position: absolute; right: -5px; bottom: -5px; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: white; background: #16803d; font-size: 16px; }
 .history-chronology-circle.wrong .history-chronology-mark { background: #c22a1f; }
-.history-chronology-instruction { margin: 8px 0 12px; text-align: center; font-size: 14px; color: var(--text-muted); }
-.history-chronology-bank { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; min-height: 72px; padding: 8px; border: 1px dashed var(--border); border-radius: 12px; }
-.history-chronology-bank-empty { color: var(--text-muted); font-size: 14px; }
+.history-chronology-bank { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; width: fit-content; max-width: 100%; min-height: 80px; margin: 12px auto 0; padding: 8px; }
+.history-chronology-return { display: grid; place-items: center; width: 64px; height: 64px; padding: 0; border: 2px dashed var(--border); border-radius: 50%; background: transparent; color: var(--text-muted); font-size: 28px; }
+.history-chronology-return:disabled { opacity: .65; }
 .history-chronology-bank .history-chronology-circle { --circle-size: 64px; }
+.history-reader-interaction-stack:has(> .history-reader-interaction-body > .history-chronology) { grid-template-rows: auto auto; align-content: start; gap: 0; }
+.history-reader-interaction-stack:has(> .history-reader-interaction-body > .history-chronology) > .history-reader-actions { height: 44px; align-self: start; justify-content: center; margin-top: 4px; }
 .history-result { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 12px; }
 .history-result.correct { background: color-mix(in srgb, var(--success) 14%, #fff); color: var(--success); }
 .history-result.incorrect { background: color-mix(in srgb, var(--warning) 18%, #fff); color: var(--warning); }
